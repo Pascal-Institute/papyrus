@@ -44,64 +44,91 @@ private fun formatCurrency(value: Double): String {
 
 /** Benchmark information for financial ratios */
 private data class BenchmarkInfo(
-    val benchmarkText: String,
-    val investorPerspective: String,
-    val example: String = ""
+        val benchmarkText: String,
+        val investorPerspective: String,
+        val example: String = ""
 )
 
 /** Get benchmark information for a given ratio */
 private fun getBenchmarkInfo(ratioName: String): BenchmarkInfo? {
     return when {
-        ratioName.contains("매출총이익률") || ratioName.contains("Gross Margin") -> BenchmarkInfo(
-            benchmarkText = "• 제조업: 25-40%\n• 소프트웨어/기술: 60-80%\n• 소매업: 20-35%\n• 제약/바이오: 70-85%",
-            investorPerspective = "높은 매출총이익률은 제품 차별화와 가격 경쟁력을 나타냅니다. 특히 기술 기업의 경우 70% 이상이면 매우 우수한 수준입니다.",
-            example = "Apple의 매출총이익률은 약 43% (2023), Microsoft는 약 69% 수준입니다."
-        )
-        ratioName.contains("영업이익률") || ratioName.contains("Operating Margin") -> BenchmarkInfo(
-            benchmarkText = "• S&P 500 평균: 10-12%\n• 기술 기업: 15-30%\n• 금융: 25-35%\n• 소매: 3-8%",
-            investorPerspective = "영업이익률이 15% 이상이면 효율적인 운영 구조를 갖춘 것으로 평가됩니다. 경쟁이 치열한 산업에서는 5-10%도 양호한 수준입니다.",
-            example = "Google의 영업이익률은 약 27% (2023), Amazon은 약 5% 수준입니다."
-        )
-        ratioName.contains("순이익률") || ratioName.contains("Net Profit Margin") -> BenchmarkInfo(
-            benchmarkText = "• 산업 평균: 5-10%\n• 우수 기업: 15-20%\n• 고성장 기업: 3-8%\n• 성숙 기업: 10-15%",
-            investorPerspective = "10% 이상이면 건강한 수익 창출 능력을 의미합니다. 성장기 기업은 재투자로 인해 낮을 수 있으나, 안정기 기업은 높아야 합니다.",
-            example = "Tesla의 순이익률은 약 15% (2023), Walmart는 약 2.4% 수준입니다."
-        )
-        ratioName.contains("ROE") || ratioName.contains("자기자본이익률") -> BenchmarkInfo(
-            benchmarkText = "• 우수: 15-20% 이상\n• 양호: 10-15%\n• 평균: 7-10%\n• 주의: 7% 미만",
-            investorPerspective = "Warren Buffett은 ROE 15% 이상을 우량 기업의 기준으로 봅니다. 지속적으로 20% 이상을 유지하는 기업은 매우 드뭅니다.",
-            example = "Coca-Cola의 ROE는 약 40% (2023), JP Morgan은 약 15% 수준입니다."
-        )
-        ratioName.contains("ROA") || ratioName.contains("총자산이익률") -> BenchmarkInfo(
-            benchmarkText = "• 우수: 5% 이상\n• 양호: 3-5%\n• 평균: 1-3%\n• 주의: 1% 미만",
-            investorPerspective = "자산 집약적 산업(제조업, 항공)은 낮고, 자산 경량 산업(소프트웨어, 서비스)은 높습니다. 5% 이상이면 자산을 효율적으로 활용하는 것입니다.",
-            example = "Adobe의 ROA는 약 28% (2023), Ford는 약 1.2% 수준입니다."
-        )
-        ratioName.contains("유동비율") || ratioName.contains("Current Ratio") -> BenchmarkInfo(
-            benchmarkText = "• 안전: 1.5-3.0\n• 최소: 1.0 이상\n• 주의: 1.0 미만\n• 과다: 3.0 초과 (비효율 가능)",
-            investorPerspective = "1.5-2.0이 이상적입니다. 너무 높으면 자산을 효율적으로 활용하지 못하는 것일 수 있고, 1.0 미만이면 단기 지급 능력에 문제가 있을 수 있습니다.",
-            example = "일반적으로 건강한 기업은 1.5-2.5 범위를 유지합니다."
-        )
-        ratioName.contains("당좌비율") || ratioName.contains("Quick Ratio") -> BenchmarkInfo(
-            benchmarkText = "• 안전: 1.0 이상\n• 최소: 0.5-1.0\n• 주의: 0.5 미만",
-            investorPerspective = "재고를 제외한 즉시 현금화 가능 자산으로 단기 부채를 갚을 수 있는지 측정합니다. 1.0 이상이면 안정적입니다.",
-            example = "기술 기업은 재고가 적어 당좌비율이 유동비율과 비슷합니다."
-        )
-        ratioName.contains("부채비율") || ratioName.contains("Debt to Equity") && !ratioName.contains("Debt Ratio") -> BenchmarkInfo(
-            benchmarkText = "• 안전: 50% 이하\n• 평균: 50-150%\n• 주의: 150-200%\n• 위험: 200% 초과",
-            investorPerspective = "산업마다 다르지만 100% 이하가 일반적으로 안전합니다. 금융업은 높을 수 있으나, 제조업은 낮아야 합니다.",
-            example = "Tesla의 부채비율은 약 17% (2023), AT&T는 약 120% 수준입니다."
-        )
-        ratioName.contains("총자산회전율") || ratioName.contains("Asset Turnover") -> BenchmarkInfo(
-            benchmarkText = "• 소매업: 2-3회\n• 제조업: 0.5-1.5회\n• 서비스업: 1-2회\n• 자본집약 산업: 0.3-0.8회",
-            investorPerspective = "높을수록 자산을 효율적으로 활용해 매출을 창출하는 것입니다. 산업 특성에 따라 큰 차이가 있습니다.",
-            example = "Walmart의 총자산회전율은 약 2.4회, ExxonMobil은 약 0.9회입니다."
-        )
-        ratioName.contains("이자보상배율") || ratioName.contains("Interest Coverage") -> BenchmarkInfo(
-            benchmarkText = "• 매우 안전: 8배 이상\n• 안전: 4-8배\n• 평균: 2.5-4배\n• 위험: 1.5배 미만",
-            investorPerspective = "영업이익으로 이자비용을 몇 번 갚을 수 있는지 나타냅니다. 2.5배 미만이면 부채 상환 능력에 주의가 필요합니다.",
-            example = "건강한 기업은 최소 5배 이상을 유지합니다."
-        )
+        ratioName.contains("매출총이익률") || ratioName.contains("Gross Margin") ->
+                BenchmarkInfo(
+                        benchmarkText =
+                                "• 제조업: 25-40%\n• 소프트웨어/기술: 60-80%\n• 소매업: 20-35%\n• 제약/바이오: 70-85%",
+                        investorPerspective =
+                                "높은 매출총이익률은 제품 차별화와 가격 경쟁력을 나타냅니다. 특히 기술 기업의 경우 70% 이상이면 매우 우수한 수준입니다.",
+                        example = "Apple의 매출총이익률은 약 43% (2023), Microsoft는 약 69% 수준입니다."
+                )
+        ratioName.contains("영업이익률") || ratioName.contains("Operating Margin") ->
+                BenchmarkInfo(
+                        benchmarkText =
+                                "• S&P 500 평균: 10-12%\n• 기술 기업: 15-30%\n• 금융: 25-35%\n• 소매: 3-8%",
+                        investorPerspective =
+                                "영업이익률이 15% 이상이면 효율적인 운영 구조를 갖춘 것으로 평가됩니다. 경쟁이 치열한 산업에서는 5-10%도 양호한 수준입니다.",
+                        example = "Google의 영업이익률은 약 27% (2023), Amazon은 약 5% 수준입니다."
+                )
+        ratioName.contains("순이익률") || ratioName.contains("Net Profit Margin") ->
+                BenchmarkInfo(
+                        benchmarkText =
+                                "• 산업 평균: 5-10%\n• 우수 기업: 15-20%\n• 고성장 기업: 3-8%\n• 성숙 기업: 10-15%",
+                        investorPerspective =
+                                "10% 이상이면 건강한 수익 창출 능력을 의미합니다. 성장기 기업은 재투자로 인해 낮을 수 있으나, 안정기 기업은 높아야 합니다.",
+                        example = "Tesla의 순이익률은 약 15% (2023), Walmart는 약 2.4% 수준입니다."
+                )
+        ratioName.contains("ROE") || ratioName.contains("자기자본이익률") ->
+                BenchmarkInfo(
+                        benchmarkText = "• 우수: 15-20% 이상\n• 양호: 10-15%\n• 평균: 7-10%\n• 주의: 7% 미만",
+                        investorPerspective =
+                                "Warren Buffett은 ROE 15% 이상을 우량 기업의 기준으로 봅니다. 지속적으로 20% 이상을 유지하는 기업은 매우 드뭅니다.",
+                        example = "Coca-Cola의 ROE는 약 40% (2023), JP Morgan은 약 15% 수준입니다."
+                )
+        ratioName.contains("ROA") || ratioName.contains("총자산이익률") ->
+                BenchmarkInfo(
+                        benchmarkText = "• 우수: 5% 이상\n• 양호: 3-5%\n• 평균: 1-3%\n• 주의: 1% 미만",
+                        investorPerspective =
+                                "자산 집약적 산업(제조업, 항공)은 낮고, 자산 경량 산업(소프트웨어, 서비스)은 높습니다. 5% 이상이면 자산을 효율적으로 활용하는 것입니다.",
+                        example = "Adobe의 ROA는 약 28% (2023), Ford는 약 1.2% 수준입니다."
+                )
+        ratioName.contains("유동비율") || ratioName.contains("Current Ratio") ->
+                BenchmarkInfo(
+                        benchmarkText =
+                                "• 안전: 1.5-3.0\n• 최소: 1.0 이상\n• 주의: 1.0 미만\n• 과다: 3.0 초과 (비효율 가능)",
+                        investorPerspective =
+                                "1.5-2.0이 이상적입니다. 너무 높으면 자산을 효율적으로 활용하지 못하는 것일 수 있고, 1.0 미만이면 단기 지급 능력에 문제가 있을 수 있습니다.",
+                        example = "일반적으로 건강한 기업은 1.5-2.5 범위를 유지합니다."
+                )
+        ratioName.contains("당좌비율") || ratioName.contains("Quick Ratio") ->
+                BenchmarkInfo(
+                        benchmarkText = "• 안전: 1.0 이상\n• 최소: 0.5-1.0\n• 주의: 0.5 미만",
+                        investorPerspective =
+                                "재고를 제외한 즉시 현금화 가능 자산으로 단기 부채를 갚을 수 있는지 측정합니다. 1.0 이상이면 안정적입니다.",
+                        example = "기술 기업은 재고가 적어 당좌비율이 유동비율과 비슷합니다."
+                )
+        ratioName.contains("부채비율") ||
+                ratioName.contains("Debt to Equity") && !ratioName.contains("Debt Ratio") ->
+                BenchmarkInfo(
+                        benchmarkText =
+                                "• 안전: 50% 이하\n• 평균: 50-150%\n• 주의: 150-200%\n• 위험: 200% 초과",
+                        investorPerspective =
+                                "산업마다 다르지만 100% 이하가 일반적으로 안전합니다. 금융업은 높을 수 있으나, 제조업은 낮아야 합니다.",
+                        example = "Tesla의 부채비율은 약 17% (2023), AT&T는 약 120% 수준입니다."
+                )
+        ratioName.contains("총자산회전율") || ratioName.contains("Asset Turnover") ->
+                BenchmarkInfo(
+                        benchmarkText =
+                                "• 소매업: 2-3회\n• 제조업: 0.5-1.5회\n• 서비스업: 1-2회\n• 자본집약 산업: 0.3-0.8회",
+                        investorPerspective =
+                                "높을수록 자산을 효율적으로 활용해 매출을 창출하는 것입니다. 산업 특성에 따라 큰 차이가 있습니다.",
+                        example = "Walmart의 총자산회전율은 약 2.4회, ExxonMobil은 약 0.9회입니다."
+                )
+        ratioName.contains("이자보상배율") || ratioName.contains("Interest Coverage") ->
+                BenchmarkInfo(
+                        benchmarkText = "• 매우 안전: 8배 이상\n• 안전: 4-8배\n• 평균: 2.5-4배\n• 위험: 1.5배 미만",
+                        investorPerspective =
+                                "영업이익으로 이자비용을 몇 번 갚을 수 있는지 나타냅니다. 2.5배 미만이면 부채 상환 능력에 주의가 필요합니다.",
+                        example = "건강한 기업은 최소 5배 이상을 유지합니다."
+                )
         else -> null
     }
 }
@@ -347,6 +374,7 @@ private fun StatCard(
 @Composable
 private fun QuickAnalyzeContentTab(content: String) {
     val scrollState = rememberScrollState()
+    var copySuccess by remember { mutableStateOf(false) }
 
     Card(
             modifier = Modifier.fillMaxSize(),
@@ -355,21 +383,65 @@ private fun QuickAnalyzeContentTab(content: String) {
             backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                SectionHeader(title = "Document Content Preview", icon = Icons.Outlined.Article)
+            SectionHeader(
+                    title = "Document Content Preview",
+                    icon = Icons.Outlined.Article,
+                    action = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                    text = "${content.length} characters",
+                                    style = AppTypography.Caption,
+                                    color = AppColors.OnSurfaceSecondary
+                            )
 
-                Text(
-                        text = "${content.length} characters",
-                        style = AppTypography.Caption,
-                        color = AppColors.OnSurfaceSecondary
-                )
-            }
+                            Spacer(modifier = Modifier.width(AppDimens.PaddingMedium))
+
+                            // Copy to clipboard button
+                            Button(
+                                    onClick = {
+                                        try {
+                                            val clipboard =
+                                                    java.awt.Toolkit.getDefaultToolkit()
+                                                            .systemClipboard
+                                            val stringSelection =
+                                                    java.awt.datatransfer.StringSelection(content)
+                                            clipboard.setContents(stringSelection, null)
+                                            copySuccess = true
+                                        } catch (e: Exception) {
+                                            println("Failed to copy to clipboard: ${e.message}")
+                                        }
+                                    },
+                                    colors =
+                                            ButtonDefaults.buttonColors(
+                                                    backgroundColor = AppColors.Primary
+                                            ),
+                                    modifier = Modifier.height(32.dp)
+                            ) {
+                                Icon(
+                                        Icons.Default.ContentCopy,
+                                        contentDescription = "Copy to clipboard",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                        text = if (copySuccess) "Copied!" else "Copy",
+                                        color = Color.White,
+                                        style = AppTypography.Caption
+                                )
+                            }
+                        }
+                    }
+            )
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+
+            if (copySuccess) {
+                LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(2000)
+                    copySuccess = false
+                }
+            }
 
             Divider(color = AppColors.Divider)
 
@@ -410,14 +482,14 @@ fun FinancialAnalysisPanel(
     val tabs = buildList {
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
             add("Health Score")
-            add("AI Analysis")  // Always show AI Analysis tab
+            add("AI Analysis") // Always show AI Analysis tab
             add("Insights")
             add("Glossary")
             add("Ratios")
             add("Raw Data")
         } else {
             add("Overview")
-            add("AI Analysis")  // Always show AI Analysis tab
+            add("AI Analysis") // Always show AI Analysis tab
             add("Metrics")
             add("Raw Data")
         }
@@ -438,7 +510,7 @@ fun FinancialAnalysisPanel(
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
             when (selectedTab) {
                 0 -> HealthScoreTab(analysis)
-                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI)  // Always show AI tab
+                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI) // Always show AI tab
                 2 -> BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
                 3 -> TermGlossaryTab(analysis.termExplanations)
                 4 -> FinancialRatiosTab(analysis.ratios, analysis.metrics)
@@ -447,7 +519,7 @@ fun FinancialAnalysisPanel(
         } else {
             when (selectedTab) {
                 0 -> FinancialOverviewTab(analysis)
-                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI)  // Always show AI tab
+                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI) // Always show AI tab
                 2 -> FinancialMetricsTab(analysis.metrics)
                 3 -> FinancialRawDataTab(analysis.rawContent, analysis)
             }
@@ -970,9 +1042,9 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
         // Toggle between visual and detailed view
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                     text = "Financial Ratios & Metrics",
@@ -980,13 +1052,14 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
                     fontWeight = FontWeight.Bold,
                     color = AppColors.OnSurface
             )
-            
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { showVisualization = !showVisualization }) {
                     Icon(
-                        if (showVisualization) Icons.Default.ViewList else Icons.Default.BarChart,
-                        contentDescription = "Toggle View",
-                        tint = AppColors.Primary
+                            if (showVisualization) Icons.Default.ViewList
+                            else Icons.Default.BarChart,
+                            contentDescription = "Toggle View",
+                            tint = AppColors.Primary
                     )
                 }
             }
@@ -998,7 +1071,7 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
                 RatioVisualizationPanel(ratios)
                 Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
             }
-            
+
             // Detailed ratio cards
             ratios.forEach { ratio ->
                 EnhancedRatioCard(ratio, showVisualization)
@@ -1017,7 +1090,7 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
             )
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
-            
+
             // Group ratios by category
             val groupedRatios = ratios.groupBy { it.category }
             groupedRatios.forEach { (category, categoryRatios) ->
@@ -1039,32 +1112,35 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
 @Composable
 private fun RatioVisualizationPanel(ratios: List<FinancialRatio>) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = AppDimens.CardElevationHigh,
-        shape = AppShapes.Large,
-        backgroundColor = AppColors.Surface
+            modifier = Modifier.fillMaxWidth(),
+            elevation = AppDimens.CardElevationHigh,
+            shape = AppShapes.Large,
+            backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
             Text(
-                text = "Financial Health Overview",
-                style = AppTypography.Headline3,
-                fontWeight = FontWeight.Bold,
-                color = AppColors.OnSurface
+                    text = "Financial Health Overview",
+                    style = AppTypography.Headline3,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.OnSurface
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Visual bars for each ratio category
             val categories = ratios.groupBy { it.category.toString() }
             categories.forEach { (category, categoryRatios) ->
                 Text(
-                    text = category.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
-                    style = AppTypography.Subtitle1,
-                    fontWeight = FontWeight.Bold,
-                    color = AppColors.OnSurface,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                        text =
+                                category.replace("_", " ").lowercase().replaceFirstChar {
+                                    it.uppercase()
+                                },
+                        style = AppTypography.Subtitle1,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.OnSurface,
+                        modifier = Modifier.padding(vertical = 8.dp)
                 )
-                
+
                 categoryRatios.forEach { ratio ->
                     RatioVisualBar(ratio)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1084,51 +1160,52 @@ private fun RatioVisualBar(ratio: FinancialRatio) {
                 HealthStatus.CAUTION -> Color(0xFFFF9800)
                 HealthStatus.WARNING -> AppColors.Error
             }
-    
+
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = ratio.name,
-                style = AppTypography.Body2,
-                color = AppColors.OnSurface,
-                modifier = Modifier.weight(1f)
+                    text = ratio.name,
+                    style = AppTypography.Body2,
+                    color = AppColors.OnSurface,
+                    modifier = Modifier.weight(1f)
             )
             Text(
-                text = ratio.formattedValue,
-                style = AppTypography.Subtitle1,
-                fontWeight = FontWeight.Bold,
-                color = statusColor
+                    text = ratio.formattedValue,
+                    style = AppTypography.Subtitle1,
+                    fontWeight = FontWeight.Bold,
+                    color = statusColor
             )
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         // Visual progress bar
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(AppShapes.Pill)
-                .background(statusColor.copy(alpha = 0.2f))
+                modifier =
+                        Modifier.fillMaxWidth()
+                                .height(8.dp)
+                                .clip(AppShapes.Pill)
+                                .background(statusColor.copy(alpha = 0.2f))
         ) {
-            val progress = when (ratio.healthStatus) {
-                HealthStatus.EXCELLENT -> 1.0f
-                HealthStatus.GOOD -> 0.8f
-                HealthStatus.NEUTRAL -> 0.6f
-                HealthStatus.CAUTION -> 0.4f
-                HealthStatus.WARNING -> 0.2f
-            }
-            
+            val progress =
+                    when (ratio.healthStatus) {
+                        HealthStatus.EXCELLENT -> 1.0f
+                        HealthStatus.GOOD -> 0.8f
+                        HealthStatus.NEUTRAL -> 0.6f
+                        HealthStatus.CAUTION -> 0.4f
+                        HealthStatus.WARNING -> 0.2f
+                    }
+
             Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(progress)
-                    .clip(AppShapes.Pill)
-                    .background(statusColor)
+                    modifier =
+                            Modifier.fillMaxHeight()
+                                    .fillMaxWidth(progress)
+                                    .clip(AppShapes.Pill)
+                                    .background(statusColor)
             )
         }
     }
@@ -1137,7 +1214,7 @@ private fun RatioVisualBar(ratio: FinancialRatio) {
 @Composable
 private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
     var isExpanded by remember { mutableStateOf(false) }
-    
+
     val statusColor =
             when (ratio.healthStatus) {
                 HealthStatus.EXCELLENT -> AppColors.Success
@@ -1155,7 +1232,7 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
                 HealthStatus.CAUTION -> "주의"
                 HealthStatus.WARNING -> "위험"
             }
-    
+
     // Get benchmark and explanation for this ratio
     val benchmark = getBenchmarkInfo(ratio.name)
 
@@ -1195,7 +1272,6 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
                                 color = AppColors.OnSurfaceSecondary
                         )
                     }
-                
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
@@ -1205,16 +1281,13 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
                             fontWeight = FontWeight.Bold,
                             color = statusColor
                     )
-                    Surface(
-                        shape = AppShapes.Pill,
-                        color = statusColor.copy(alpha = 0.2f)
-                    ) {
+                    Surface(shape = AppShapes.Pill, color = statusColor.copy(alpha = 0.2f)) {
                         Text(
-                            text = statusText,
-                            style = AppTypography.Caption,
-                            color = statusColor,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            fontWeight = FontWeight.Bold
+                                text = statusText,
+                                style = AppTypography.Caption,
+                                color = statusColor,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -1230,80 +1303,82 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
                         style = AppTypography.Body2,
                         color = AppColors.OnSurface
                 )
-                
+
                 // Expanded section with detailed info
                 AnimatedVisibility(visible = isExpanded) {
                     Column(modifier = Modifier.padding(top = 12.dp)) {
                         if (benchmark != null) {
                             Card(
-                                backgroundColor = AppColors.InfoLight,
-                                elevation = 0.dp,
-                                shape = AppShapes.Small
+                                    backgroundColor = AppColors.InfoLight,
+                                    elevation = 0.dp,
+                                    shape = AppShapes.Small
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
-                                            Icons.Default.Analytics,
-                                            contentDescription = null,
-                                            tint = AppColors.Info,
-                                            modifier = Modifier.size(18.dp)
+                                                Icons.Default.Analytics,
+                                                contentDescription = null,
+                                                tint = AppColors.Info,
+                                                modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "산업 벤치마크",
-                                            style = AppTypography.Subtitle2,
-                                            fontWeight = FontWeight.Bold,
-                                            color = AppColors.OnSurface
+                                                text = "산업 벤치마크",
+                                                style = AppTypography.Subtitle2,
+                                                fontWeight = FontWeight.Bold,
+                                                color = AppColors.OnSurface
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = benchmark.benchmarkText,
-                                        style = AppTypography.Body2,
-                                        color = AppColors.OnSurface,
-                                        lineHeight = 20.sp
+                                            text = benchmark.benchmarkText,
+                                            style = AppTypography.Body2,
+                                            color = AppColors.OnSurface,
+                                            lineHeight = 20.sp
                                     )
                                     if (benchmark.example.isNotBlank()) {
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Text(
-                                            text = "예시: ${benchmark.example}",
-                                            style = AppTypography.Caption,
-                                            color = AppColors.OnSurfaceSecondary,
-                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                                text = "예시: ${benchmark.example}",
+                                                style = AppTypography.Caption,
+                                                color = AppColors.OnSurfaceSecondary,
+                                                fontStyle =
+                                                        androidx.compose.ui.text.font.FontStyle
+                                                                .Italic
                                         )
                                     }
                                 }
                             }
-                            
+
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
                             Card(
-                                backgroundColor = AppColors.WarningLight.copy(alpha = 0.3f),
-                                elevation = 0.dp,
-                                shape = AppShapes.Small
+                                    backgroundColor = AppColors.WarningLight.copy(alpha = 0.3f),
+                                    elevation = 0.dp,
+                                    shape = AppShapes.Small
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
-                                            Icons.Default.Lightbulb,
-                                            contentDescription = null,
-                                            tint = AppColors.Warning,
-                                            modifier = Modifier.size(18.dp)
+                                                Icons.Default.Lightbulb,
+                                                contentDescription = null,
+                                                tint = AppColors.Warning,
+                                                modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "투자자 관점",
-                                            style = AppTypography.Subtitle2,
-                                            fontWeight = FontWeight.Bold,
-                                            color = AppColors.OnSurface
+                                                text = "투자자 관점",
+                                                style = AppTypography.Subtitle2,
+                                                fontWeight = FontWeight.Bold,
+                                                color = AppColors.OnSurface
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = benchmark.investorPerspective,
-                                        style = AppTypography.Body2,
-                                        color = AppColors.OnSurface,
-                                        lineHeight = 20.sp
+                                            text = benchmark.investorPerspective,
+                                            style = AppTypography.Body2,
+                                            color = AppColors.OnSurface,
+                                            lineHeight = 20.sp
                                     )
                                 }
                             }
@@ -1318,46 +1393,47 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
 @Composable
 private fun MetricCategoryCard(category: RatioCategory, metrics: List<FinancialRatio>) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = AppDimens.CardElevation,
-        shape = AppShapes.Medium,
-        backgroundColor = AppColors.Surface
+            modifier = Modifier.fillMaxWidth(),
+            elevation = AppDimens.CardElevation,
+            shape = AppShapes.Medium,
+            backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            val categoryName = when(category) {
-                RatioCategory.PROFITABILITY -> "Profitability"
-                RatioCategory.LIQUIDITY -> "Liquidity"
-                RatioCategory.SOLVENCY -> "Solvency"
-                RatioCategory.EFFICIENCY -> "Efficiency"
-                RatioCategory.VALUATION -> "Valuation"
-            }
-            
+            val categoryName =
+                    when (category) {
+                        RatioCategory.PROFITABILITY -> "Profitability"
+                        RatioCategory.LIQUIDITY -> "Liquidity"
+                        RatioCategory.SOLVENCY -> "Solvency"
+                        RatioCategory.EFFICIENCY -> "Efficiency"
+                        RatioCategory.VALUATION -> "Valuation"
+                    }
+
             Text(
-                text = categoryName,
-                style = AppTypography.Subtitle1,
-                fontWeight = FontWeight.Bold,
-                color = AppColors.Primary
+                    text = categoryName,
+                    style = AppTypography.Subtitle1,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.Primary
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             metrics.forEach { metric ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = metric.name,
-                        style = AppTypography.Body2,
-                        color = AppColors.OnSurface,
-                        modifier = Modifier.weight(1f)
+                            text = metric.name,
+                            style = AppTypography.Body2,
+                            color = AppColors.OnSurface,
+                            modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = metric.formattedValue,
-                        style = AppTypography.Subtitle1,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.OnSurface
+                            text = metric.formattedValue,
+                            style = AppTypography.Subtitle1,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.OnSurface
                     )
                 }
             }
@@ -1675,59 +1751,65 @@ private fun FinancialRawDataTab(rawContent: String, analysis: FinancialAnalysis)
             backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                SectionHeader(title = "Raw Document Content", icon = Icons.Outlined.Code)
+            SectionHeader(
+                    title = "Raw Document Content",
+                    icon = Icons.Outlined.Code,
+                    action = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                    text = "${rawContent.length} characters",
+                                    style = AppTypography.Caption,
+                                    color = AppColors.OnSurfaceSecondary
+                            )
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                            text = "${rawContent.length} characters",
-                            style = AppTypography.Caption,
-                            color = AppColors.OnSurfaceSecondary
-                    )
-                    
-                    Spacer(modifier = Modifier.width(AppDimens.PaddingMedium))
-                    
-                    // Copy to clipboard button
-                    Button(
-                        onClick = {
-                            try {
-                                val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
-                                val stringSelection = java.awt.datatransfer.StringSelection(rawContent)
-                                clipboard.setContents(stringSelection, null)
-                                copySuccess = true
-                            } catch (e: Exception) {
-                                println("Failed to copy to clipboard: ${e.message}")
+                            Spacer(modifier = Modifier.width(AppDimens.PaddingMedium))
+
+                            // Copy to clipboard button
+                            Button(
+                                    onClick = {
+                                        try {
+                                            val clipboard =
+                                                    java.awt.Toolkit.getDefaultToolkit()
+                                                            .systemClipboard
+                                            val stringSelection =
+                                                    java.awt.datatransfer.StringSelection(
+                                                            rawContent
+                                                    )
+                                            clipboard.setContents(stringSelection, null)
+                                            copySuccess = true
+                                        } catch (e: Exception) {
+                                            println("Failed to copy to clipboard: ${e.message}")
+                                        }
+                                    },
+                                    colors =
+                                            ButtonDefaults.buttonColors(
+                                                    backgroundColor = AppColors.Primary
+                                            ),
+                                    modifier = Modifier.height(32.dp)
+                            ) {
+                                Icon(
+                                        Icons.Default.ContentCopy,
+                                        contentDescription = "Copy to clipboard",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                        text = if (copySuccess) "Copied!" else "Copy",
+                                        color = Color.White,
+                                        style = AppTypography.Caption
+                                )
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Primary),
-                        modifier = Modifier.height(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ContentCopy,
-                            contentDescription = "Copy to clipboard",
-                            modifier = Modifier.size(16.dp),
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (copySuccess) "Copied!" else "Copy",
-                            color = Color.White,
-                            style = AppTypography.Caption
-                        )
+                        }
                     }
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
             Divider(color = AppColors.Divider)
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
-            
+
             if (copySuccess) {
                 LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(2000)
@@ -1738,50 +1820,53 @@ private fun FinancialRawDataTab(rawContent: String, analysis: FinancialAnalysis)
             // Display extracted metrics summary first
             if (analysis.extendedMetrics.isNotEmpty()) {
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = AppDimens.PaddingMedium),
-                    backgroundColor = AppColors.InfoLight,
-                    shape = AppShapes.Small,
-                    elevation = 0.dp
+                        modifier =
+                                Modifier.fillMaxWidth().padding(bottom = AppDimens.PaddingMedium),
+                        backgroundColor = AppColors.InfoLight,
+                        shape = AppShapes.Small,
+                        elevation = 0.dp
                 ) {
                     Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                Icons.Default.Assessment,
-                                contentDescription = null,
-                                tint = AppColors.Info,
-                                modifier = Modifier.size(20.dp)
+                                    Icons.Default.Assessment,
+                                    contentDescription = null,
+                                    tint = AppColors.Info,
+                                    modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "추출된 재무 데이터: ${analysis.extendedMetrics.size}개 항목",
-                                style = AppTypography.Body1.copy(fontWeight = FontWeight.Bold),
-                                color = AppColors.Info
+                                    "추출된 재무 데이터: ${analysis.extendedMetrics.size}개 항목",
+                                    style = AppTypography.Body1.copy(fontWeight = FontWeight.Bold),
+                                    color = AppColors.Info
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         // Group metrics by category
                         val groupedMetrics = analysis.extendedMetrics.groupBy { it.category }
-                        
+
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.weight(1f)) {
                                 val halfSize = groupedMetrics.size / 2
-                                groupedMetrics.entries.take(halfSize).forEach { (category, metrics) ->
+                                groupedMetrics.entries.take(halfSize).forEach { (category, metrics)
+                                    ->
                                     Text(
-                                        "• ${category.name.replace("_", " ")}: ${metrics.size}개",
-                                        style = AppTypography.Caption,
-                                        color = AppColors.OnSurface
+                                            "• ${category.name.replace("_", " ")}: ${metrics.size}개",
+                                            style = AppTypography.Caption,
+                                            color = AppColors.OnSurface
                                     )
                                 }
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 val halfSize = groupedMetrics.size / 2
-                                groupedMetrics.entries.drop(halfSize).forEach { (category, metrics) ->
+                                groupedMetrics.entries.drop(halfSize).forEach { (category, metrics)
+                                    ->
                                     Text(
-                                        "• ${category.name.replace("_", " ")}: ${metrics.size}개",
-                                        style = AppTypography.Caption,
-                                        color = AppColors.OnSurface
+                                            "• ${category.name.replace("_", " ")}: ${metrics.size}개",
+                                            style = AppTypography.Caption,
+                                            color = AppColors.OnSurface
                                     )
                                 }
                             }
@@ -1964,10 +2049,15 @@ private fun AiAnalysisTab(
                 Button(
                         onClick = { onReanalyze(analysis) },
                         modifier = Modifier.padding(bottom = 16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = if (hasAnyAiResult) AppColors.Surface else AppColors.Primary
-                        ),
-                        elevation = if (hasAnyAiResult) ButtonDefaults.elevation(0.dp, 2.dp) else ButtonDefaults.elevation()
+                        colors =
+                                ButtonDefaults.buttonColors(
+                                        backgroundColor =
+                                                if (hasAnyAiResult) AppColors.Surface
+                                                else AppColors.Primary
+                                ),
+                        elevation =
+                                if (hasAnyAiResult) ButtonDefaults.elevation(0.dp, 2.dp)
+                                else ButtonDefaults.elevation()
                 ) {
                     Icon(
                             if (hasAnyAiResult) Icons.Default.Refresh else Icons.Default.Psychology,
@@ -1979,7 +2069,7 @@ private fun AiAnalysisTab(
                 }
             }
         }
-        
+
         // Show existing AI results or prompt message
         if (!hasAnyAiResult) {
             AiNotAvailableCard(analysis, null) // Pass null since button is already shown above
