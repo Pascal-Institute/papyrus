@@ -116,6 +116,18 @@ object EnhancedFinancialParser {
                     PatternDef("Capital Expenditures", MetricCategory.CAPITAL_EXPENDITURES, 1.0),
                     PatternDef("CapEx", MetricCategory.CAPITAL_EXPENDITURES, 0.9)
             )
+    
+    // ===== 비용 관련 패턴 (추가) =====
+    private val expensePatterns =
+            listOf(
+                    PatternDef("Interest Expense", MetricCategory.INTEREST_EXPENSE, 1.0),
+                    PatternDef("Interest Costs", MetricCategory.INTEREST_EXPENSE, 0.95),
+                    PatternDef("Interest Paid", MetricCategory.INTEREST_EXPENSE, 0.9),
+                    PatternDef("R&D Expense", MetricCategory.RD_EXPENSE, 1.0),
+                    PatternDef("Research and Development", MetricCategory.RD_EXPENSE, 1.0),
+                    PatternDef("SG&A Expense", MetricCategory.SGA_EXPENSE, 1.0),
+                    PatternDef("Selling, General and Administrative", MetricCategory.SGA_EXPENSE, 0.95)
+            )
 
     // ===== 주당 지표 패턴 =====
     private val perSharePatterns =
@@ -149,6 +161,7 @@ object EnhancedFinancialParser {
                     liabilityPatterns +
                     equityPatterns +
                     cashFlowPatterns +
+                    expensePatterns +
                     perSharePatterns +
                     sharesPatterns
 
@@ -555,6 +568,143 @@ object EnhancedFinancialParser {
                     )
             )
         }
+        
+        // 11. 자산회전율 (Asset Turnover)
+        if (revenue != null && totalAssets != null && totalAssets > 0) {
+            val ratio = revenue / totalAssets
+            ratios.add(
+                    createRatio(
+                            "총자산회전율",
+                            "Asset Turnover",
+                            ratio,
+                            "회",
+                            "자산을 활용한 매출 창출 효율성 (높을수록 좋음)",
+                            RatioCategory.EFFICIENCY,
+                            assessEfficiencyHealth(ratio, 0.5, 1.5)
+                    )
+            )
+        }
+        
+        // 12. 매출채권회전율 (Receivables Turnover)
+        val receivables = getValue(MetricCategory.ACCOUNTS_RECEIVABLE)
+        if (revenue != null && receivables != null && receivables > 0) {
+            val ratio = revenue / receivables
+            ratios.add(
+                    createRatio(
+                            "매출채권회전율",
+                            "Receivables Turnover",
+                            ratio,
+                            "회",
+                            "매출채권을 현금으로 회수하는 속도 (높을수록 빠름)",
+                            RatioCategory.EFFICIENCY,
+                            assessEfficiencyHealth(ratio, 4.0, 8.0)
+                    )
+            )
+        }
+        
+        // 13. 재고자산회전율 (Inventory Turnover)
+        val costOfRevenue = getValue(MetricCategory.COST_OF_REVENUE)
+        if (costOfRevenue != null && inventory != null && inventory > 0) {
+            val ratio = costOfRevenue / inventory
+            ratios.add(
+                    createRatio(
+                            "재고자산회전율",
+                            "Inventory Turnover",
+                            ratio,
+                            "회",
+                            "재고를 판매하는 속도 (높을수록 재고 관리가 효율적)",
+                            RatioCategory.EFFICIENCY,
+                            assessEfficiencyHealth(ratio, 3.0, 7.0)
+                    )
+            )
+        }
+        
+        // 14. 이자보상배율 (Interest Coverage)
+        val ebit = operatingIncome
+        val interestExpense = getValue(MetricCategory.INTEREST_EXPENSE)
+        if (ebit != null && interestExpense != null && interestExpense > 0) {
+            val ratio = ebit / interestExpense
+            ratios.add(
+                    createRatio(
+                            "이자보상배율",
+                            "Interest Coverage",
+                            ratio,
+                            "배",
+                            "영업이익으로 이자비용을 감당할 수 있는 능력 (높을수록 안전)",
+                            RatioCategory.SOLVENCY,
+                            assessInterestCoverageHealth(ratio)
+                    )
+            )
+        }
+        
+        // 15. 부채비율 (Debt Ratio)
+        if (totalLiabilities != null && totalAssets != null && totalAssets > 0) {
+            val ratio = (totalLiabilities / totalAssets) * 100
+            ratios.add(
+                    createRatio(
+                            "부채비율",
+                            "Debt Ratio",
+                            ratio,
+                            "%",
+                            "총자산 중 부채가 차지하는 비중 (50% 이하가 안정적)",
+                            RatioCategory.SOLVENCY,
+                            assessDebtRatioHealth(ratio)
+                    )
+            )
+        }
+        
+        // 16. 유보율 (Retained Earnings Ratio)
+        val retainedEarnings = getValue(MetricCategory.RETAINED_EARNINGS)
+        if (retainedEarnings != null && totalEquity != null && totalEquity > 0) {
+            val ratio = (retainedEarnings / totalEquity) * 100
+            ratios.add(
+                    createRatio(
+                            "유보율",
+                            "Retained Earnings Ratio",
+                            ratio,
+                            "%",
+                            "자기자본 중 이익잉여금 비율 (기업의 내부 유보 수준)",
+                            RatioCategory.SOLVENCY,
+                            assessRetainedEarningsHealth(ratio)
+                    )
+            )
+        }
+        
+        // 17. EBITDA 마진 (EBITDA Margin)
+        val ebitda = getValue(MetricCategory.EBITDA)
+        if (ebitda != null && revenue != null && revenue > 0) {
+            val ratio = (ebitda / revenue) * 100
+            if (ratio <= 150) {  // Sanity check
+                ratios.add(
+                        createRatio(
+                                "EBITDA 마진",
+                                "EBITDA Margin",
+                                ratio,
+                                "%",
+                                "감가상각 전 영업현금흐름 효율성 (20% 이상 우수)",
+                                RatioCategory.PROFITABILITY,
+                                assessProfitabilityHealth(ratio, 10.0, 20.0)
+                        )
+                )
+            }
+        }
+        
+        // 18. 운전자본비율 (Working Capital Ratio)
+        if (currentAssets != null && currentLiabilities != null && totalAssets != null && totalAssets > 0) {
+            val workingCapital = currentAssets - currentLiabilities
+            val ratio = (workingCapital / totalAssets) * 100
+            ratios.add(
+                    createRatio(
+                            "운전자본비율",
+                            "Working Capital Ratio",
+                            ratio,
+                            "%",
+                            "총자산 대비 운전자본 비율 (유동성 여력)",
+                            RatioCategory.LIQUIDITY,
+                            assessWorkingCapitalHealth(ratio)
+                    )
+            )
+        }
 
         return ratios
     }
@@ -956,6 +1106,60 @@ object EnhancedFinancialParser {
             value <= cautionThreshold -> HealthStatus.NEUTRAL
             value <= cautionThreshold * 1.5 -> HealthStatus.CAUTION
             else -> HealthStatus.WARNING
+        }
+    }
+    
+    private fun assessEfficiencyHealth(
+            value: Double,
+            cautionThreshold: Double,
+            goodThreshold: Double
+    ): HealthStatus {
+        return when {
+            value >= goodThreshold * 1.5 -> HealthStatus.EXCELLENT
+            value >= goodThreshold -> HealthStatus.GOOD
+            value >= cautionThreshold -> HealthStatus.NEUTRAL
+            value >= cautionThreshold * 0.5 -> HealthStatus.CAUTION
+            else -> HealthStatus.WARNING
+        }
+    }
+    
+    private fun assessInterestCoverageHealth(value: Double): HealthStatus {
+        return when {
+            value >= 10.0 -> HealthStatus.EXCELLENT  // 이자비용의 10배 이상 벌 수 있음
+            value >= 5.0 -> HealthStatus.GOOD        // 5배 이상
+            value >= 2.5 -> HealthStatus.NEUTRAL     // 2.5배 이상
+            value >= 1.5 -> HealthStatus.CAUTION     // 1.5배 이상 (위험)
+            else -> HealthStatus.WARNING             // 1.5배 미만 (매우 위험)
+        }
+    }
+    
+    private fun assessDebtRatioHealth(value: Double): HealthStatus {
+        return when {
+            value <= 30.0 -> HealthStatus.EXCELLENT   // 30% 이하
+            value <= 50.0 -> HealthStatus.GOOD        // 50% 이하
+            value <= 70.0 -> HealthStatus.NEUTRAL     // 70% 이하
+            value <= 85.0 -> HealthStatus.CAUTION     // 85% 이하
+            else -> HealthStatus.WARNING              // 85% 초과
+        }
+    }
+    
+    private fun assessRetainedEarningsHealth(value: Double): HealthStatus {
+        return when {
+            value >= 60.0 -> HealthStatus.EXCELLENT   // 60% 이상 (높은 유보)
+            value >= 40.0 -> HealthStatus.GOOD        // 40% 이상
+            value >= 20.0 -> HealthStatus.NEUTRAL     // 20% 이상
+            value >= 0.0 -> HealthStatus.CAUTION      // 0% 이상 (낮은 유보)
+            else -> HealthStatus.WARNING              // 음수 (누적 결손)
+        }
+    }
+    
+    private fun assessWorkingCapitalHealth(value: Double): HealthStatus {
+        return when {
+            value >= 20.0 -> HealthStatus.EXCELLENT   // 20% 이상
+            value >= 10.0 -> HealthStatus.GOOD        // 10% 이상
+            value >= 5.0 -> HealthStatus.NEUTRAL      // 5% 이상
+            value >= 0.0 -> HealthStatus.CAUTION      // 0% 이상
+            else -> HealthStatus.WARNING              // 음수 (유동성 위기)
         }
     }
 

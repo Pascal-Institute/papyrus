@@ -366,53 +366,75 @@ fun PapyrusApp() {
                                         appState = appState,
                                         onFileDropped = { file ->
                                                 scope.launch {
+                                        // Immediately show loading state
+                                        appState =
+                                                appState.copy(
+                                                        analysisState =
+                                                                AnalysisState
+                                                                        .Loading(
+                                                                                "파일을 읽는 중... ${file.name}"
+                                                                        )
+                                                )
+
+                                        try {
+                                                if (!FileUtils.isSupportedFile(file)
+                                                ) {
                                                         appState =
                                                                 appState.copy(
                                                                         analysisState =
                                                                                 AnalysisState
-                                                                                        .Loading(
-                                                                                                "Analyzing ${file.name}..."
+                                                                                        .Error(
+                                                                                                message =
+                                                                                                        "Unsupported file type: ${file.extension}\nSupported: PDF, HTML, HTM, TXT",
+                                                                                                retryAction =
+                                                                                                        null
                                                                                         )
                                                                 )
-
-                                                        try {
-                                                                if (!FileUtils.isSupportedFile(file)
-                                                                ) {
-                                                                        appState =
-                                                                                appState.copy(
-                                                                                        analysisState =
-                                                                                                AnalysisState
-                                                                                                        .Error(
-                                                                                                                message =
-                                                                                                                        "Unsupported file type: ${file.extension}\nSupported: PDF, HTML, HTM, TXT",
-                                                                                                                retryAction =
-                                                                                                                        null
-                                                                                                        )
+                                                        return@launch
+                                                }
+                                                
+                                                // Update loading message for content extraction
+                                                appState =
+                                                        appState.copy(
+                                                                analysisState =
+                                                                        AnalysisState
+                                                                                .Loading(
+                                                                                        "문서 내용을 추출하는 중..."
                                                                                 )
-                                                                        return@launch
-                                                                }
-
-                                                                val content =
-                                                                        FileUtils
-                                                                                .extractTextFromFile(
-                                                                                        file
+                                                        )
+                                                
+                                                val content =
+                                                        FileUtils
+                                                                .extractTextFromFile(
+                                                                        file
+                                                                )
+                                                
+                                                // Update loading message for analysis
+                                                appState =
+                                                        appState.copy(
+                                                                analysisState =
+                                                                        AnalysisState
+                                                                                .Loading(
+                                                                                        "재무 데이터를 분석하는 중..."
                                                                                 )
-                                                                // Use beginner-friendly analysis
-                                                                val analysis =
-                                                                        FinancialAnalyzer
-                                                                                .analyzeForBeginners(
-                                                                                        file.name,
-                                                                                        content
-                                                                                )
+                                                        )
+                                                
+                                                // Use beginner-friendly analysis
+                                                val analysis =
+                                                        FinancialAnalyzer
+                                                                .analyzeForBeginners(
+                                                                        file.name,
+                                                                        content
+                                                                )
 
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .FinancialAnalysisResult(
-                                                                                                        analysis
-                                                                                                )
-                                                                        )
+                                                appState =
+                                                        appState.copy(
+                                                                analysisState =
+                                                                        AnalysisState
+                                                                                .FinancialAnalysisResult(
+                                                                                        analysis
+                                                                                )
+                                                        )
                                                         } catch (e: Exception) {
                                                                 appState =
                                                                         appState.copy(

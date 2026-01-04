@@ -46,6 +46,9 @@ enum class MetricCategory {
     OPERATING_INCOME,
     NET_INCOME,
     EBITDA,
+    INTEREST_EXPENSE,
+    RD_EXPENSE,
+    SGA_EXPENSE,
 
     // Balance Sheet (재무상태표)
     TOTAL_ASSETS,

@@ -42,6 +42,70 @@ private fun formatCurrency(value: Double): String {
     }
 }
 
+/** Benchmark information for financial ratios */
+private data class BenchmarkInfo(
+    val benchmarkText: String,
+    val investorPerspective: String,
+    val example: String = ""
+)
+
+/** Get benchmark information for a given ratio */
+private fun getBenchmarkInfo(ratioName: String): BenchmarkInfo? {
+    return when {
+        ratioName.contains("매출총이익률") || ratioName.contains("Gross Margin") -> BenchmarkInfo(
+            benchmarkText = "• 제조업: 25-40%\n• 소프트웨어/기술: 60-80%\n• 소매업: 20-35%\n• 제약/바이오: 70-85%",
+            investorPerspective = "높은 매출총이익률은 제품 차별화와 가격 경쟁력을 나타냅니다. 특히 기술 기업의 경우 70% 이상이면 매우 우수한 수준입니다.",
+            example = "Apple의 매출총이익률은 약 43% (2023), Microsoft는 약 69% 수준입니다."
+        )
+        ratioName.contains("영업이익률") || ratioName.contains("Operating Margin") -> BenchmarkInfo(
+            benchmarkText = "• S&P 500 평균: 10-12%\n• 기술 기업: 15-30%\n• 금융: 25-35%\n• 소매: 3-8%",
+            investorPerspective = "영업이익률이 15% 이상이면 효율적인 운영 구조를 갖춘 것으로 평가됩니다. 경쟁이 치열한 산업에서는 5-10%도 양호한 수준입니다.",
+            example = "Google의 영업이익률은 약 27% (2023), Amazon은 약 5% 수준입니다."
+        )
+        ratioName.contains("순이익률") || ratioName.contains("Net Profit Margin") -> BenchmarkInfo(
+            benchmarkText = "• 산업 평균: 5-10%\n• 우수 기업: 15-20%\n• 고성장 기업: 3-8%\n• 성숙 기업: 10-15%",
+            investorPerspective = "10% 이상이면 건강한 수익 창출 능력을 의미합니다. 성장기 기업은 재투자로 인해 낮을 수 있으나, 안정기 기업은 높아야 합니다.",
+            example = "Tesla의 순이익률은 약 15% (2023), Walmart는 약 2.4% 수준입니다."
+        )
+        ratioName.contains("ROE") || ratioName.contains("자기자본이익률") -> BenchmarkInfo(
+            benchmarkText = "• 우수: 15-20% 이상\n• 양호: 10-15%\n• 평균: 7-10%\n• 주의: 7% 미만",
+            investorPerspective = "Warren Buffett은 ROE 15% 이상을 우량 기업의 기준으로 봅니다. 지속적으로 20% 이상을 유지하는 기업은 매우 드뭅니다.",
+            example = "Coca-Cola의 ROE는 약 40% (2023), JP Morgan은 약 15% 수준입니다."
+        )
+        ratioName.contains("ROA") || ratioName.contains("총자산이익률") -> BenchmarkInfo(
+            benchmarkText = "• 우수: 5% 이상\n• 양호: 3-5%\n• 평균: 1-3%\n• 주의: 1% 미만",
+            investorPerspective = "자산 집약적 산업(제조업, 항공)은 낮고, 자산 경량 산업(소프트웨어, 서비스)은 높습니다. 5% 이상이면 자산을 효율적으로 활용하는 것입니다.",
+            example = "Adobe의 ROA는 약 28% (2023), Ford는 약 1.2% 수준입니다."
+        )
+        ratioName.contains("유동비율") || ratioName.contains("Current Ratio") -> BenchmarkInfo(
+            benchmarkText = "• 안전: 1.5-3.0\n• 최소: 1.0 이상\n• 주의: 1.0 미만\n• 과다: 3.0 초과 (비효율 가능)",
+            investorPerspective = "1.5-2.0이 이상적입니다. 너무 높으면 자산을 효율적으로 활용하지 못하는 것일 수 있고, 1.0 미만이면 단기 지급 능력에 문제가 있을 수 있습니다.",
+            example = "일반적으로 건강한 기업은 1.5-2.5 범위를 유지합니다."
+        )
+        ratioName.contains("당좌비율") || ratioName.contains("Quick Ratio") -> BenchmarkInfo(
+            benchmarkText = "• 안전: 1.0 이상\n• 최소: 0.5-1.0\n• 주의: 0.5 미만",
+            investorPerspective = "재고를 제외한 즉시 현금화 가능 자산으로 단기 부채를 갚을 수 있는지 측정합니다. 1.0 이상이면 안정적입니다.",
+            example = "기술 기업은 재고가 적어 당좌비율이 유동비율과 비슷합니다."
+        )
+        ratioName.contains("부채비율") || ratioName.contains("Debt to Equity") && !ratioName.contains("Debt Ratio") -> BenchmarkInfo(
+            benchmarkText = "• 안전: 50% 이하\n• 평균: 50-150%\n• 주의: 150-200%\n• 위험: 200% 초과",
+            investorPerspective = "산업마다 다르지만 100% 이하가 일반적으로 안전합니다. 금융업은 높을 수 있으나, 제조업은 낮아야 합니다.",
+            example = "Tesla의 부채비율은 약 17% (2023), AT&T는 약 120% 수준입니다."
+        )
+        ratioName.contains("총자산회전율") || ratioName.contains("Asset Turnover") -> BenchmarkInfo(
+            benchmarkText = "• 소매업: 2-3회\n• 제조업: 0.5-1.5회\n• 서비스업: 1-2회\n• 자본집약 산업: 0.3-0.8회",
+            investorPerspective = "높을수록 자산을 효율적으로 활용해 매출을 창출하는 것입니다. 산업 특성에 따라 큰 차이가 있습니다.",
+            example = "Walmart의 총자산회전율은 약 2.4회, ExxonMobil은 약 0.9회입니다."
+        )
+        ratioName.contains("이자보상배율") || ratioName.contains("Interest Coverage") -> BenchmarkInfo(
+            benchmarkText = "• 매우 안전: 8배 이상\n• 안전: 4-8배\n• 평균: 2.5-4배\n• 위험: 1.5배 미만",
+            investorPerspective = "영업이익으로 이자비용을 몇 번 갚을 수 있는지 나타냅니다. 2.5배 미만이면 부채 상환 능력에 주의가 필요합니다.",
+            example = "건강한 기업은 최소 5배 이상을 유지합니다."
+        )
+        else -> null
+    }
+}
+
 /** Enhanced Quick Analyze Result View Shows analysis results in a structured, modern UI */
 @Composable
 fun QuickAnalyzeResultView(
@@ -346,14 +410,14 @@ fun FinancialAnalysisPanel(
     val tabs = buildList {
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
             add("Health Score")
-            if (hasAiAnalysis) add("AI Analysis")
+            add("AI Analysis")  // Always show AI Analysis tab
             add("Insights")
             add("Glossary")
             add("Ratios")
             add("Raw Data")
         } else {
             add("Overview")
-            if (hasAiAnalysis) add("AI Analysis")
+            add("AI Analysis")  // Always show AI Analysis tab
             add("Metrics")
             add("Raw Data")
         }
@@ -374,33 +438,17 @@ fun FinancialAnalysisPanel(
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
             when (selectedTab) {
                 0 -> HealthScoreTab(analysis)
-                1 ->
-                        if (hasAiAnalysis) AiAnalysisTab(analysis, onReanalyzeWithAI)
-                        else BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
-                2 ->
-                        if (hasAiAnalysis)
-                                BeginnerInsightsTab(
-                                        analysis.beginnerInsights,
-                                        analysis.keyTakeaways
-                                )
-                        else TermGlossaryTab(analysis.termExplanations)
-                3 ->
-                        if (hasAiAnalysis) TermGlossaryTab(analysis.termExplanations)
-                        else FinancialRatiosTab(analysis.ratios, analysis.metrics)
-                4 ->
-                        if (hasAiAnalysis) FinancialRatiosTab(analysis.ratios, analysis.metrics)
-                        else FinancialRawDataTab(analysis.rawContent)
+                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI)  // Always show AI tab
+                2 -> BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
+                3 -> TermGlossaryTab(analysis.termExplanations)
+                4 -> FinancialRatiosTab(analysis.ratios, analysis.metrics)
                 5 -> FinancialRawDataTab(analysis.rawContent)
             }
         } else {
             when (selectedTab) {
                 0 -> FinancialOverviewTab(analysis)
-                1 ->
-                        if (hasAiAnalysis) AiAnalysisTab(analysis, onReanalyzeWithAI)
-                        else FinancialMetricsTab(analysis.metrics)
-                2 ->
-                        if (hasAiAnalysis) FinancialMetricsTab(analysis.metrics)
-                        else FinancialRawDataTab(analysis.rawContent)
+                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI)  // Always show AI tab
+                2 -> FinancialMetricsTab(analysis.metrics)
                 3 -> FinancialRawDataTab(analysis.rawContent)
             }
         }
@@ -1088,6 +1136,8 @@ private fun RatioVisualBar(ratio: FinancialRatio) {
 
 @Composable
 private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
+    var isExpanded by remember { mutableStateOf(false) }
+    
     val statusColor =
             when (ratio.healthStatus) {
                 HealthStatus.EXCELLENT -> AppColors.Success
@@ -1099,15 +1149,18 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
 
     val statusText =
             when (ratio.healthStatus) {
-                HealthStatus.EXCELLENT -> "Excellent"
-                HealthStatus.GOOD -> "Good"
-                HealthStatus.NEUTRAL -> "Neutral"
-                HealthStatus.CAUTION -> "Caution"
-                HealthStatus.WARNING -> "Warning"
+                HealthStatus.EXCELLENT -> "우수"
+                HealthStatus.GOOD -> "양호"
+                HealthStatus.NEUTRAL -> "보통"
+                HealthStatus.CAUTION -> "주의"
+                HealthStatus.WARNING -> "위험"
             }
+    
+    // Get benchmark and explanation for this ratio
+    val benchmark = getBenchmarkInfo(ratio.name)
 
     Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded },
             elevation = AppDimens.CardElevation,
             shape = AppShapes.Medium,
             backgroundColor = if (compact) Color.Transparent else statusColor.copy(alpha = 0.05f)
@@ -1119,19 +1172,30 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
                     verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                            text = ratio.name,
-                            style = AppTypography.Subtitle1,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.OnSurface
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                                text = ratio.name,
+                                style = AppTypography.Subtitle1,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.OnSurface
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                                if (isExpanded) Icons.Default.ExpandLess else Icons.Default.Info,
+                                contentDescription = "상세정보",
+                                tint = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.size(18.dp)
+                        )
+                    }
                     if (!compact) {
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                                 text = ratio.description,
                                 style = AppTypography.Caption,
                                 color = AppColors.OnSurfaceSecondary
                         )
                     }
+                
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
@@ -1166,6 +1230,86 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
                         style = AppTypography.Body2,
                         color = AppColors.OnSurface
                 )
+                
+                // Expanded section with detailed info
+                AnimatedVisibility(visible = isExpanded) {
+                    Column(modifier = Modifier.padding(top = 12.dp)) {
+                        if (benchmark != null) {
+                            Card(
+                                backgroundColor = AppColors.InfoLight,
+                                elevation = 0.dp,
+                                shape = AppShapes.Small
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Analytics,
+                                            contentDescription = null,
+                                            tint = AppColors.Info,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "산업 벤치마크",
+                                            style = AppTypography.Subtitle2,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AppColors.OnSurface
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = benchmark.benchmarkText,
+                                        style = AppTypography.Body2,
+                                        color = AppColors.OnSurface,
+                                        lineHeight = 20.sp
+                                    )
+                                    if (benchmark.example.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "예시: ${benchmark.example}",
+                                            style = AppTypography.Caption,
+                                            color = AppColors.OnSurfaceSecondary,
+                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Card(
+                                backgroundColor = AppColors.WarningLight.copy(alpha = 0.3f),
+                                elevation = 0.dp,
+                                shape = AppShapes.Small
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Lightbulb,
+                                            contentDescription = null,
+                                            tint = AppColors.Warning,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "투자자 관점",
+                                            style = AppTypography.Subtitle2,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AppColors.OnSurface
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = benchmark.investorPerspective,
+                                        style = AppTypography.Body2,
+                                        color = AppColors.OnSurface,
+                                        lineHeight = 20.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
