@@ -101,32 +101,27 @@ fun PapyrusApp() {
                             )
                             
                             appState = appState.copy(
-                                analysisState = AnalysisState.Loading("Fetching document..."),
+                                analysisState = AnalysisState.Loading("SEC 문서를 분석하고 있습니다..."),
                                 currentAnalyzingFiling = filing.accessionNumber
                             )
                             
                             try {
                                 val rawHtml = SecApi.fetchDocumentContent(url)
-                                val text = rawHtml
-                                    .replace(Regex("<[^>]*>"), " ")
-                                    .replace(Regex("\\s+"), " ")
-                                    .take(10000)
                                 
-                                val summary = buildAnalysisSummary(rawHtml, text)
+                                // 초보자 친화적 분석 사용
+                                val analysis = FinancialAnalyzer.analyzeForBeginners(
+                                    filing.primaryDocument, 
+                                    rawHtml
+                                )
                                 
                                 appState = appState.copy(
-                                    analysisState = AnalysisState.QuickAnalyzeResult(
-                                        documentTitle = filing.primaryDocument,
-                                        documentUrl = url,
-                                        content = text,
-                                        summary = summary
-                                    ),
+                                    analysisState = AnalysisState.FinancialAnalysisResult(analysis),
                                     currentAnalyzingFiling = null
                                 )
                             } catch (e: Exception) {
                                 appState = appState.copy(
                                     analysisState = AnalysisState.Error(
-                                        message = "Failed to analyze document: ${e.message}",
+                                        message = "문서 분석 실패: ${e.message}",
                                         retryAction = null
                                     ),
                                     currentAnalyzingFiling = null
@@ -174,7 +169,8 @@ fun PapyrusApp() {
                                 }
                                 
                                 val content = FileUtils.extractTextFromFile(file)
-                                val analysis = FinancialAnalyzer.analyzeDocument(file.name, content)
+                                // 초보자 친화적 분석 기능 사용
+                                val analysis = FinancialAnalyzer.analyzeForBeginners(file.name, content)
                                 
                                 appState = appState.copy(
                                     analysisState = AnalysisState.FinancialAnalysisResult(analysis)
