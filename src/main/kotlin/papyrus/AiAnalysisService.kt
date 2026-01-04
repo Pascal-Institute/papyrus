@@ -28,8 +28,17 @@ object AiAnalysisService {
     // OpenRouter API 설정
     private const val OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
     
-    // 무료 모델 옵션
-    private const val FREE_MODEL = "meta-llama/llama-3.1-8b-instruct:free"
+    // 무료 모델 옵션 - OpenRouter의 최신 무료 모델 사용
+    // 참고: 무료 모델은 변경될 수 있으므로 https://openrouter.ai/docs 에서 확인
+    private const val FREE_MODEL = "meta-llama/llama-3.2-3b-instruct:free"
+    
+    // 대체 모델 옵션 (fallback)
+    private val FALLBACK_MODELS = listOf(
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "meta-llama/llama-3.1-8b-instruct:free",
+        "google/gemma-2-9b-it:free",
+        "microsoft/phi-3-mini-128k-instruct:free"
+    )
     
     // API 키 (SettingsManager에서 가져오기)
     private fun getApiKey(): String? = SettingsManager.getApiKey()
@@ -283,9 +292,33 @@ object AiAnalysisService {
     private fun callOpenRouterApi(prompt: String): String {
         val currentApiKey = getApiKey() ?: throw Exception("API 키가 설정되지 않았습니다")
         
+        // 먼저 기본 모델 시도, 실패 시 대체 모델들 순차 시도
+        var lastError: Exception? = null
+        
+        for (model in FALLBACK_MODELS) {
+            try {
+                return callOpenRouterApiWithModel(currentApiKey, prompt, model)
+            } catch (e: Exception) {
+                lastError = e
+                // 404 또는 모델 찾을 수 없음 오류인 경우 다음 모델 시도
+                if (e.message?.contains("404") == true || 
+                    e.message?.contains("no endpoints") == true ||
+                    e.message?.contains("not found") == true) {
+                    continue
+                }
+                // 다른 오류는 바로 throw
+                throw e
+            }
+        }
+        
+        // 모든 모델 실패 시
+        throw lastError ?: Exception("사용 가능한 AI 모델을 찾을 수 없습니다")
+    }
+    
+    private fun callOpenRouterApiWithModel(apiKey: String, prompt: String, model: String): String {
         val requestBody = """
             {
-                "model": "$FREE_MODEL",
+                "model": "$model",
                 "messages": [
                     {
                         "role": "system",
@@ -305,7 +338,7 @@ object AiAnalysisService {
         val request = HttpRequest.newBuilder()
             .uri(URI.create(OPENROUTER_API_URL))
             .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer $currentApiKey")
+            .header("Authorization", "Bearer $apiKey")
             .header("HTTP-Referer", "https://github.com/Pascal-Institute/papyrus")
             .header("X-Title", "Papyrus SEC Financial Analyzer")
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
@@ -366,46 +399,59 @@ object AiAnalysisService {
      * API 키 테스트 - 간단한 요청으로 키의 유효성 검사
      */
     suspend fun testApiKey(testKey: String): Pair<Boolean, String?> = withContext(Dispatchers.IO) {
-        try {
-            val requestBody = """
-                {
-                    "model": "$FREE_MODEL",
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": "Say 'OK' if you can understand this message."
-                        }
-                    ],
-                    "max_tokens": 10
+        // 여러 모델 시도
+        for (model in FALLBACK_MODELS) {
+            try {
+                val requestBody = """
+                    {
+                        "model": "$model",
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": "Say 'OK' if you can understand this message."
+                            }
+                        ],
+                        "max_tokens": 10
+                    }
+                """.trimIndent()
+                
+                val request = HttpRequest.newBuilder()
+                    .uri(URI.create(OPENROUTER_API_URL))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer $testKey")
+                    .header("HTTP-Referer", "https://github.com/Pascal-Institute/papyrus")
+                    .header("X-Title", "Papyrus SEC Financial Analyzer")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .timeout(Duration.ofSeconds(30))
+                    .build()
+                
+                val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+                
+                if (response.statusCode() == 200) {
+                    return@withContext Pair(true, "API 키가 정상적으로 작동합니다! (모델: ${model.split("/").last()})")
+                } else if (response.statusCode() == 404) {
+                    // 모델을 찾을 수 없으면 다음 모델 시도
+                    continue
+                } else {
+                    val errorMsg = when (response.statusCode()) {
+                        401 -> "유효하지 않은 API 키입니다."
+                        402 -> "크레딧이 부족합니다. OpenRouter에서 크레딧을 충전해주세요."
+                        429 -> "요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."
+                        else -> "API 오류 (${response.statusCode()}): ${response.body().take(100)}"
+                    }
+                    return@withContext Pair(false, errorMsg)
                 }
-            """.trimIndent()
-            
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create(OPENROUTER_API_URL))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer $testKey")
-                .header("HTTP-Referer", "https://github.com/Pascal-Institute/papyrus")
-                .header("X-Title", "Papyrus SEC Financial Analyzer")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .timeout(Duration.ofSeconds(30))
-                .build()
-            
-            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            
-            if (response.statusCode() == 200) {
-                return@withContext Pair(true, "API 키가 정상적으로 작동합니다!")
-            } else {
-                val errorMsg = when (response.statusCode()) {
-                    401 -> "유효하지 않은 API 키입니다."
-                    402 -> "크레딧이 부족합니다. OpenRouter에서 크레딧을 충전해주세요."
-                    429 -> "요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."
-                    else -> "API 오류 (${response.statusCode()}): ${response.body().take(100)}"
+            } catch (e: Exception) {
+                // 404 오류면 다음 모델 시도
+                if (e.message?.contains("404") == true) {
+                    continue
                 }
-                return@withContext Pair(false, errorMsg)
+                return@withContext Pair(false, "연결 실패: ${e.message}")
             }
-        } catch (e: Exception) {
-            return@withContext Pair(false, "연결 실패: ${e.message}")
         }
+        
+        // 모든 모델 실패
+        return@withContext Pair(false, "사용 가능한 AI 모델을 찾을 수 없습니다. OpenRouter 무료 모델 상태를 확인해주세요.")
     }
 }
 
