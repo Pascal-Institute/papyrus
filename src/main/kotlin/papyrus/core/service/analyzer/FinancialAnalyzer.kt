@@ -43,12 +43,8 @@ object FinancialAnalyzer {
     private val epsTerms = listOf("Earnings Per Share", "EPS", "Basic EPS", "Diluted EPS")
 
     fun analyzeDocument(fileName: String, content: String): FinancialAnalysis {
-        // Remove HTML tags and normalize whitespace
-        val cleanText =
-                content.replace(Regex("<[^>]*>"), " ")
-                        .replace(Regex("\\s+"), " ")
-                        .replace("&nbsp;", " ")
-                        .trim()
+        // Remove HTML tags and normalize whitespace using the enhanced parser
+        val cleanText = EnhancedFinancialParser.cleanHtml(content)
 
         // Extract company name (usually in first few lines)
         val companyName = extractCompanyName(cleanText)
@@ -141,8 +137,9 @@ object FinancialAnalyzer {
 
         for (term in terms) {
             // Look for pattern: Term + amount
-            // Handles formats like: "Total Revenue $123,456", "Revenue: 123456", etc.
-            val pattern = Regex("(?i)${Regex.escape(term)}[:\\s]*(\\$?\\s*[\\d,]+(?:\\.\\d+)?)")
+            // Handles formats like: "Total Revenue $123,456", "Revenue: 123456", "Revenue |
+            // 123,456" etc.
+            val pattern = Regex("(?i)${Regex.escape(term)}[:\\s\\|]*(\\$?\\s*[\\d,]+(?:\\.\\d+)?)")
             val matches = pattern.findAll(text)
 
             for (match in matches.take(3)) { // Take first 3 matches
@@ -267,7 +264,7 @@ object FinancialAnalyzer {
             println("✓ Loaded analysis from cache")
             return cached
         }
-        
+
         println("Performing fresh analysis...")
         val basicAnalysis = analyzeDocument(fileName, content)
 
@@ -314,21 +311,22 @@ object FinancialAnalyzer {
                         riskFactors
                 )
 
-        val result = basicAnalysis.copy(
-                metrics = allMetrics,
-                ratios = ratios,
-                beginnerInsights = insights,
-                termExplanations = termExplanations,
-                healthScore = healthScore,
-                reportTypeExplanation = reportExplanation,
-                keyTakeaways = keyTakeaways,
-                extendedMetrics = extendedMetrics
-        )
-        
+        val result =
+                basicAnalysis.copy(
+                        metrics = allMetrics,
+                        ratios = ratios,
+                        beginnerInsights = insights,
+                        termExplanations = termExplanations,
+                        healthScore = healthScore,
+                        reportTypeExplanation = reportExplanation,
+                        keyTakeaways = keyTakeaways,
+                        extendedMetrics = extendedMetrics
+                )
+
         // Save to cache
         AnalysisCache.saveAnalysis(content, result)
         println("✓ Analysis cached for future use")
-        
+
         return result
     }
 
