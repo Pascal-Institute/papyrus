@@ -28,8 +28,8 @@ import papyrus.core.model.FinancialAnalysis
 import papyrus.core.model.TickerEntry
 import papyrus.core.network.NewsApi
 import papyrus.core.network.SecApi
-import papyrus.core.service.AiAnalysisService
-import papyrus.core.service.FinancialAnalyzer
+import papyrus.core.service.analyzer.AiAnalysisService
+import papyrus.core.service.analyzer.FinancialAnalyzer
 import papyrus.ui.*
 import papyrus.util.BookmarkManager
 import papyrus.util.FileUtils

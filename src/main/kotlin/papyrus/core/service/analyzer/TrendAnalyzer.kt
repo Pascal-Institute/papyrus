@@ -1,4 +1,4 @@
-package papyrus.core.service
+package papyrus.core.service.analyzer
 
 import papyrus.core.model.*
 import java.math.BigDecimal

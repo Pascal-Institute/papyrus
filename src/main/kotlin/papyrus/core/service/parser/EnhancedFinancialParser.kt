@@ -1,4 +1,4 @@
-package papyrus.core.service
+package papyrus.core.service.parser
 
 import papyrus.core.model.*
 

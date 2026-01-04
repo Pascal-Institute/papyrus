@@ -1,4 +1,4 @@
-package papyrus.core.service
+package papyrus.core.service.analyzer
 
 import java.net.URI
 import java.net.http.HttpClient
@@ -77,8 +77,7 @@ object AiAnalysisService {
     suspend fun analyzeFinancialData(
             companyName: String,
             metrics: List<FinancialMetric>,
-            ratios: List<FinancialRatio>,
-            rawText: String
+            ratios: List<FinancialRatio>
     ): AiAnalysisResult =
             withContext(Dispatchers.IO) {
                 if (!isConfigured()) {

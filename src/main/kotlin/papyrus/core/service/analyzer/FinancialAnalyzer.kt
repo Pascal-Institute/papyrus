@@ -1,6 +1,7 @@
-package papyrus.core.service
+package papyrus.core.service.analyzer
 
 import papyrus.core.model.*
+import papyrus.core.service.parser.EnhancedFinancialParser
 import papyrus.util.AnalysisCache
 
 object FinancialAnalyzer {
@@ -272,7 +273,6 @@ object FinancialAnalyzer {
 
         // 향상된 파서로 더 많은 지표 추출
         val extendedMetrics = EnhancedFinancialParser.parseFinancialMetrics(content)
-        val financialStatements = EnhancedFinancialParser.parseFinancialStatements(content)
         val riskFactors = EnhancedFinancialParser.parseRiskFactors(content)
 
         // 기존 메트릭과 새 메트릭 병합
@@ -292,12 +292,11 @@ object FinancialAnalyzer {
                         basicAnalysis,
                         ratios,
                         extendedMetrics,
-                        financialStatements,
                         riskFactors
                 )
 
         // 용어 설명 생성
-        val termExplanations = generateTermExplanations(basicAnalysis.metrics)
+        val termExplanations = generateTermExplanations()
 
         // 재무 건전성 점수 계산
         val healthScore = calculateEnhancedHealthScore(allMetrics, ratios, riskFactors)
@@ -363,7 +362,6 @@ object FinancialAnalyzer {
             analysis: FinancialAnalysis,
             ratios: List<FinancialRatio>,
             extendedMetrics: List<ExtendedFinancialMetric>,
-            statements: List<FinancialStatement>,
             riskFactors: List<RiskFactor>
     ): List<BeginnerInsight> {
         val insights = mutableListOf<BeginnerInsight>()
@@ -578,7 +576,6 @@ object FinancialAnalyzer {
     ): BeginnerInsight {
         val cashFlowValue = operatingCashFlow?.rawValue
         val fcfValue = freeCashFlow?.rawValue
-        val cashValue = cash?.rawValue
 
         val status =
                 when {
@@ -1112,9 +1109,7 @@ object FinancialAnalyzer {
             }
 
     /** 용어 설명 생성 */
-    private fun generateTermExplanations(
-            metrics: List<FinancialMetric>
-    ): List<FinancialTermExplanation> {
+    private fun generateTermExplanations(): List<FinancialTermExplanation> {
         val terms = mutableListOf<FinancialTermExplanation>()
 
         // 기본 용어들
@@ -1186,10 +1181,7 @@ object FinancialAnalyzer {
     }
 
     /** 재무 건전성 점수 계산 */
-    private fun calculateHealthScore(
-            metrics: List<FinancialMetric>,
-            ratios: List<FinancialRatio>
-    ): FinancialHealthScore {
+    private fun calculateHealthScore(ratios: List<FinancialRatio>): FinancialHealthScore {
         var totalScore = 0
         var count = 0
         val strengths = mutableListOf<String>()
@@ -1374,8 +1366,7 @@ object FinancialAnalyzer {
                     AiAnalysisService.analyzeFinancialData(
                             companyName = basicAnalysis.companyName ?: "Unknown Company",
                             metrics = basicAnalysis.metrics,
-                            ratios = basicAnalysis.ratios,
-                            rawText = content
+                            ratios = basicAnalysis.ratios
                     )
                 } catch (e: Exception) {
                     null
@@ -1449,8 +1440,7 @@ object FinancialAnalyzer {
                     AiAnalysisService.analyzeFinancialData(
                             companyName = existingAnalysis.companyName ?: "Unknown Company",
                             metrics = existingAnalysis.metrics,
-                            ratios = existingAnalysis.ratios,
-                            rawText = content
+                            ratios = existingAnalysis.ratios
                     )
                 } catch (e: Exception) {
                     null

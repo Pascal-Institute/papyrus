@@ -19,7 +19,7 @@ import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import papyrus.core.service.AiAnalysisService
+import papyrus.core.service.analyzer.AiAnalysisService
 import papyrus.util.SettingsManager
 
 /** API 키 설정 다이얼로그 */

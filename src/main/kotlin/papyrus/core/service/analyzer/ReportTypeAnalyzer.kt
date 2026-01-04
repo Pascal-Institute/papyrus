@@ -1,4 +1,4 @@
-package papyrus.core.service
+package papyrus.core.service.analyzer
 
 import papyrus.core.model.*
 import java.math.BigDecimal
@@ -11,6 +11,7 @@ import java.math.RoundingMode
 object ReportTypeAnalyzer {
     
     /** Analyze 10-K (Annual Report) with year-over-year insights */
+    @Suppress("UNUSED_PARAMETER")
     fun analyze10K(analysis: FinancialAnalysis, metrics: List<ExtendedFinancialMetric>): ReportSpecificInsights {
         return ReportSpecificInsights(
             reportType = "10-K",
@@ -51,6 +52,7 @@ object ReportTypeAnalyzer {
     }
     
     /** Analyze 10-Q (Quarterly Report) with QoQ and YoY insights */
+    @Suppress("UNUSED_PARAMETER")
     fun analyze10Q(analysis: FinancialAnalysis, metrics: List<ExtendedFinancialMetric>): ReportSpecificInsights {
         return ReportSpecificInsights(
             reportType = "10-Q",
@@ -90,6 +92,7 @@ object ReportTypeAnalyzer {
     }
     
     /** Analyze 8-K (Current Report) for material events */
+    @Suppress("UNUSED_PARAMETER")
     fun analyze8K(analysis: FinancialAnalysis, content: String): ReportSpecificInsights {
         val eventTypes = detect8KEventType(content)
         
@@ -137,6 +140,7 @@ object ReportTypeAnalyzer {
     }
     
     /** Analyze DEF 14A (Proxy Statement) for governance */
+    @Suppress("UNUSED_PARAMETER")
     fun analyzeDEF14A(analysis: FinancialAnalysis): ReportSpecificInsights {
         return ReportSpecificInsights(
             reportType = "DEF 14A",
@@ -178,6 +182,7 @@ object ReportTypeAnalyzer {
     }
     
     /** Analyze 20-F (Foreign Company Annual Report) */
+    @Suppress("UNUSED_PARAMETER")
     fun analyze20F(analysis: FinancialAnalysis): ReportSpecificInsights {
         return ReportSpecificInsights(
             reportType = "20-F",

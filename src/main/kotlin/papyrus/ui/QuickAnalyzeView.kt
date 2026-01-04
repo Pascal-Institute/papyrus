@@ -30,7 +30,7 @@ import papyrus.core.model.FinancialRatio
 import papyrus.core.model.FinancialTermExplanation
 import papyrus.core.model.HealthStatus
 import papyrus.core.model.RatioCategory
-import papyrus.core.service.AiAnalysisService
+import papyrus.core.service.analyzer.AiAnalysisService
 
 /** Helper function to format currency values */
 private fun formatCurrency(value: Double): String {
