@@ -283,28 +283,19 @@ fun PapyrusApp() {
                                                                                         ?.investmentAdvice !=
                                                                                         null
 
-                                                                // Decide whether to skip AI analysis (when same file
-                                                                // already has AI analysis)
-                                                                val skipAi =
-                                                                        hasAiAnalysis &&
-                                                                                existingAnalysis
-                                                                                        ?.fileName ==
-                                                                                        filing.primaryDocument
+                                                                // Decide whether to skip AI analysis
+                                                                // Quick Analyze always skips AI - use AI tab for AI analysis
+                                                                val skipAi = true
 
-                                                                // Update AI analysis message (only when not skipping)
-                                                                if (!skipAi &&
-                                                                                AiAnalysisService
-                                                                                        .isConfigured()
-                                                                ) {
-                                                                        appState =
-                                                                                appState.copy(
-                                                                                        analysisState =
-                                                                                                AnalysisState
-                                                                                                        .Loading(
-                                                                                                                "Analyzing with AI..."
-                                                                                                        )
-                                                                                )
-                                                                }
+                                                                // Perform financial analysis without AI
+                                                                appState =
+                                                                        appState.copy(
+                                                                                analysisState =
+                                                                                        AnalysisState
+                                                                                                .Loading(
+                                                                                                        "SEC 문서를 분석하고 있습니다..."
+                                                                                                )
+                                                                        )
 
                                                                 // Perform financial analysis
                                                                 val analysis =

@@ -1759,27 +1759,32 @@ private fun AiAnalysisTab(
                         analysis.industryComparison != null ||
                         analysis.investmentAdvice != null
 
-        if (!hasAnyAiResult) {
-            AiNotAvailableCard(analysis, onReanalyze)
-            return
-        }
-
-        // Reanalyze Button
+        // Always show AI analysis button at the top
         if (onReanalyze != null) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                OutlinedButton(
+                Button(
                         onClick = { onReanalyze(analysis) },
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = if (hasAnyAiResult) AppColors.Surface else AppColors.Primary
+                        ),
+                        elevation = if (hasAnyAiResult) ButtonDefaults.elevation(0.dp, 2.dp) else ButtonDefaults.elevation()
                 ) {
                     Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Reanalyze",
+                            if (hasAnyAiResult) Icons.Default.Refresh else Icons.Default.Psychology,
+                            contentDescription = if (hasAnyAiResult) "Reanalyze" else "Analyze",
                             modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Reanalyze with AI")
+                    Text(if (hasAnyAiResult) "Reanalyze with AI" else "Analyze with AI")
                 }
             }
+        }
+        
+        // Show existing AI results or prompt message
+        if (!hasAnyAiResult) {
+            AiNotAvailableCard(analysis, null) // Pass null since button is already shown above
+            return
         }
 
         // Summary Section
