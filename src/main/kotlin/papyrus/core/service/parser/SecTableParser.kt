@@ -9,6 +9,12 @@ import java.math.RoundingMode
  * 
  * SEC 10-K, 10-Q 등의 재무제표 테이블을 정확하게 파싱합니다.
  * HTML 테이블 구조를 인식하고, 숫자 데이터를 정확하게 추출합니다.
+ * 
+ * 지원 형식:
+ * - Apple, Microsoft, NVE 등 다양한 회사의 10-K 형식
+ * - Products/Services 분리 매출 형식
+ * - 세그먼트별 매출 형식
+ * - 간단한 단일 테이블 형식
  */
 object SecTableParser {
     
@@ -34,68 +40,84 @@ object SecTableParser {
         val category: MetricCategory? = null
     )
     
+    // 다양한 회사 형식을 위한 추가 섹션 패턴
+    private val extendedSectionPatterns = mapOf(
+        StatementType.INCOME_STATEMENT to listOf(
+            "CONSOLIDATED STATEMENTS OF OPERATIONS",
+            "CONSOLIDATED STATEMENTS OF INCOME",
+            "CONSOLIDATED STATEMENTS OF EARNINGS",
+            "STATEMENTS OF OPERATIONS",
+            "INCOME STATEMENT",
+            "STATEMENT OF OPERATIONS",
+            "STATEMENT OF INCOME",
+            "NET SALES BY CATEGORY",  // Apple 형식
+            "REVENUE BY PRODUCT",     // 일부 회사 형식
+            "RESULTS OF OPERATIONS"
+        ),
+        StatementType.BALANCE_SHEET to listOf(
+            "CONSOLIDATED BALANCE SHEETS",
+            "CONSOLIDATED BALANCE SHEET",
+            "BALANCE SHEETS",
+            "BALANCE SHEET",
+            "STATEMENT OF FINANCIAL POSITION",
+            "CONSOLIDATED STATEMENTS OF FINANCIAL POSITION",
+            "FINANCIAL POSITION"
+        ),
+        StatementType.CASH_FLOW_STATEMENT to listOf(
+            "CONSOLIDATED STATEMENTS OF CASH FLOWS",
+            "STATEMENTS OF CASH FLOWS",
+            "CASH FLOW STATEMENT",
+            "STATEMENT OF CASH FLOWS",
+            "CASH FLOW STATEMENTS"
+        ),
+        StatementType.COMPREHENSIVE_INCOME to listOf(
+            "CONSOLIDATED STATEMENTS OF COMPREHENSIVE INCOME",
+            "STATEMENTS OF COMPREHENSIVE INCOME",
+            "COMPREHENSIVE INCOME",
+            "STATEMENT OF COMPREHENSIVE INCOME"
+        ),
+        StatementType.EQUITY_STATEMENT to listOf(
+            "CONSOLIDATED STATEMENTS OF EQUITY",
+            "STATEMENTS OF STOCKHOLDERS' EQUITY",
+            "STATEMENT OF CHANGES IN EQUITY",
+            "CONSOLIDATED STATEMENTS OF SHAREHOLDERS' EQUITY",
+            "STOCKHOLDERS' EQUITY"
+        )
+    )
+    
     /**
      * HTML 문서에서 재무제표 테이블을 찾아 파싱
      */
     fun parseFinancialTables(htmlContent: String): List<ParsedFinancialTable> {
         val tables = mutableListOf<ParsedFinancialTable>()
         
-        // 손익계산서 파싱
-        findAndParseTable(htmlContent, StatementType.INCOME_STATEMENT)?.let { tables.add(it) }
+        // 각 재무제표 유형별로 파싱 시도
+        for ((statementType, patterns) in extendedSectionPatterns) {
+            val parsed = findAndParseTableWithPatterns(htmlContent, statementType, patterns)
+            if (parsed != null) {
+                tables.add(parsed)
+            }
+        }
         
-        // 재무상태표 파싱
-        findAndParseTable(htmlContent, StatementType.BALANCE_SHEET)?.let { tables.add(it) }
-        
-        // 현금흐름표 파싱
-        findAndParseTable(htmlContent, StatementType.CASH_FLOW_STATEMENT)?.let { tables.add(it) }
-        
-        // 포괄손익계산서 파싱
-        findAndParseTable(htmlContent, StatementType.COMPREHENSIVE_INCOME)?.let { tables.add(it) }
+        // 테이블을 찾지 못한 경우 대체 전략: 텍스트 기반 파싱
+        if (tables.isEmpty()) {
+            val fallbackTables = parsePlainTextTables(htmlContent)
+            tables.addAll(fallbackTables)
+        }
         
         return tables
     }
     
     /**
-     * 특정 유형의 재무제표 테이블 찾기 및 파싱
+     * 특정 유형의 재무제표 테이블 찾기 및 파싱 (확장된 패턴 사용)
      */
-    private fun findAndParseTable(content: String, type: StatementType): ParsedFinancialTable? {
-        val sectionPatterns = when (type) {
-            StatementType.INCOME_STATEMENT -> listOf(
-                "CONSOLIDATED STATEMENTS OF OPERATIONS",
-                "CONSOLIDATED STATEMENTS OF INCOME",
-                "CONSOLIDATED STATEMENTS OF EARNINGS",
-                "STATEMENTS OF OPERATIONS",
-                "INCOME STATEMENT",
-                "STATEMENT OF OPERATIONS"
-            )
-            StatementType.BALANCE_SHEET -> listOf(
-                "CONSOLIDATED BALANCE SHEETS",
-                "CONSOLIDATED BALANCE SHEET",
-                "BALANCE SHEETS",
-                "BALANCE SHEET",
-                "STATEMENT OF FINANCIAL POSITION",
-                "CONSOLIDATED STATEMENTS OF FINANCIAL POSITION"
-            )
-            StatementType.CASH_FLOW_STATEMENT -> listOf(
-                "CONSOLIDATED STATEMENTS OF CASH FLOWS",
-                "STATEMENTS OF CASH FLOWS",
-                "CASH FLOW STATEMENT",
-                "STATEMENT OF CASH FLOWS"
-            )
-            StatementType.COMPREHENSIVE_INCOME -> listOf(
-                "CONSOLIDATED STATEMENTS OF COMPREHENSIVE INCOME",
-                "STATEMENTS OF COMPREHENSIVE INCOME",
-                "COMPREHENSIVE INCOME"
-            )
-            StatementType.EQUITY_STATEMENT -> listOf(
-                "CONSOLIDATED STATEMENTS OF EQUITY",
-                "STATEMENTS OF STOCKHOLDERS' EQUITY",
-                "STATEMENT OF CHANGES IN EQUITY"
-            )
-        }
-        
+    private fun findAndParseTableWithPatterns(
+        content: String, 
+        type: StatementType,
+        patterns: List<String>
+    ): ParsedFinancialTable? {
         // 섹션 찾기
-        val section = findSection(content, sectionPatterns) ?: return null
+        val section = findSectionWithPatterns(content, patterns) ?: return null
         
         // 단위 감지
         val unit = detectTableUnit(section)
@@ -110,12 +132,205 @@ object SecTableParser {
         
         return ParsedFinancialTable(
             statementType = type,
-            title = sectionPatterns.firstOrNull() ?: type.name,
+            title = patterns.firstOrNull() ?: type.name,
             periods = periods,
             rows = rows,
             unit = unit,
             rawHtml = section.take(3000)
         )
+    }
+    
+    /**
+     * 확장된 패턴으로 섹션 찾기
+     */
+    private fun findSectionWithPatterns(content: String, patterns: List<String>): String? {
+        val lowerContent = content.lowercase()
+        
+        for (pattern in patterns) {
+            val lowerPattern = pattern.lowercase()
+            val startIdx = lowerContent.indexOf(lowerPattern)
+            
+            if (startIdx != -1) {
+                // 다음 주요 섹션까지 또는 최대 50000자까지 추출
+                val endPatterns = listOf(
+                    "consolidated statements of",
+                    "notes to consolidated",
+                    "notes to the consolidated",
+                    "item 1a", "item 1b", "item 1c",
+                    "item 2", "item 3", "item 4",
+                    "part ii", "part iii",
+                    "signatures",
+                    "report of independent"
+                )
+                
+                var endIdx = content.length
+                for (endPattern in endPatterns) {
+                    val possibleEnd = lowerContent.indexOf(endPattern, startIdx + pattern.length + 100)
+                    if (possibleEnd != -1 && possibleEnd < endIdx) {
+                        endIdx = possibleEnd
+                    }
+                }
+                
+                val section = content.substring(startIdx, minOf(endIdx, startIdx + 50000))
+                if (section.length > 500) return section
+            }
+        }
+        return null
+    }
+    
+    /**
+     * 일반 텍스트 기반 테이블 파싱 (HTML이 아닌 경우)
+     */
+    private fun parsePlainTextTables(text: String): List<ParsedFinancialTable> {
+        val tables = mutableListOf<ParsedFinancialTable>()
+        
+        // 손익계산서 섹션 찾기
+        val incomeSection = findIncomeStatementInText(text)
+        if (incomeSection != null) {
+            val rows = parseTextTableRows(incomeSection, StatementType.INCOME_STATEMENT)
+            if (rows.isNotEmpty()) {
+                tables.add(ParsedFinancialTable(
+                    statementType = StatementType.INCOME_STATEMENT,
+                    title = "Income Statement",
+                    periods = extractYearsFromText(incomeSection),
+                    rows = rows,
+                    unit = detectTableUnit(incomeSection)
+                ))
+            }
+        }
+        
+        // 재무상태표 섹션 찾기
+        val balanceSection = findBalanceSheetInText(text)
+        if (balanceSection != null) {
+            val rows = parseTextTableRows(balanceSection, StatementType.BALANCE_SHEET)
+            if (rows.isNotEmpty()) {
+                tables.add(ParsedFinancialTable(
+                    statementType = StatementType.BALANCE_SHEET,
+                    title = "Balance Sheet",
+                    periods = extractYearsFromText(balanceSection),
+                    rows = rows,
+                    unit = detectTableUnit(balanceSection)
+                ))
+            }
+        }
+        
+        // 현금흐름표 섹션 찾기
+        val cashFlowSection = findCashFlowInText(text)
+        if (cashFlowSection != null) {
+            val rows = parseTextTableRows(cashFlowSection, StatementType.CASH_FLOW_STATEMENT)
+            if (rows.isNotEmpty()) {
+                tables.add(ParsedFinancialTable(
+                    statementType = StatementType.CASH_FLOW_STATEMENT,
+                    title = "Cash Flow Statement",
+                    periods = extractYearsFromText(cashFlowSection),
+                    rows = rows,
+                    unit = detectTableUnit(cashFlowSection)
+                ))
+            }
+        }
+        
+        return tables
+    }
+    
+    private fun findIncomeStatementInText(text: String): String? {
+        val patterns = listOf(
+            "Statements of Operations", "Statement of Income", "Income Statement",
+            "Consolidated Statements of Operations", "Results of Operations"
+        )
+        return findTextSection(text, patterns)
+    }
+    
+    private fun findBalanceSheetInText(text: String): String? {
+        val patterns = listOf(
+            "Balance Sheets", "Balance Sheet", "Financial Position",
+            "Consolidated Balance Sheets", "Statement of Financial Position"
+        )
+        return findTextSection(text, patterns)
+    }
+    
+    private fun findCashFlowInText(text: String): String? {
+        val patterns = listOf(
+            "Cash Flows", "Statement of Cash Flows", 
+            "Consolidated Statements of Cash Flows"
+        )
+        return findTextSection(text, patterns)
+    }
+    
+    private fun findTextSection(text: String, patterns: List<String>): String? {
+        val lowerText = text.lowercase()
+        
+        for (pattern in patterns) {
+            val startIdx = lowerText.indexOf(pattern.lowercase())
+            if (startIdx != -1) {
+                // 다음 섹션 또는 20000자까지
+                val sectionMarkers = listOf(
+                    "notes to", "item ", "part ", "signatures",
+                    "consolidated statements of", "statement of"
+                )
+                
+                var endIdx = minOf(text.length, startIdx + 20000)
+                for (marker in sectionMarkers) {
+                    val possibleEnd = lowerText.indexOf(marker, startIdx + pattern.length + 50)
+                    if (possibleEnd != -1 && possibleEnd < endIdx) {
+                        endIdx = possibleEnd
+                    }
+                }
+                
+                val section = text.substring(startIdx, endIdx)
+                if (section.length > 300) return section
+            }
+        }
+        return null
+    }
+    
+    private fun extractYearsFromText(text: String): List<String> {
+        val yearPattern = Regex("""20\d{2}""")
+        return yearPattern.findAll(text.take(2000))
+            .map { it.value }
+            .toSet()
+            .sorted()
+            .takeLast(4)
+            .reversed()
+    }
+    
+    private fun parseTextTableRows(section: String, type: StatementType): List<TableRow> {
+        val rows = mutableListOf<TableRow>()
+        val lines = section.split("\n")
+        
+        val numberPattern = Regex("""\(?\$?\s*[\d,]+(?:\.\d+)?\)?""")
+        
+        for (line in lines) {
+            val trimmedLine = line.trim()
+            if (trimmedLine.length < 5) continue
+            
+            val numbers = numberPattern.findAll(trimmedLine).toList()
+            if (numbers.isEmpty()) continue
+            
+            val firstNumberStart = numbers.first().range.first
+            val label = trimmedLine.substring(0, firstNumberStart).trim()
+            
+            // 유효성 검사
+            if (label.length < 3) continue
+            if (label.all { it.isDigit() || it == ',' || it == '.' || it.isWhitespace() || it == '$' }) continue
+            if (label.contains("Page ") || label.matches(Regex("""F-\d+.*"""))) continue
+            
+            val values = numbers.map { parseTableValue(it.value) }
+            if (values.all { it == null }) continue
+            
+            val category = mapLabelToCategory(label, type)
+            val isTotal = label.lowercase().let { 
+                it.startsWith("total") || it.contains("total ") 
+            }
+            
+            rows.add(TableRow(
+                label = label,
+                values = values,
+                isTotal = isTotal,
+                category = category
+            ))
+        }
+        
+        return rows
     }
     
     /**

@@ -1,9 +1,278 @@
 package papyrus.core.service.parser
 
 import papyrus.core.model.*
+import papyrus.util.*
 
 /** 향상된 재무 분석 파서 */
 object EnhancedFinancialParser {
+    
+    /**
+     * SEC PDF 문서 전용 파싱 - PdfParser의 SecDocumentText 활용
+     * 
+     * PDF에서 추출된 구조화된 문서 정보를 활용하여 더 정확한 파싱 수행
+     */
+    fun parseFromSecDocument(secDoc: SecDocumentText): List<ExtendedFinancialMetric> {
+        val metrics = mutableListOf<ExtendedFinancialMetric>()
+        
+        // 각 섹션별로 특화된 파싱 수행
+        for (section in secDoc.sections) {
+            val sectionMetrics = when (section.type) {
+                SecSectionType.INCOME_STATEMENT -> parseIncomeStatementSection(section.content)
+                SecSectionType.BALANCE_SHEET -> parseBalanceSheetSection(section.content)
+                SecSectionType.CASH_FLOW -> parseCashFlowSection(section.content)
+                else -> emptyList()
+            }
+            metrics.addAll(sectionMetrics)
+        }
+        
+        // 전체 텍스트에서 추가 메트릭 추출 (섹션에서 못 찾은 경우)
+        val foundCategories = metrics.map { it.category }.toSet()
+        val additionalMetrics = parseFinancialMetrics(secDoc.fullText)
+            .filter { it.category !in foundCategories }
+        
+        metrics.addAll(additionalMetrics)
+        
+        // 회사명과 회계연도 정보 추가
+        return metrics.map { metric ->
+            metric.copy(
+                context = "${secDoc.companyName} - ${secDoc.fiscalYear ?: ""} ${metric.context ?: ""}".trim()
+            )
+        }
+    }
+    
+    /**
+     * PDF 텍스트 기반 테이블 파싱 - 열 정렬 인식
+     * 
+     * PDF에서 추출된 텍스트의 공백 패턴을 분석하여 테이블 구조 인식
+     */
+    fun parsePdfTextTable(text: String): List<ExtendedFinancialMetric> {
+        val metrics = mutableListOf<ExtendedFinancialMetric>()
+        val lines = text.split("\n")
+        
+        // 단위 감지
+        val unit = detectUnit(text)
+        
+        // 기간 헤더 찾기 (보통 숫자가 여러 개 있는 열 헤더)
+        val yearPattern = Regex("""20\d{2}""")
+        val headerLine = lines.take(20).find { line ->
+            yearPattern.findAll(line).count() >= 2
+        }
+        val years = headerLine?.let { yearPattern.findAll(it).map { m -> m.value }.toList() } ?: emptyList()
+        
+        // 각 라인에서 레이블과 숫자 추출
+        for (line in lines) {
+            val trimmedLine = line.trim()
+            if (trimmedLine.length < 10) continue
+            
+            // 숫자 패턴 (SEC 문서 형식: 괄호는 음수, $ 기호 옵션, 천 단위 쉼표)
+            val numberPattern = Regex("""\(?\$?\s*[\d,]+(?:\.\d+)?\)?""")
+            val numbers = numberPattern.findAll(trimmedLine).toList()
+            
+            if (numbers.isEmpty()) continue
+            
+            // 첫 번째 숫자 앞이 레이블
+            val firstNumberStart = numbers.first().range.first
+            val label = trimmedLine.substring(0, firstNumberStart).trim()
+            
+            // 레이블 유효성 검사
+            if (!isValidLabel(label)) continue
+            
+            // 가장 최근 값 (첫 번째 숫자)
+            val currentValueStr = numbers.first().value
+            val currentValue = parseSecValue(currentValueStr, unit)
+            
+            // 이전 기간 값 (두 번째 숫자, 있으면)
+            val priorValue = if (numbers.size >= 2) {
+                parseSecValue(numbers[1].value, unit)
+            } else null
+            
+            if (currentValue == null) continue
+            
+            // 카테고리 추론
+            val category = inferCategoryFromLabel(label) ?: continue
+            
+            // YoY 변화율 계산
+            val yoyChange = if (priorValue != null && priorValue != 0.0) {
+                ((currentValue - priorValue) / kotlin.math.abs(priorValue)) * 100
+            } else null
+            
+            metrics.add(ExtendedFinancialMetric(
+                name = label,
+                value = formatValue(currentValue),
+                rawValue = currentValue,
+                unit = unit,
+                period = years.firstOrNull(),
+                category = category,
+                source = "PDF Text Table Parser",
+                confidence = if (label.lowercase().startsWith("total")) 0.95 else 0.85,
+                yearOverYearChange = yoyChange
+            ))
+        }
+        
+        return deduplicateMetrics(metrics)
+    }
+    
+    private fun isValidLabel(label: String): Boolean {
+        if (label.length < 3) return false
+        if (label.all { it.isDigit() || it.isWhitespace() || it == ',' || it == '.' || it == '$' }) return false
+        if (label.contains("Page ") || label.matches(Regex("""F-\d+.*"""))) return false
+        if (label.matches(Regex("""^\d+.*"""))) return false  // 숫자로 시작하면 스킵
+        if (label.contains("---")) return false  // 구분선
+        return true
+    }
+    
+    private fun parseSecValue(valueStr: String, unit: MetricUnit): Double? {
+        val cleaned = valueStr
+            .replace("$", "")
+            .replace(",", "")
+            .replace(" ", "")
+            .trim()
+        
+        if (cleaned.isEmpty() || cleaned == "-" || cleaned == "—" || cleaned == "–") return null
+        
+        val isNegative = cleaned.startsWith("(") && cleaned.endsWith(")")
+        val numberStr = cleaned.replace("(", "").replace(")", "")
+        
+        return try {
+            var value = numberStr.toDouble()
+            
+            // 단위 적용
+            value = when (unit) {
+                MetricUnit.BILLIONS -> value * 1_000_000_000
+                MetricUnit.MILLIONS -> value * 1_000_000
+                MetricUnit.THOUSANDS -> value * 1_000
+                else -> value
+            }
+            
+            if (isNegative) -value else value
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    private fun inferCategoryFromLabel(label: String): MetricCategory? {
+        val lowerLabel = label.lowercase().trim()
+        
+        // 더 유연한 매칭을 위한 패턴
+        return when {
+            // 수익 (다양한 표현)
+            lowerLabel.matches(Regex(".*total.*(?:revenue|sales).*")) -> MetricCategory.REVENUE
+            lowerLabel.matches(Regex(".*net.*(?:revenue|sales).*")) -> MetricCategory.REVENUE
+            lowerLabel == "revenue" || lowerLabel == "revenues" -> MetricCategory.REVENUE
+            lowerLabel == "net sales" || lowerLabel == "total net sales" -> MetricCategory.REVENUE
+            lowerLabel.contains("products") && lowerLabel.contains("net sales") -> MetricCategory.PRODUCT_REVENUE
+            lowerLabel.contains("services") && (lowerLabel.contains("revenue") || lowerLabel.contains("sales")) -> MetricCategory.SERVICE_REVENUE
+            
+            // 매출원가
+            lowerLabel.matches(Regex(".*cost.*(?:revenue|sales|goods).*")) -> MetricCategory.COST_OF_REVENUE
+            lowerLabel == "cogs" -> MetricCategory.COST_OF_REVENUE
+            
+            // 이익
+            lowerLabel == "gross profit" || lowerLabel == "gross margin" -> MetricCategory.GROSS_PROFIT
+            lowerLabel.contains("operating income") -> MetricCategory.OPERATING_INCOME
+            lowerLabel.contains("income from operations") -> MetricCategory.OPERATING_INCOME
+            lowerLabel == "operating profit" -> MetricCategory.OPERATING_INCOME
+            lowerLabel.matches(Regex(".*net income.*")) -> MetricCategory.NET_INCOME
+            lowerLabel == "net earnings" || lowerLabel == "net profit" -> MetricCategory.NET_INCOME
+            lowerLabel.contains("net loss") -> MetricCategory.NET_INCOME
+            lowerLabel.contains("ebitda") -> MetricCategory.EBITDA
+            
+            // 자산
+            lowerLabel == "total assets" -> MetricCategory.TOTAL_ASSETS
+            lowerLabel.matches(Regex(".*total.*current.*assets.*")) -> MetricCategory.CURRENT_ASSETS
+            lowerLabel.matches(Regex(".*current.*assets.*total.*")) -> MetricCategory.CURRENT_ASSETS
+            lowerLabel.contains("cash and cash equivalents") -> MetricCategory.CASH_AND_EQUIVALENTS
+            lowerLabel == "cash" -> MetricCategory.CASH_AND_EQUIVALENTS
+            lowerLabel.contains("accounts receivable") -> MetricCategory.ACCOUNTS_RECEIVABLE
+            lowerLabel.contains("inventories") || lowerLabel == "inventory" -> MetricCategory.INVENTORY
+            lowerLabel.contains("marketable securities") -> MetricCategory.MARKETABLE_SECURITIES
+            lowerLabel.contains("property") && lowerLabel.contains("equipment") -> MetricCategory.FIXED_ASSETS
+            
+            // 부채
+            lowerLabel == "total liabilities" -> MetricCategory.TOTAL_LIABILITIES
+            lowerLabel.matches(Regex(".*total.*current.*liabilities.*")) -> MetricCategory.CURRENT_LIABILITIES
+            lowerLabel.contains("accounts payable") -> MetricCategory.ACCOUNTS_PAYABLE
+            lowerLabel.matches(Regex(".*long.*term.*debt.*")) -> MetricCategory.LONG_TERM_DEBT
+            lowerLabel.contains("term debt") -> MetricCategory.LONG_TERM_DEBT
+            lowerLabel.contains("deferred revenue") -> MetricCategory.DEFERRED_REVENUE
+            
+            // 자본
+            lowerLabel.matches(Regex(".*total.*(?:equity|stockholders|shareholders).*")) -> MetricCategory.TOTAL_EQUITY
+            lowerLabel.matches(Regex(".*(?:stockholders|shareholders).*equity.*")) -> MetricCategory.TOTAL_EQUITY
+            lowerLabel.contains("retained earnings") -> MetricCategory.RETAINED_EARNINGS
+            lowerLabel.contains("accumulated deficit") -> MetricCategory.RETAINED_EARNINGS
+            
+            // 현금흐름
+            lowerLabel.matches(Regex(".*(?:net )?cash.*(?:provided|generated|used).*operating.*")) -> MetricCategory.OPERATING_CASH_FLOW
+            lowerLabel.matches(Regex(".*operating.*(?:cash flow|activities).*")) -> MetricCategory.OPERATING_CASH_FLOW
+            lowerLabel.matches(Regex(".*(?:net )?cash.*(?:provided|used).*investing.*")) -> MetricCategory.INVESTING_CASH_FLOW
+            lowerLabel.matches(Regex(".*(?:net )?cash.*(?:provided|used).*financing.*")) -> MetricCategory.FINANCING_CASH_FLOW
+            lowerLabel.contains("capital expenditures") || lowerLabel == "capex" -> MetricCategory.CAPITAL_EXPENDITURES
+            lowerLabel.contains("free cash flow") -> MetricCategory.FREE_CASH_FLOW
+            
+            // 비용
+            lowerLabel.contains("research and development") || lowerLabel.contains("r&d") -> MetricCategory.RD_EXPENSE
+            lowerLabel.matches(Regex(".*selling.*(?:general|admin).*")) -> MetricCategory.SGA_EXPENSE
+            lowerLabel.contains("sg&a") -> MetricCategory.SGA_EXPENSE
+            lowerLabel.contains("interest expense") -> MetricCategory.INTEREST_EXPENSE
+            lowerLabel.contains("depreciation") -> MetricCategory.DEPRECIATION
+            lowerLabel.contains("income tax") || lowerLabel.contains("provision for") -> MetricCategory.INCOME_TAX
+            
+            // EPS
+            lowerLabel.matches(Regex(".*basic.*(?:earnings|eps).*(?:share)?.*")) -> MetricCategory.EPS_BASIC
+            lowerLabel.matches(Regex(".*diluted.*(?:earnings|eps).*(?:share)?.*")) -> MetricCategory.EPS_DILUTED
+            lowerLabel == "earnings per share" || lowerLabel == "eps" -> MetricCategory.EPS_BASIC
+            
+            // 주식수
+            lowerLabel.contains("shares outstanding") -> MetricCategory.SHARES_OUTSTANDING
+            lowerLabel.contains("weighted average shares") -> MetricCategory.SHARES_OUTSTANDING
+            
+            else -> null
+        }
+    }
+    
+    /**
+     * 손익계산서 섹션 전용 파싱
+     */
+    private fun parseIncomeStatementSection(content: String): List<ExtendedFinancialMetric> {
+        val metrics = parsePdfTextTable(content)
+        val incomeCategories = setOf(
+            MetricCategory.REVENUE, MetricCategory.PRODUCT_REVENUE, MetricCategory.SERVICE_REVENUE,
+            MetricCategory.COST_OF_REVENUE, MetricCategory.GROSS_PROFIT,
+            MetricCategory.OPERATING_INCOME, MetricCategory.NET_INCOME, MetricCategory.EBITDA,
+            MetricCategory.RD_EXPENSE, MetricCategory.SGA_EXPENSE, MetricCategory.INTEREST_EXPENSE,
+            MetricCategory.INCOME_TAX, MetricCategory.EPS_BASIC, MetricCategory.EPS_DILUTED
+        )
+        return metrics.filter { it.category in incomeCategories }
+    }
+    
+    /**
+     * 재무상태표 섹션 전용 파싱
+     */
+    private fun parseBalanceSheetSection(content: String): List<ExtendedFinancialMetric> {
+        val metrics = parsePdfTextTable(content)
+        val balanceCategories = setOf(
+            MetricCategory.TOTAL_ASSETS, MetricCategory.CURRENT_ASSETS, MetricCategory.CASH_AND_EQUIVALENTS,
+            MetricCategory.ACCOUNTS_RECEIVABLE, MetricCategory.INVENTORY, MetricCategory.MARKETABLE_SECURITIES,
+            MetricCategory.FIXED_ASSETS, MetricCategory.TOTAL_LIABILITIES, MetricCategory.CURRENT_LIABILITIES,
+            MetricCategory.ACCOUNTS_PAYABLE, MetricCategory.LONG_TERM_DEBT, MetricCategory.DEFERRED_REVENUE,
+            MetricCategory.TOTAL_EQUITY, MetricCategory.RETAINED_EARNINGS
+        )
+        return metrics.filter { it.category in balanceCategories }
+    }
+    
+    /**
+     * 현금흐름표 섹션 전용 파싱
+     */
+    private fun parseCashFlowSection(content: String): List<ExtendedFinancialMetric> {
+        val metrics = parsePdfTextTable(content)
+        val cashFlowCategories = setOf(
+            MetricCategory.OPERATING_CASH_FLOW, MetricCategory.INVESTING_CASH_FLOW,
+            MetricCategory.FINANCING_CASH_FLOW, MetricCategory.FREE_CASH_FLOW,
+            MetricCategory.CAPITAL_EXPENDITURES
+        )
+        return metrics.filter { it.category in cashFlowCategories }
+    }
 
         // ===== 수익 관련 패턴 =====
         private val revenuePatterns =
