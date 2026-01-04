@@ -538,13 +538,47 @@ object EnhancedFinancialParser {
     // ===== Helper Functions =====
 
     private fun cleanHtml(content: String): String {
-        return content.replace(Regex("<[^>]*>"), " ")
-                .replace(Regex("&nbsp;|&#160;"), " ")
-                .replace(Regex("&amp;"), "&")
-                .replace(Regex("&lt;"), "<")
-                .replace(Regex("&gt;"), ">")
-                .replace(Regex("\\s+"), " ")
-                .trim()
+        var cleaned = content
+        
+        // Remove script and style tags with their content
+        cleaned = cleaned.replace(Regex("<script[^>]*>.*?</script>", RegexOption.DOT_MATCHES_ALL), " ")
+        cleaned = cleaned.replace(Regex("<style[^>]*>.*?</style>", RegexOption.DOT_MATCHES_ALL), " ")
+        
+        // Remove XBRL tags but preserve content
+        cleaned = cleaned.replace(Regex("</?ix:[^>]*>", RegexOption.IGNORE_CASE), " ")
+        cleaned = cleaned.replace(Regex("</?us-gaap:[^>]*>", RegexOption.IGNORE_CASE), " ")
+        cleaned = cleaned.replace(Regex("</?dei:[^>]*>", RegexOption.IGNORE_CASE), " ")
+        cleaned = cleaned.replace(Regex("</?xbrli:[^>]*>", RegexOption.IGNORE_CASE), " ")
+        
+        // Preserve table structure by converting to readable format
+        cleaned = cleaned.replace(Regex("<tr[^>]*>", RegexOption.IGNORE_CASE), "\n")
+        cleaned = cleaned.replace(Regex("<td[^>]*>|<th[^>]*>", RegexOption.IGNORE_CASE), " | ")
+        cleaned = cleaned.replace(Regex("</td>|</th>", RegexOption.IGNORE_CASE), "")
+        cleaned = cleaned.replace(Regex("</tr>", RegexOption.IGNORE_CASE), "\n")
+        
+        // Replace <br> with newlines
+        cleaned = cleaned.replace(Regex("<br\\s*/?>", RegexOption.IGNORE_CASE), "\n")
+        cleaned = cleaned.replace(Regex("<p[^>]*>", RegexOption.IGNORE_CASE), "\n")
+        
+        // Remove all remaining HTML tags
+        cleaned = cleaned.replace(Regex("<[^>]*>"), " ")
+        
+        // Decode HTML entities
+        cleaned = cleaned.replace(Regex("&nbsp;|&#160;|&#xA0;"), " ")
+        cleaned = cleaned.replace(Regex("&amp;"), "&")
+        cleaned = cleaned.replace(Regex("&lt;"), "<")
+        cleaned = cleaned.replace(Regex("&gt;"), ">")
+        cleaned = cleaned.replace(Regex("&quot;"), "\"")
+        cleaned = cleaned.replace(Regex("&apos;|&#39;"), "'")
+        cleaned = cleaned.replace(Regex("&#8211;|&#8212;|&mdash;|&ndash;"), "-")
+        cleaned = cleaned.replace(Regex("&#\\d+;"), "") // Remove other numeric entities
+        cleaned = cleaned.replace(Regex("&[a-zA-Z]+;"), "") // Remove named entities
+        
+        // Normalize whitespace but preserve line breaks
+        cleaned = cleaned.replace(Regex("[ \\t]+"), " ")
+        cleaned = cleaned.replace(Regex("\n\\s*\n+"), "\n")
+        
+        return cleaned.trim()
     }
 
     private fun detectUnit(text: String): MetricUnit {
@@ -618,33 +652,58 @@ object EnhancedFinancialParser {
     ): List<ExtendedFinancialMetric> {
         val results = mutableListOf<ExtendedFinancialMetric>()
 
-        // 다양한 금액 패턴 매칭
+        // Enhanced number patterns with better context matching
         val patterns =
                 listOf(
-                        // $1,234,567 또는 1,234,567
+                        // Pattern 1: Label followed by amount with optional parentheses
+                        // e.g., "Total Revenue $ 123,456" or "Total Revenue (123,456)"
                         Regex(
-                                "(?i)${Regex.escape(term)}[:\\s]*\\(?\\$?\\s*([\\d,]+(?:\\.\\d+)?)\\)?(?:\\s*(?:million|billion|thousand))?",
+                                "(?i)${Regex.escape(term)}[:\\s\\|]*\\(?\\$?\\s*([\\d,]+(?:\\.\\d+)?)\\)?(?:\\s*(?:million|billion|thousand|m|b|k))?",
                                 RegexOption.IGNORE_CASE
                         ),
-                        // (1,234) - 음수 표현
+                        // Pattern 2: Table format with pipe separator
+                        // e.g., "Total Revenue | 123,456"
+                        Regex(
+                                "(?i)${Regex.escape(term)}\\s*\\|\\s*\\$?\\s*\\(?([\\d,]+(?:\\.\\d+)?)\\)?",
+                                RegexOption.IGNORE_CASE
+                        ),
+                        // Pattern 3: Parentheses for negative numbers
+                        // e.g., "Net Loss (123,456)"
                         Regex(
                                 "(?i)${Regex.escape(term)}[:\\s]*\\(\\$?\\s*([\\d,]+(?:\\.\\d+)?)\\)",
+                                RegexOption.IGNORE_CASE
+                        ),
+                        // Pattern 4: Amount before label (less common)
+                        // e.g., "$ 123,456 Total Revenue"
+                        Regex(
+                                "(?i)\\$?\\s*\\(?([\\d,]+(?:\\.\\d+)?)\\)?\\s*[-–—]?\\s*${Regex.escape(term)}",
                                 RegexOption.IGNORE_CASE
                         )
                 )
 
         for (pattern in patterns) {
             val matches = pattern.findAll(text)
-            for ((index, match) in matches.take(3).withIndex()) {
+            for ((index, match) in matches.take(5).withIndex()) {
                 val valueStr = match.groupValues.getOrNull(1) ?: continue
+                
+                // Skip if value is too small to be realistic (likely a ratio or percentage)
+                val prelimCheck = valueStr.replace(",", "").replace(".", "").toDoubleOrNull()
+                if (prelimCheck != null && prelimCheck < 0.01) continue
+                
                 val context =
                         text.substring(
-                                maxOf(0, match.range.first - 50),
-                                minOf(text.length, match.range.last + 50)
+                                maxOf(0, match.range.first - 100),
+                                minOf(text.length, match.range.last + 100)
                         )
-                val rawValue = parseNumber(valueStr, unit, match.value.contains("("), context)
+                
+                // Determine if negative based on parentheses or context
+                val isNegative = match.value.trim().startsWith("(") && match.value.trim().endsWith(")") ||
+                                 context.lowercase().contains("loss") ||
+                                 context.lowercase().contains("deficit")
+                
+                val rawValue = parseNumber(valueStr, unit, isNegative, context)
 
-                if (rawValue != null) {
+                if (rawValue != null && kotlin.math.abs(rawValue) >= 1000) {  // Filter out unrealistic small values
 
                     results.add(
                             ExtendedFinancialMetric(
@@ -655,17 +714,17 @@ object EnhancedFinancialParser {
                                     period = period,
                                     periodType = periodType,
                                     category = category,
-                                    source = "Document text extraction",
+                                    source = "Enhanced document extraction",
                                     confidence =
-                                            baseConfidence * (1.0 - index * 0.1), // 첫 매치가 더 신뢰도 높음
-                                    context = context
+                                            baseConfidence * (1.0 - index * 0.08), // Gradual confidence decay
+                                    context = context.trim()
                             )
                     )
                 }
             }
         }
 
-        return results
+        return results.distinctBy { it.rawValue } // Remove duplicate values
     }
 
     private fun parseNumber(

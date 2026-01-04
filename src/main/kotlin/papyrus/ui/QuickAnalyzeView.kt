@@ -916,20 +916,43 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
 @Composable
 private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<FinancialMetric>) {
     val scrollState = rememberScrollState()
+    var showVisualization by remember { mutableStateOf(true) }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
-        if (ratios.isNotEmpty()) {
+        // Toggle between visual and detailed view
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                    text = "📊 핵심 재무 비율",
+                    text = "Financial Ratios & Metrics",
                     style = AppTypography.Headline3,
                     fontWeight = FontWeight.Bold,
                     color = AppColors.OnSurface
             )
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { showVisualization = !showVisualization }) {
+                    Icon(
+                        if (showVisualization) Icons.Default.ViewList else Icons.Default.BarChart,
+                        contentDescription = "Toggle View",
+                        tint = AppColors.Primary
+                    )
+                }
+            }
+        }
 
-            Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
-
+        if (ratios.isNotEmpty()) {
+            if (showVisualization) {
+                // Visual representation of ratios
+                RatioVisualizationPanel(ratios)
+                Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+            }
+            
+            // Detailed ratio cards
             ratios.forEach { ratio ->
-                RatioDetailCard(ratio)
+                EnhancedRatioCard(ratio, showVisualization)
                 Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
             }
         }
@@ -938,16 +961,18 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
             Text(
-                    text = "📈 추출된 재무 지표",
+                    text = "Extracted Financial Metrics",
                     style = AppTypography.Headline3,
                     fontWeight = FontWeight.Bold,
                     color = AppColors.OnSurface
             )
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
-
-            metrics.forEach { metric ->
-                MetricDetailCard(metric)
+            
+            // Group metrics by category
+            val groupedMetrics = metrics.groupBy { it.category }
+            groupedMetrics.forEach { (category, categoryMetrics) ->
+                MetricCategoryCard(category, categoryMetrics)
                 Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
             }
         }
@@ -955,15 +980,113 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
         if (ratios.isEmpty() && metrics.isEmpty()) {
             EmptyState(
                     icon = Icons.Outlined.Analytics,
-                    title = "지표 없음",
-                    description = "문서에서 재무 지표를 추출할 수 없었습니다."
+                    title = "No Metrics Found",
+                    description = "Unable to extract financial metrics from document."
             )
         }
     }
 }
 
 @Composable
-private fun RatioDetailCard(ratio: FinancialRatio) {
+private fun RatioVisualizationPanel(ratios: List<FinancialRatio>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = AppDimens.CardElevationHigh,
+        shape = AppShapes.Large,
+        backgroundColor = AppColors.Surface
+    ) {
+        Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
+            Text(
+                text = "Financial Health Overview",
+                style = AppTypography.Headline3,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.OnSurface
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Visual bars for each ratio category
+            val categories = ratios.groupBy { it.category.toString() }
+            categories.forEach { (category, categoryRatios) ->
+                Text(
+                    text = category.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                    style = AppTypography.Subtitle1,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.OnSurface,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                
+                categoryRatios.forEach { ratio ->
+                    RatioVisualBar(ratio)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RatioVisualBar(ratio: FinancialRatio) {
+    val statusColor =
+            when (ratio.healthStatus) {
+                HealthStatus.EXCELLENT -> AppColors.Success
+                HealthStatus.GOOD -> Color(0xFF4CAF50)
+                HealthStatus.NEUTRAL -> AppColors.Warning
+                HealthStatus.CAUTION -> Color(0xFFFF9800)
+                HealthStatus.WARNING -> AppColors.Error
+            }
+    
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = ratio.englishName ?: ratio.name,
+                style = AppTypography.Body2,
+                color = AppColors.OnSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = ratio.formattedValue,
+                style = AppTypography.Subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = statusColor
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // Visual progress bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(AppShapes.Pill)
+                .background(statusColor.copy(alpha = 0.2f))
+        ) {
+            val progress = when (ratio.healthStatus) {
+                HealthStatus.EXCELLENT -> 1.0f
+                HealthStatus.GOOD -> 0.8f
+                HealthStatus.NEUTRAL -> 0.6f
+                HealthStatus.CAUTION -> 0.4f
+                HealthStatus.WARNING -> 0.2f
+            }
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress)
+                    .clip(AppShapes.Pill)
+                    .background(statusColor)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
     val statusColor =
             when (ratio.healthStatus) {
                 HealthStatus.EXCELLENT -> AppColors.Success
@@ -973,20 +1096,20 @@ private fun RatioDetailCard(ratio: FinancialRatio) {
                 HealthStatus.WARNING -> AppColors.Error
             }
 
-    val statusEmoji =
+    val statusText =
             when (ratio.healthStatus) {
-                HealthStatus.EXCELLENT -> "🌟"
-                HealthStatus.GOOD -> "👍"
-                HealthStatus.NEUTRAL -> "📊"
-                HealthStatus.CAUTION -> "⚠️"
-                HealthStatus.WARNING -> "🚨"
+                HealthStatus.EXCELLENT -> "Excellent"
+                HealthStatus.GOOD -> "Good"
+                HealthStatus.NEUTRAL -> "Neutral"
+                HealthStatus.CAUTION -> "Caution"
+                HealthStatus.WARNING -> "Warning"
             }
 
     Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = AppDimens.CardElevation,
             shape = AppShapes.Medium,
-            backgroundColor = statusColor.copy(alpha = 0.05f)
+            backgroundColor = if (compact) Color.Transparent else statusColor.copy(alpha = 0.05f)
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
             Row(
@@ -994,16 +1117,14 @@ private fun RatioDetailCard(ratio: FinancialRatio) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = statusEmoji, fontSize = 24.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                                text = ratio.name,
-                                style = AppTypography.Subtitle1,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.OnSurface
-                        )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                            text = ratio.englishName ?: ratio.name,
+                            style = AppTypography.Subtitle1,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.OnSurface
+                    )
+                    if (!compact) {
                         Text(
                                 text = ratio.description,
                                 style = AppTypography.Caption,
@@ -1012,25 +1133,81 @@ private fun RatioDetailCard(ratio: FinancialRatio) {
                     }
                 }
 
-                Text(
-                        text = ratio.formattedValue,
-                        style = AppTypography.Headline3,
-                        fontWeight = FontWeight.Bold,
-                        color = statusColor
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                            text = ratio.formattedValue,
+                            style = AppTypography.Headline3,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColor
+                    )
+                    Surface(
+                        shape = AppShapes.Pill,
+                        color = statusColor.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = statusText,
+                            style = AppTypography.Caption,
+                            color = statusColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+            if (!compact) {
+                Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+                Divider(color = AppColors.Divider)
+                Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-            Divider(color = AppColors.Divider)
+                Text(
+                        text = ratio.interpretation,
+                        style = AppTypography.Body2,
+                        color = AppColors.OnSurface
+                )
+            }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
-
+@Composable
+private fun MetricCategoryCard(category: String, metrics: List<FinancialMetric>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = AppDimens.CardElevation,
+        shape = AppShapes.Medium,
+        backgroundColor = AppColors.Surface
+    ) {
+        Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
             Text(
-                    text = ratio.interpretation,
-                    style = AppTypography.Body2,
-                    color = AppColors.OnSurface
+                text = category.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                style = AppTypography.Subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.Primary
             )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            metrics.forEach { metric ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = metric.name,
+                        style = AppTypography.Body2,
+                        color = AppColors.OnSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = metric.value,
+                        style = AppTypography.Subtitle1,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.OnSurface
+                    )
+                }
+            }
         }
     }
 }
