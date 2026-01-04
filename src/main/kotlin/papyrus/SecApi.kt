@@ -25,10 +25,10 @@ object SecApi {
 
     private var tickers: List<TickerEntry> = emptyList()
     private val mutex = Mutex()
-    // User Agent MUST include contact info per SEC Fair Access Policy
-    // For production, use your real email: "CompanyName/1.0 (contact@yourdomain.com)"
-    private const val USER_AGENT =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    // SEC requires a descriptive User-Agent with contact info
+    // Using a generic browser User-Agent for better compatibility
+    private const val USER_AGENT = "PapyrusApp/1.0"
+    private const val CONTACT_EMAIL = "admin@example.com" // Replace with your actual email
 
     suspend fun loadTickers() {
         if (tickers.isNotEmpty()) return
@@ -36,15 +36,17 @@ object SecApi {
         mutex.withLock {
             if (tickers.isNotEmpty()) return@withLock
             try {
+                // Add a small delay to respect SEC rate limits
+                kotlinx.coroutines.delay(100)
+
                 // company_tickers.json returns a Map<String, TickerEntry> where keys are "0", "1",
                 // etc.
                 val response: Map<String, TickerEntry> =
                         client
                                 .get("https://www.sec.gov/files/company_tickers.json") {
-                                    header("User-Agent", USER_AGENT)
-                                    header("Accept", "application/json, */*")
-                                    header("Accept-Encoding", "gzip, deflate")
-                                    header("Connection", "keep-alive")
+                                    header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
+                                    header("Accept", "*/*")
+                                    header("Host", "www.sec.gov")
                                 }
                                 .body()
                 tickers = response.values.toList()
@@ -52,6 +54,8 @@ object SecApi {
             } catch (e: Exception) {
                 System.err.println("Failed to load tickers: ${e.message}")
                 e.printStackTrace()
+                // Set empty list so app can continue
+                tickers = emptyList()
             }
         }
     }
@@ -71,10 +75,12 @@ object SecApi {
         val url = "https://data.sec.gov/submissions/CIK$cikStr.json"
         println("Fetching submissions from: $url")
         return try {
+            kotlinx.coroutines.delay(100) // Respect rate limits
             client
                     .get(url) {
-                        header("User-Agent", USER_AGENT)
-                        header("Accept-Encoding", "gzip, deflate")
+                        header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
+                        header("Accept", "*/*")
+                        header("Host", "data.sec.gov")
                     }
                     .body()
         } catch (e: Exception) {
@@ -112,7 +118,13 @@ object SecApi {
 
     suspend fun fetchDocumentContent(url: String): String {
         return try {
-            client.get(url) { header("User-Agent", USER_AGENT) }.body()
+            kotlinx.coroutines.delay(100) // Respect rate limits
+            client
+                    .get(url) {
+                        header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
+                        header("Accept", "*/*")
+                    }
+                    .body()
         } catch (e: Exception) {
             "Error loading content: ${e.message}"
         }
