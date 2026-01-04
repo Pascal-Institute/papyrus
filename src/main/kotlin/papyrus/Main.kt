@@ -49,7 +49,7 @@ fun PapyrusApp() {
         var appState by remember { mutableStateOf(AppState()) }
         var showSettingsDialog by remember { mutableStateOf(false) }
 
-        // 북마크 상태
+        // Bookmark state
         var bookmarks by remember { mutableStateOf(BookmarkManager.getAllBookmarks()) }
         var recentlyViewedCiks by remember { mutableStateOf(BookmarkManager.getRecentlyViewed()) }
 
@@ -79,7 +79,7 @@ fun PapyrusApp() {
                                         },
                                         onTickerSelected = { ticker ->
                                                 scope.launch {
-                                                        // 최근 조회 기록 추가
+                                                        // Add to recent view history
                                                         BookmarkManager.addToRecentlyViewed(
                                                                 ticker.cik
                                                         )
@@ -98,7 +98,7 @@ fun PapyrusApp() {
                                                                         companyNews = null
                                                                 )
 
-                                                        // 병렬로 제출 데이터와 뉴스를 가져옴
+                                                        // Fetch submissions and news in parallel
                                                         val submissionsDeferred = async {
                                                                 val sub =
                                                                         SecApi.getSubmissions(
@@ -139,7 +139,7 @@ fun PapyrusApp() {
                                         },
                                         onBookmarkedTickerClick = { cik ->
                                                 scope.launch {
-                                                        // CIK로 티커 정보 찾기
+                                                        // Find ticker info by CIK
                                                         val ticker =
                                                                 SecApi.searchTicker("").find {
                                                                         it.cik == cik
@@ -259,7 +259,7 @@ fun PapyrusApp() {
                                                                                 url
                                                                         )
 
-                                                                // 기존 분석 결과가 있는지 확인
+                                                                // Check for existing analysis results
                                                                 val existingAnalysis =
                                                                         (appState.analysisState as?
                                                                                         AnalysisState.FinancialAnalysisResult)
@@ -278,15 +278,15 @@ fun PapyrusApp() {
                                                                                         ?.investmentAdvice !=
                                                                                         null
 
-                                                                // AI 분석 스킵 여부 결정 (동일 파일이고 AI 분석이 있을
-                                                                // 때)
+                                                                // Decide whether to skip AI analysis (when same file
+                                                                // already has AI analysis)
                                                                 val skipAi =
                                                                         hasAiAnalysis &&
                                                                                 existingAnalysis
                                                                                         ?.fileName ==
                                                                                         filing.primaryDocument
 
-                                                                // AI 분석 메시지 업데이트 (스킵하지 않을 때만)
+                                                                // Update AI analysis message (only when not skipping)
                                                                 if (!skipAi &&
                                                                                 AiAnalysisService
                                                                                         .isConfigured()
@@ -296,12 +296,12 @@ fun PapyrusApp() {
                                                                                         analysisState =
                                                                                                 AnalysisState
                                                                                                         .Loading(
-                                                                                                                "AI 분석 중..."
+                                                                                                                "Analyzing with AI..."
                                                                                                         )
                                                                                 )
                                                                 }
 
-                                                                // 재무 분석 수행
+                                                                // Perform financial analysis
                                                                 val analysis =
                                                                         withContext(
                                                                                 kotlinx.coroutines
@@ -334,7 +334,7 @@ fun PapyrusApp() {
                                                                                         AnalysisState
                                                                                                 .Error(
                                                                                                         message =
-                                                                                                                "문서 분석 실패: ${e.message}",
+                                                                                                                "Document analysis failed: ${e.message}",
                                                                                                         retryAction =
                                                                                                                 null
                                                                                                 ),
@@ -401,7 +401,7 @@ fun PapyrusApp() {
                                                                                 .extractTextFromFile(
                                                                                         file
                                                                                 )
-                                                                // 초보자 친화적 분석 기능 사용
+                                                                // Use beginner-friendly analysis
                                                                 val analysis =
                                                                         FinancialAnalyzer
                                                                                 .analyzeForBeginners(
@@ -486,7 +486,7 @@ fun PapyrusApp() {
                                                                                         AnalysisState
                                                                                                 .Error(
                                                                                                         message =
-                                                                                                                "AI 재분석 실패: ${e.message}",
+                                                                                                                "AI reanalysis failed: ${e.message}",
                                                                                                         retryAction =
                                                                                                                 null
                                                                                                 )
@@ -497,7 +497,7 @@ fun PapyrusApp() {
                                 )
                         }
 
-                        // 설정 다이얼로그
+                        // Settings dialog
                         if (showSettingsDialog) {
                                 SettingsDialog(onDismiss = { showSettingsDialog = false })
                         }

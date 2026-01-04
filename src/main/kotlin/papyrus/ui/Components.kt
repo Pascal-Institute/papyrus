@@ -778,7 +778,7 @@ fun BookmarkedTickerCard(
     }
 }
 
-/** 북마크 리스트 (가로 스크롤) */
+/** Bookmark list (horizontal scroll) */
 @Composable
 fun BookmarkHorizontalList(
         bookmarks: List<BookmarkedTicker>,
@@ -834,7 +834,7 @@ fun BookmarkHorizontalList(
     }
 }
 
-/** 최근 조회 섹션 */
+/** Recent views section */
 @Composable
 fun RecentlyViewedSection(
         recentTickers: List<TickerEntry>,
@@ -853,7 +853,7 @@ fun RecentlyViewedSection(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                    text = "최근 조회",
+                    text = "Recent Views",
                     style = AppTypography.Caption,
                     fontWeight = FontWeight.Bold,
                     color = AppColors.OnSurfaceSecondary

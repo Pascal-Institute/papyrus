@@ -3,7 +3,7 @@ package papyrus.util
 import java.io.File
 import java.util.Properties
 
-/** 애플리케이션 설정을 로컬 파일에 저장하고 로드하는 관리자 */
+/** Application settings manager for saving and loading to/from local file */
 object SettingsManager {
     private val settingsFile = File(System.getProperty("user.home"), ".papyrus/settings.properties")
     private val properties = Properties()
@@ -35,7 +35,7 @@ object SettingsManager {
         }
     }
 
-    /** OpenRouter API 키 가져오기 우선순위: 환경 변수 -> 시스템 프로퍼티 -> 저장된 설정 */
+    /** Get OpenRouter API key - Priority: environment variable -> system property -> saved settings */
     fun getApiKey(): String? {
         // 1. 환경 변수 확인
         System.getenv("OPENROUTER_API_KEY")?.let {
@@ -51,13 +51,13 @@ object SettingsManager {
         return properties.getProperty("openrouter.api.key")
     }
 
-    /** OpenRouter API 키 저장 */
+    /** Save OpenRouter API key */
     fun setApiKey(apiKey: String) {
         properties.setProperty("openrouter.api.key", apiKey)
         saveSettings()
     }
 
-    /** OpenRouter API 키 삭제 */
+    /** Delete OpenRouter API key */
     fun clearApiKey() {
         properties.remove("openrouter.api.key")
         saveSettings()

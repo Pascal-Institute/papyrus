@@ -334,14 +334,14 @@ fun FinancialAnalysisPanel(
 ) {
     var selectedTab by remember { mutableStateOf(0) }
 
-    // AI 분석 탭 포함 여부 확인
+    // Check if AI analysis tab should be included
     val hasAiAnalysis =
             analysis.aiAnalysis != null ||
                     analysis.aiSummary != null ||
                     analysis.industryComparison != null ||
                     analysis.investmentAdvice != null
 
-    // 깔끔한 탭 이름 (이모지 제거)
+    // Clean tab names (emoji removed)
     val tabs = buildList {
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
             add("Health Score")
@@ -406,35 +406,35 @@ fun FinancialAnalysisPanel(
     }
 }
 
-/** 재무 건전성 점수 탭 - 초보자가 한눈에 파악할 수 있는 점수 카드 */
+/** Financial health score tab - Score card for beginners to understand at a glance */
 @Composable
 private fun HealthScoreTab(analysis: FinancialAnalysis) {
     val scrollState = rememberScrollState()
     val healthScore = analysis.healthScore
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
-        // 건강 점수 메인 카드
+        // Health score main card
         if (healthScore != null) {
             HealthScoreMainCard(healthScore)
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-            // 강점과 약점
+            // Strengths and weaknesses
             Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
             ) {
-                // 강점 카드
+                // Strengths card
                 StrengthWeaknessCard(
-                        title = "💪 강점",
+                        title = "💪 Strengths",
                         items = healthScore.strengths,
                         backgroundColor = AppColors.SuccessLight,
                         modifier = Modifier.weight(1f)
                 )
 
-                // 약점 카드
+                // Weaknesses card
                 StrengthWeaknessCard(
-                        title = "⚠️ 개선 필요",
+                        title = "⚠️ Needs Improvement",
                         items = healthScore.weaknesses,
                         backgroundColor = AppColors.WarningLight,
                         modifier = Modifier.weight(1f)
@@ -443,7 +443,7 @@ private fun HealthScoreTab(analysis: FinancialAnalysis) {
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-            // 권장사항
+            // Recommendations
             if (healthScore.recommendations.isNotEmpty()) {
                 RecommendationsCard(healthScore.recommendations)
             }
@@ -451,12 +451,12 @@ private fun HealthScoreTab(analysis: FinancialAnalysis) {
 
         Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-        // 핵심 요점
+        // Key takeaways
         if (analysis.keyTakeaways.isNotEmpty()) {
             KeyTakeawaysCard(analysis.keyTakeaways)
         }
 
-        // 보고서 유형 설명
+        // Report type explanation
         if (analysis.reportTypeExplanation != null) {
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
             ReportTypeCard(analysis.reportType, analysis.reportTypeExplanation)
@@ -484,7 +484,7 @@ private fun HealthScoreMainCard(healthScore: FinancialHealthScore) {
                 horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                    text = "재무 건전성 점수",
+                    text = "Financial Health Score",
                     style = AppTypography.Headline3,
                     color = AppColors.OnSurface,
                     fontWeight = FontWeight.Bold
@@ -492,7 +492,7 @@ private fun HealthScoreMainCard(healthScore: FinancialHealthScore) {
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-            // 큰 점수 표시
+            // Large score display
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) {
                 Text(
                         text = healthScore.grade,
@@ -511,7 +511,7 @@ private fun HealthScoreMainCard(healthScore: FinancialHealthScore) {
                             color = scoreColor
                     )
                     Text(
-                            text = "/ 100점",
+                            text = "/ 100 points",
                             style = AppTypography.Caption,
                             color = AppColors.OnSurfaceSecondary
                     )
@@ -520,7 +520,7 @@ private fun HealthScoreMainCard(healthScore: FinancialHealthScore) {
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-            // 프로그레스 바
+            // Progress bar
             LinearProgressIndicator(
                     progress = healthScore.overallScore / 100f,
                     modifier = Modifier.fillMaxWidth().height(12.dp).clip(AppShapes.Pill),
