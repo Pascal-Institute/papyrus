@@ -18,6 +18,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import papyrus.ui.*
 import java.awt.Desktop
 import java.net.URI
@@ -43,6 +44,7 @@ fun PapyrusApp() {
     
     // State management
     var appState by remember { mutableStateOf(AppState()) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
     
     // 북마크 상태
     var bookmarks by remember { mutableStateOf(BookmarkManager.getAllBookmarks()) }
@@ -190,11 +192,20 @@ fun PapyrusApp() {
                             try {
                                 val rawHtml = SecApi.fetchDocumentContent(url)
                                 
-                                // 초보자 친화적 분석 사용
-                                val analysis = FinancialAnalyzer.analyzeForBeginners(
-                                    filing.primaryDocument, 
-                                    rawHtml
-                                )
+                                // AI 분석 메시지 업데이트
+                                if (AiAnalysisService.isConfigured()) {
+                                    appState = appState.copy(
+                                        analysisState = AnalysisState.Loading("AI로 심층 분석 중...")
+                                    )
+                                }
+                                
+                                // AI 지원 재무 분석 사용
+                                val analysis = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    FinancialAnalyzer.analyzeWithAI(
+                                        filing.primaryDocument, 
+                                        rawHtml
+                                    )
+                                }
                                 
                                 appState = appState.copy(
                                     analysisState = AnalysisState.FinancialAnalysisResult(analysis),
@@ -221,6 +232,9 @@ fun PapyrusApp() {
                         if (Desktop.isDesktopSupported()) {
                             Desktop.getDesktop().browse(URI(url))
                         }
+                    },
+                    onSettingsClick = {
+                        showSettingsDialog = true
                     }
                 )
                 
@@ -280,6 +294,13 @@ fun PapyrusApp() {
                     }
                 )
             }
+            
+            // 설정 다이얼로그
+            if (showSettingsDialog) {
+                SettingsDialog(
+                    onDismiss = { showSettingsDialog = false }
+                )
+            }
         }
     }
 }
@@ -298,7 +319,8 @@ private fun LeftPanel(
     onRemoveBookmark: (Int) -> Unit,
     onBackToSearch: () -> Unit,
     onQuickAnalyze: (FilingItem) -> Unit,
-    onOpenInBrowser: (FilingItem) -> Unit
+    onOpenInBrowser: (FilingItem) -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -309,7 +331,8 @@ private fun LeftPanel(
         // App Header
         AppHeader(
             title = "Papyrus",
-            subtitle = "SEC Financial Analyzer"
+            subtitle = "SEC Financial Analyzer",
+            onSettingsClick = onSettingsClick
         )
         
         // Search Box
