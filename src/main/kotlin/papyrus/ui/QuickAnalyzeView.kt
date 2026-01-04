@@ -29,6 +29,7 @@ import papyrus.core.model.FinancialMetric
 import papyrus.core.model.FinancialRatio
 import papyrus.core.model.FinancialTermExplanation
 import papyrus.core.model.HealthStatus
+import papyrus.core.model.RatioCategory
 import papyrus.core.service.AiAnalysisService
 
 /** Helper function to format currency values */
@@ -969,10 +970,10 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
             
-            // Group metrics by category
-            val groupedMetrics = metrics.groupBy { it.category }
-            groupedMetrics.forEach { (category, categoryMetrics) ->
-                MetricCategoryCard(category, categoryMetrics)
+            // Group ratios by category
+            val groupedRatios = ratios.groupBy { it.category }
+            groupedRatios.forEach { (category, categoryRatios) ->
+                MetricCategoryCard(category, categoryRatios)
                 Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
             }
         }
@@ -1043,7 +1044,7 @@ private fun RatioVisualBar(ratio: FinancialRatio) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = ratio.englishName ?: ratio.name,
+                text = ratio.name,
                 style = AppTypography.Body2,
                 color = AppColors.OnSurface,
                 modifier = Modifier.weight(1f)
@@ -1119,7 +1120,7 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                            text = ratio.englishName ?: ratio.name,
+                            text = ratio.name,
                             style = AppTypography.Subtitle1,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.OnSurface
@@ -1171,7 +1172,7 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
 }
 
 @Composable
-private fun MetricCategoryCard(category: String, metrics: List<FinancialMetric>) {
+private fun MetricCategoryCard(category: RatioCategory, metrics: List<FinancialRatio>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = AppDimens.CardElevation,
@@ -1179,8 +1180,16 @@ private fun MetricCategoryCard(category: String, metrics: List<FinancialMetric>)
         backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+            val categoryName = when(category) {
+                RatioCategory.PROFITABILITY -> "Profitability"
+                RatioCategory.LIQUIDITY -> "Liquidity"
+                RatioCategory.SOLVENCY -> "Solvency"
+                RatioCategory.EFFICIENCY -> "Efficiency"
+                RatioCategory.VALUATION -> "Valuation"
+            }
+            
             Text(
-                text = category.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                text = categoryName,
                 style = AppTypography.Subtitle1,
                 fontWeight = FontWeight.Bold,
                 color = AppColors.Primary
@@ -1201,7 +1210,7 @@ private fun MetricCategoryCard(category: String, metrics: List<FinancialMetric>)
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = metric.value,
+                        text = metric.formattedValue,
                         style = AppTypography.Subtitle1,
                         fontWeight = FontWeight.Bold,
                         color = AppColors.OnSurface
