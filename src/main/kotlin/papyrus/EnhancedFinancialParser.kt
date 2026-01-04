@@ -28,7 +28,8 @@ enum class MetricUnit {
     PERCENTAGE,
     RATIO,
     SHARES,
-    PER_SHARE
+    PER_SHARE,
+    NONE  // For dimensionless values
 }
 
 enum class PeriodType {
@@ -554,10 +555,14 @@ object EnhancedFinancialParser {
     private fun detectUnit(text: String): MetricUnit {
         val lowerText = text.lowercase()
         return when {
-            lowerText.contains("in billions") || lowerText.contains("(in billions)") -> MetricUnit.BILLIONS
+            lowerText.contains("in billions") || lowerText.contains("(in billions)") || 
+                lowerText.contains("billions of dollars") || lowerText.contains(", in billions,") -> MetricUnit.BILLIONS
             lowerText.contains("in millions") || lowerText.contains("(in millions)") || 
-                lowerText.contains("$ in millions") -> MetricUnit.MILLIONS
-            lowerText.contains("in thousands") || lowerText.contains("(in thousands)") -> MetricUnit.THOUSANDS
+                lowerText.contains("$ in millions") || lowerText.contains("millions of dollars") ||
+                lowerText.contains(", in millions,") -> MetricUnit.MILLIONS
+            lowerText.contains("in thousands") || lowerText.contains("(in thousands)") || 
+                lowerText.contains("thousands of dollars") || lowerText.contains(", in thousands,") -> MetricUnit.THOUSANDS
+            lowerText.contains("except per share") || lowerText.contains("per share data") -> MetricUnit.NONE
             else -> MetricUnit.MILLIONS // Default for most SEC filings
         }
     }
@@ -613,13 +618,13 @@ object EnhancedFinancialParser {
             val matches = pattern.findAll(text)
             for ((index, match) in matches.take(3).withIndex()) {
                 val valueStr = match.groupValues.getOrNull(1) ?: continue
-                val rawValue = parseNumber(valueStr, unit, match.value.contains("("))
+                val context = text.substring(
+                    maxOf(0, match.range.first - 50),
+                    minOf(text.length, match.range.last + 50)
+                )
+                val rawValue = parseNumber(valueStr, unit, match.value.contains("("), context)
                 
                 if (rawValue != null) {
-                    val context = text.substring(
-                        maxOf(0, match.range.first - 50),
-                        minOf(text.length, match.range.last + 50)
-                    )
                     
                     results.add(ExtendedFinancialMetric(
                         name = term,
@@ -640,13 +645,22 @@ object EnhancedFinancialParser {
         return results
     }
     
-    private fun parseNumber(value: String, unit: MetricUnit, isNegative: Boolean = false): Double? {
+    private fun parseNumber(value: String, unit: MetricUnit, isNegative: Boolean = false, contextText: String = ""): Double? {
         return try {
             val cleaned = value.replace(",", "").replace("$", "").trim()
             var number = cleaned.toDoubleOrNull() ?: return null
             
+            // 컨텍스트 텍스트에서 단위 힌트 확인 (실제 단위가 텍스트에 명시된 경우)
+            val lowerContext = contextText.lowercase()
+            val actualUnit = when {
+                lowerContext.contains("billion") || lowerContext.contains("b)") -> MetricUnit.BILLIONS
+                lowerContext.contains("million") || lowerContext.contains("m)") -> MetricUnit.MILLIONS
+                lowerContext.contains("thousand") || lowerContext.contains("k)") -> MetricUnit.THOUSANDS
+                else -> unit
+            }
+            
             // 단위에 따라 조정
-            number = when (unit) {
+            number = when (actualUnit) {
                 MetricUnit.BILLIONS -> number * 1_000_000_000
                 MetricUnit.MILLIONS -> number * 1_000_000
                 MetricUnit.THOUSANDS -> number * 1_000

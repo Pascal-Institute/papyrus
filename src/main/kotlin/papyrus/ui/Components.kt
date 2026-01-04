@@ -8,6 +8,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -28,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import papyrus.FilingItem
 import papyrus.TickerEntry
+import papyrus.NewsArticle
+import papyrus.CompanyNews
 
 /**
  * Enhanced App Header with gradient background
@@ -931,6 +935,207 @@ fun RecentlyViewedSection(
                         style = AppTypography.Caption,
                         fontWeight = FontWeight.Bold,
                         color = AppColors.Primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ===== News Components =====
+
+/**
+ * 뉴스 섹션 헤더
+ */
+@Composable
+fun NewsSectionHeader(
+    companyName: String,
+    articleCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.PaddingMedium, vertical = AppDimens.PaddingSmall),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Newspaper,
+                contentDescription = null,
+                tint = AppColors.Primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = "$companyName 관련 뉴스",
+                style = AppTypography.Headline3,
+                color = AppColors.OnSurface,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        Text(
+            text = "$articleCount articles",
+            style = AppTypography.Caption,
+            color = AppColors.OnSurfaceSecondary
+        )
+    }
+}
+
+/**
+ * 개별 뉴스 카드
+ */
+@Composable
+fun NewsArticleCard(
+    article: NewsArticle,
+    onOpenInBrowser: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onOpenInBrowser(article.url) },
+        elevation = 2.dp,
+        shape = AppShapes.Medium,
+        backgroundColor = AppColors.Surface
+    ) {
+        Column(
+            modifier = Modifier.padding(AppDimens.PaddingMedium)
+        ) {
+            // 제목
+            Text(
+                text = article.title,
+                style = AppTypography.Headline3,
+                color = AppColors.OnSurface,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // 설명
+            if (!article.description.isNullOrEmpty()) {
+                Text(
+                    text = article.description,
+                    style = AppTypography.Body2,
+                    color = AppColors.OnSurfaceSecondary,
+                    maxLines = 3,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            // 메타 정보
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 출처
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Source,
+                            contentDescription = null,
+                            tint = AppColors.Primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = article.source,
+                            style = AppTypography.Caption,
+                            color = AppColors.Primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    
+                    // 날짜
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Schedule,
+                            contentDescription = null,
+                            tint = AppColors.OnSurfaceSecondary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = article.publishedAt,
+                            style = AppTypography.Caption,
+                            color = AppColors.OnSurfaceSecondary
+                        )
+                    }
+                }
+                
+                // 외부 링크 아이콘
+                Icon(
+                    Icons.Outlined.OpenInNew,
+                    contentDescription = "Open in browser",
+                    tint = AppColors.Primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 뉴스 리스트 (스크롤 가능)
+ */
+@Composable
+fun NewsArticleList(
+    news: CompanyNews,
+    onOpenInBrowser: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        NewsSectionHeader(
+            companyName = news.companyName,
+            articleCount = news.articles.size
+        )
+        
+        if (news.articles.isEmpty()) {
+            EmptyState(
+                icon = Icons.Outlined.Newspaper,
+                title = "뉴스가 없습니다",
+                description = "현재 이 기업에 대한 최신 뉴스가 없습니다"
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = AppDimens.PaddingMedium),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingMedium)
+            ) {
+                items(news.articles) { article ->
+                    NewsArticleCard(
+                        article = article,
+                        onOpenInBrowser = onOpenInBrowser
+                    )
+                }
+                
+                // 마지막 업데이트 시간
+                item {
+                    Text(
+                        text = "Last updated: ${news.lastUpdated}",
+                        style = AppTypography.Caption,
+                        color = AppColors.OnSurfaceSecondary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = AppDimens.PaddingMedium),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }

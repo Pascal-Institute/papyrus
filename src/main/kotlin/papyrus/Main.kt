@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import papyrus.ui.*
 import java.awt.Desktop
 import java.net.URI
@@ -83,15 +84,29 @@ fun PapyrusApp() {
                                 searchText = "",
                                 searchResults = emptyList(),
                                 isLoading = true,
-                                analysisState = AnalysisState.Idle
+                                isLoadingNews = true,
+                                analysisState = AnalysisState.Idle,
+                                companyNews = null
                             )
                             
-                            val sub = SecApi.getSubmissions(ticker.cik)
-                            val filings = sub?.filings?.recent?.let { SecApi.transformFilings(it) } ?: emptyList()
+                            // 병렬로 제출 데이터와 뉴스를 가져옴
+                            val submissionsDeferred = async {
+                                val sub = SecApi.getSubmissions(ticker.cik)
+                                sub?.filings?.recent?.let { SecApi.transformFilings(it) } ?: emptyList()
+                            }
+                            
+                            val newsDeferred = async {
+                                NewsApi.getCompanyNews(ticker.ticker, ticker.title)
+                            }
+                            
+                            val filings = submissionsDeferred.await()
+                            val news = newsDeferred.await()
                             
                             appState = appState.copy(
                                 submissions = filings,
-                                isLoading = false
+                                companyNews = news,
+                                isLoading = false,
+                                isLoadingNews = false
                             )
                         }
                     },
@@ -120,15 +135,29 @@ fun PapyrusApp() {
                                     searchText = "",
                                     searchResults = emptyList(),
                                     isLoading = true,
-                                    analysisState = AnalysisState.Idle
+                                    isLoadingNews = true,
+                                    analysisState = AnalysisState.Idle,
+                                    companyNews = null
                                 )
                                 
-                                val sub = SecApi.getSubmissions(cik)
-                                val filings = sub?.filings?.recent?.let { SecApi.transformFilings(it) } ?: emptyList()
+                                // 병렬로 제출 데이터와 뉴스를 가져옴
+                                val submissionsDeferred = async {
+                                    val sub = SecApi.getSubmissions(cik)
+                                    sub?.filings?.recent?.let { SecApi.transformFilings(it) } ?: emptyList()
+                                }
+                                
+                                val newsDeferred = async {
+                                    NewsApi.getCompanyNews(ticker.ticker, ticker.title)
+                                }
+                                
+                                val filings = submissionsDeferred.await()
+                                val news = newsDeferred.await()
                                 
                                 appState = appState.copy(
                                     submissions = filings,
-                                    isLoading = false
+                                    companyNews = news,
+                                    isLoading = false,
+                                    isLoadingNews = false
                                 )
                             }
                         }
@@ -334,10 +363,17 @@ private fun LeftPanel(
                 filings = appState.submissions,
                 currentAnalyzingFiling = appState.currentAnalyzingFiling,
                 isBookmarked = BookmarkManager.isBookmarked(appState.selectedTicker.cik),
+                companyNews = appState.companyNews,
+                isLoadingNews = appState.isLoadingNews,
                 onBackClick = onBackToSearch,
                 onBookmarkClick = { onBookmarkClick(appState.selectedTicker) },
                 onQuickAnalyze = onQuickAnalyze,
-                onOpenInBrowser = onOpenInBrowser
+                onOpenInBrowser = onOpenInBrowser,
+                onOpenNewsInBrowser = { url ->
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(URI(url))
+                    }
+                }
             )
         }
     }
@@ -380,10 +416,13 @@ private fun CompanyFilingsPanel(
     filings: List<FilingItem>,
     currentAnalyzingFiling: String?,
     isBookmarked: Boolean,
+    companyNews: CompanyNews?,
+    isLoadingNews: Boolean,
     onBackClick: () -> Unit,
     onBookmarkClick: () -> Unit,
     onQuickAnalyze: (FilingItem) -> Unit,
-    onOpenInBrowser: (FilingItem) -> Unit
+    onOpenInBrowser: (FilingItem) -> Unit,
+    onOpenNewsInBrowser: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Company Info Card
@@ -402,46 +441,85 @@ private fun CompanyFilingsPanel(
         
         Divider(color = AppColors.Divider)
         
-        // Section Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppDimens.PaddingMedium, vertical = AppDimens.PaddingSmall)
+        // 탭 선택
+        var selectedTab by remember { mutableStateOf(0) }
+        TabRow(
+            selectedTabIndex = selectedTab,
+            backgroundColor = AppColors.Surface,
+            contentColor = AppColors.Primary
         ) {
-            SectionHeader(
-                title = "SEC Filings",
-                icon = Icons.Outlined.Description,
-                action = {
-                    Text(
-                        text = "${filings.size} filings",
-                        style = AppTypography.Caption,
-                        color = AppColors.OnSurfaceSecondary
-                    )
-                }
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("SEC Filings (${filings.size})") }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text("News${if (companyNews != null) " (${companyNews.articles.size})" else ""}") }
             )
         }
         
-        // Filings List
-        if (filings.isEmpty()) {
-            EmptyState(
-                icon = Icons.Outlined.FolderOff,
-                title = "No filings found",
-                description = "This company has no recent SEC filings"
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = AppDimens.PaddingSmall),
-                verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
-            ) {
-                items(filings) { filing ->
-                    FilingCard(
-                        filing = filing,
-                        cik = ticker.cik.toString(),
-                        onOpenBrowser = { onOpenInBrowser(filing) },
-                        onQuickAnalyze = { onQuickAnalyze(filing) },
-                        isAnalyzing = currentAnalyzingFiling == filing.accessionNumber
+        Divider(color = AppColors.Divider)
+        
+        // 탭 컨텐츠
+        when (selectedTab) {
+            0 -> {
+                // SEC Filings
+                if (filings.isEmpty()) {
+                    EmptyState(
+                        icon = Icons.Outlined.FolderOff,
+                        title = "No filings found",
+                        description = "This company has no recent SEC filings"
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = AppDimens.PaddingSmall),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
+                    ) {
+                        items(filings) { filing ->
+                            FilingCard(
+                                filing = filing,
+                                cik = ticker.cik.toString(),
+                                onOpenBrowser = { onOpenInBrowser(filing) },
+                                onQuickAnalyze = { onQuickAnalyze(filing) },
+                                isAnalyzing = currentAnalyzingFiling == filing.accessionNumber
+                            )
+                        }
+                    }
+                }
+            }
+            1 -> {
+                // News
+                if (isLoadingNews) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(color = AppColors.Primary)
+                            Text(
+                                text = "뉴스를 불러오는 중...",
+                                style = AppTypography.Body1,
+                                color = AppColors.OnSurfaceSecondary
+                            )
+                        }
+                    }
+                } else if (companyNews != null) {
+                    NewsArticleList(
+                        news = companyNews,
+                        onOpenInBrowser = onOpenNewsInBrowser
+                    )
+                } else {
+                    EmptyState(
+                        icon = Icons.Outlined.Newspaper,
+                        title = "뉴스를 불러올 수 없습니다",
+                        description = "잠시 후 다시 시도해주세요"
                     )
                 }
             }
@@ -559,7 +637,9 @@ data class AppState(
     val isLoading: Boolean = false,
     val isDragging: Boolean = false,
     val analysisState: AnalysisState = AnalysisState.Idle,
-    val currentAnalyzingFiling: String? = null
+    val currentAnalyzingFiling: String? = null,
+    val companyNews: CompanyNews? = null,
+    val isLoadingNews: Boolean = false
 )
 
 /**
