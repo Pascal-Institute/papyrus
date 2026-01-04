@@ -322,7 +322,8 @@ object FinancialAnalyzer {
                 termExplanations = termExplanations,
                 healthScore = healthScore,
                 reportTypeExplanation = reportExplanation,
-                keyTakeaways = keyTakeaways
+                keyTakeaways = keyTakeaways,
+                extendedMetrics = extendedMetrics
         )
         
         // Save to cache

@@ -442,14 +442,14 @@ fun FinancialAnalysisPanel(
                 2 -> BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
                 3 -> TermGlossaryTab(analysis.termExplanations)
                 4 -> FinancialRatiosTab(analysis.ratios, analysis.metrics)
-                5 -> FinancialRawDataTab(analysis.rawContent)
+                5 -> FinancialRawDataTab(analysis.rawContent, analysis)
             }
         } else {
             when (selectedTab) {
                 0 -> FinancialOverviewTab(analysis)
                 1 -> AiAnalysisTab(analysis, onReanalyzeWithAI)  // Always show AI tab
                 2 -> FinancialMetricsTab(analysis.metrics)
-                3 -> FinancialRawDataTab(analysis.rawContent)
+                3 -> FinancialRawDataTab(analysis.rawContent, analysis)
             }
         }
     }
@@ -1664,7 +1664,7 @@ private fun MetricDetailCard(metric: FinancialMetric) {
 }
 
 @Composable
-private fun FinancialRawDataTab(rawContent: String) {
+private fun FinancialRawDataTab(rawContent: String, analysis: FinancialAnalysis) {
     val scrollState = rememberScrollState()
     var copySuccess by remember { mutableStateOf(false) }
 
@@ -1732,6 +1732,61 @@ private fun FinancialRawDataTab(rawContent: String) {
                 LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(2000)
                     copySuccess = false
+                }
+            }
+
+            // Display extracted metrics summary first
+            if (analysis.extendedMetrics.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = AppDimens.PaddingMedium),
+                    backgroundColor = AppColors.InfoLight,
+                    shape = AppShapes.Small,
+                    elevation = 0.dp
+                ) {
+                    Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Assessment,
+                                contentDescription = null,
+                                tint = AppColors.Info,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "추출된 재무 데이터: ${analysis.extendedMetrics.size}개 항목",
+                                style = AppTypography.Body1.copy(fontWeight = FontWeight.Bold),
+                                color = AppColors.Info
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // Group metrics by category
+                        val groupedMetrics = analysis.extendedMetrics.groupBy { it.category }
+                        
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                val halfSize = groupedMetrics.size / 2
+                                groupedMetrics.entries.take(halfSize).forEach { (category, metrics) ->
+                                    Text(
+                                        "• ${category.name.replace("_", " ")}: ${metrics.size}개",
+                                        style = AppTypography.Caption,
+                                        color = AppColors.OnSurface
+                                    )
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                val halfSize = groupedMetrics.size / 2
+                                groupedMetrics.entries.drop(halfSize).forEach { (category, metrics) ->
+                                    Text(
+                                        "• ${category.name.replace("_", " ")}: ${metrics.size}개",
+                                        style = AppTypography.Caption,
+                                        color = AppColors.OnSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

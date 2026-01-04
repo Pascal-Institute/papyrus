@@ -151,6 +151,85 @@ object EnhancedFinancialParser {
                     PatternDef("Diluted Shares Outstanding", MetricCategory.SHARES_DILUTED, 1.0),
                     PatternDef("Weighted Average Shares", MetricCategory.SHARES_OUTSTANDING, 0.9)
             )
+    
+    // ===== 세부 자산 항목 패턴 =====
+    private val detailedAssetPatterns =
+            listOf(
+                    PatternDef("Marketable Securities", MetricCategory.MARKETABLE_SECURITIES, 1.0),
+                    PatternDef("Short-term Investments", MetricCategory.MARKETABLE_SECURITIES, 0.95),
+                    PatternDef("Short-term Marketable Securities", MetricCategory.MARKETABLE_SECURITIES, 0.95),
+                    PatternDef("Long-term Marketable Securities", MetricCategory.LONG_TERM_INVESTMENTS, 1.0),
+                    PatternDef("Long-term Investments", MetricCategory.LONG_TERM_INVESTMENTS, 0.95),
+                    PatternDef("Prepaid Expenses", MetricCategory.PREPAID_EXPENSES, 1.0),
+                    PatternDef("Prepaid Expenses and Other", MetricCategory.PREPAID_EXPENSES, 0.9),
+                    PatternDef("Other Current Assets", MetricCategory.OTHER_CURRENT_ASSETS, 0.9),
+                    PatternDef("Fixed Assets", MetricCategory.FIXED_ASSETS, 1.0),
+                    PatternDef("Net Fixed Assets", MetricCategory.FIXED_ASSETS, 0.95),
+                    PatternDef("Property, Plant and Equipment", MetricCategory.FIXED_ASSETS, 1.0),
+                    PatternDef("PP&E", MetricCategory.FIXED_ASSETS, 0.9),
+                    PatternDef("Machinery and Equipment", MetricCategory.FIXED_ASSETS, 0.85),
+                    PatternDef("Deferred Tax Assets", MetricCategory.DEFERRED_TAX_ASSETS, 1.0)
+            )
+    
+    // ===== 재고 세부 항목 패턴 =====
+    private val inventoryDetailPatterns =
+            listOf(
+                    PatternDef("Raw Materials", MetricCategory.RAW_MATERIALS, 1.0),
+                    PatternDef("Work in Process", MetricCategory.WORK_IN_PROCESS, 1.0),
+                    PatternDef("Work-in-Process", MetricCategory.WORK_IN_PROCESS, 1.0),
+                    PatternDef("Finished Goods", MetricCategory.FINISHED_GOODS, 1.0),
+                    PatternDef("Total Inventories", MetricCategory.INVENTORY, 1.0),
+                    PatternDef("Inventories, Net", MetricCategory.INVENTORY, 0.95)
+            )
+    
+    // ===== 세부 부채 항목 패턴 =====
+    private val detailedLiabilityPatterns =
+            listOf(
+                    PatternDef("Accounts Payable", MetricCategory.ACCOUNTS_PAYABLE, 1.0),
+                    PatternDef("Trade Payables", MetricCategory.ACCOUNTS_PAYABLE, 0.95),
+                    PatternDef("Accrued Expenses", MetricCategory.ACCRUED_EXPENSES, 1.0),
+                    PatternDef("Accrued Payroll", MetricCategory.ACCRUED_EXPENSES, 0.9),
+                    PatternDef("Accrued Liabilities", MetricCategory.ACCRUED_EXPENSES, 0.9),
+                    PatternDef("Operating Lease", MetricCategory.OPERATING_LEASE, 1.0),
+                    PatternDef("Operating Lease Liability", MetricCategory.OPERATING_LEASE, 1.0),
+                    PatternDef("Long-term Operating Lease", MetricCategory.LONG_TERM_LEASE, 1.0),
+                    PatternDef("Deferred Revenue", MetricCategory.DEFERRED_REVENUE, 1.0),
+                    PatternDef("Unearned Revenue", MetricCategory.DEFERRED_REVENUE, 0.9)
+            )
+    
+    // ===== 세부 수익/비용 항목 패턴 =====
+    private val detailedIncomePatterns =
+            listOf(
+                    PatternDef("Product Sales", MetricCategory.PRODUCT_REVENUE, 1.0),
+                    PatternDef("Service Revenue", MetricCategory.SERVICE_REVENUE, 1.0),
+                    PatternDef("Contract Research and Development", MetricCategory.RD_REVENUE, 1.0),
+                    PatternDef("Total Expenses", MetricCategory.TOTAL_EXPENSES, 1.0),
+                    PatternDef("Total Operating Expenses", MetricCategory.TOTAL_EXPENSES, 0.95),
+                    PatternDef("Income Before Taxes", MetricCategory.INCOME_BEFORE_TAX, 1.0),
+                    PatternDef("Pretax Income", MetricCategory.INCOME_BEFORE_TAX, 0.95),
+                    PatternDef("Provision for Income Taxes", MetricCategory.INCOME_TAX, 1.0),
+                    PatternDef("Income Tax Expense", MetricCategory.INCOME_TAX, 0.95),
+                    PatternDef("Interest Income", MetricCategory.INTEREST_INCOME, 1.0),
+                    PatternDef("Interest and Other Income", MetricCategory.INTEREST_INCOME, 0.9),
+                    PatternDef("Other Income", MetricCategory.OTHER_INCOME, 0.85),
+                    PatternDef("Depreciation", MetricCategory.DEPRECIATION, 1.0),
+                    PatternDef("Depreciation and Amortization", MetricCategory.DEPRECIATION, 1.0),
+                    PatternDef("Amortization", MetricCategory.AMORTIZATION, 1.0)
+            )
+    
+    // ===== 현금흐름 세부 항목 패턴 =====
+    private val detailedCashFlowPatterns =
+            listOf(
+                    PatternDef("Purchases of Fixed Assets", MetricCategory.CAPITAL_EXPENDITURES, 1.0),
+                    PatternDef("Purchases of Marketable Securities", MetricCategory.INVESTMENT_PURCHASES, 1.0),
+                    PatternDef("Proceeds from Maturities", MetricCategory.INVESTMENT_PROCEEDS, 1.0),
+                    PatternDef("Proceeds from Sale of", MetricCategory.INVESTMENT_PROCEEDS, 0.85),
+                    PatternDef("Payment of Dividends", MetricCategory.DIVIDENDS_PAID, 1.0),
+                    PatternDef("Cash Dividends Paid", MetricCategory.DIVIDENDS_PAID, 1.0),
+                    PatternDef("Stock-based Compensation", MetricCategory.STOCK_COMPENSATION, 1.0),
+                    PatternDef("Share-based Compensation", MetricCategory.STOCK_COMPENSATION, 1.0),
+                    PatternDef("Changes in Operating Assets", MetricCategory.WORKING_CAPITAL_CHANGES, 0.8)
+            )
 
     // 모든 패턴 합치기
     private val allPatterns =
@@ -163,7 +242,12 @@ object EnhancedFinancialParser {
                     cashFlowPatterns +
                     expensePatterns +
                     perSharePatterns +
-                    sharesPatterns
+                    sharesPatterns +
+                    detailedAssetPatterns +
+                    inventoryDetailPatterns +
+                    detailedLiabilityPatterns +
+                    detailedIncomePatterns +
+                    detailedCashFlowPatterns
 
     /** 문서에서 모든 재무 지표 추출 */
     fun parseFinancialMetrics(content: String): List<ExtendedFinancialMetric> {
@@ -718,21 +802,32 @@ object EnhancedFinancialParser {
         cleaned = cleaned.replace(Regex("<script[^>]*>.*?</script>", RegexOption.DOT_MATCHES_ALL), " ")
         cleaned = cleaned.replace(Regex("<style[^>]*>.*?</style>", RegexOption.DOT_MATCHES_ALL), " ")
         
+        // Extract XBRL data before removing tags (contextRef indicates which period the data belongs to)
+        // This preserves structured financial data from XBRL tags
+        val xbrlPattern = Regex("<ix:nonfraction[^>]*contextRef=\"([^\"]*?)\"[^>]*>([^<]+)</ix:nonfraction>", RegexOption.IGNORE_CASE)
+        val xbrlMatches = xbrlPattern.findAll(content)
+        val xbrlData = StringBuilder()
+        for (match in xbrlMatches) {
+            val context = match.groupValues[1]
+            val value = match.groupValues[2]
+            xbrlData.append("[$context: $value] ")
+        }
+        
         // Remove XBRL tags but preserve content
         cleaned = cleaned.replace(Regex("</?ix:[^>]*>", RegexOption.IGNORE_CASE), " ")
         cleaned = cleaned.replace(Regex("</?us-gaap:[^>]*>", RegexOption.IGNORE_CASE), " ")
         cleaned = cleaned.replace(Regex("</?dei:[^>]*>", RegexOption.IGNORE_CASE), " ")
         cleaned = cleaned.replace(Regex("</?xbrli:[^>]*>", RegexOption.IGNORE_CASE), " ")
         
-        // Preserve table structure by converting to readable format
-        cleaned = cleaned.replace(Regex("<tr[^>]*>", RegexOption.IGNORE_CASE), "\n")
-        cleaned = cleaned.replace(Regex("<td[^>]*>|<th[^>]*>", RegexOption.IGNORE_CASE), " | ")
-        cleaned = cleaned.replace(Regex("</td>|</th>", RegexOption.IGNORE_CASE), "")
-        cleaned = cleaned.replace(Regex("</tr>", RegexOption.IGNORE_CASE), "\n")
+        // Enhanced table structure preservation - keep column alignment
+        cleaned = cleaned.replace(Regex("<tr[^>]*>", RegexOption.IGNORE_CASE), "\n║ROW║ ")
+        cleaned = cleaned.replace(Regex("<td[^>]*>|<th[^>]*>", RegexOption.IGNORE_CASE), " ║ ")
+        cleaned = cleaned.replace(Regex("</td>|</th>", RegexOption.IGNORE_CASE), " ")
+        cleaned = cleaned.replace(Regex("</tr>", RegexOption.IGNORE_CASE), " ║END║\n")
         
         // Replace <br> with newlines
         cleaned = cleaned.replace(Regex("<br\\s*/?>", RegexOption.IGNORE_CASE), "\n")
-        cleaned = cleaned.replace(Regex("<p[^>]*>", RegexOption.IGNORE_CASE), "\n")
+        cleaned = cleaned.replace(Regex("<p[^>]*>", RegexOption.IGNORE_CASE), "\n\n")
         
         // Remove all remaining HTML tags
         cleaned = cleaned.replace(Regex("<[^>]*>"), " ")
@@ -745,12 +840,17 @@ object EnhancedFinancialParser {
         cleaned = cleaned.replace(Regex("&quot;"), "\"")
         cleaned = cleaned.replace(Regex("&apos;|&#39;"), "'")
         cleaned = cleaned.replace(Regex("&#8211;|&#8212;|&mdash;|&ndash;"), "-")
-        cleaned = cleaned.replace(Regex("&#\\d+;"), "") // Remove other numeric entities
-        cleaned = cleaned.replace(Regex("&[a-zA-Z]+;"), "") // Remove named entities
+        cleaned = cleaned.replace(Regex("&#\\d+;"), " ") // Replace numeric entities with space
+        cleaned = cleaned.replace(Regex("&[a-zA-Z]+;"), " ") // Replace named entities with space
         
-        // Normalize whitespace but preserve line breaks
+        // Preserve XBRL structured data at the end
+        if (xbrlData.isNotEmpty()) {
+            cleaned += "\n\n--- XBRL STRUCTURED DATA ---\n" + xbrlData.toString()
+        }
+        
+        // Normalize whitespace but preserve line breaks and table markers
         cleaned = cleaned.replace(Regex("[ \\t]+"), " ")
-        cleaned = cleaned.replace(Regex("\n\\s*\n+"), "\n")
+        cleaned = cleaned.replace(Regex("\n[ ]+\n"), "\n\n")
         
         return cleaned.trim()
     }

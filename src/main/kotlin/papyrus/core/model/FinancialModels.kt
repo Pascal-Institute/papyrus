@@ -98,6 +98,7 @@ data class FinancialAnalysis(
         val healthScore: FinancialHealthScore? = null,
         val reportTypeExplanation: String? = null,
         val keyTakeaways: List<String> = emptyList(),
+        val extendedMetrics: List<ExtendedFinancialMetric> = emptyList(),
         // We will use Any? or a specific type if we move AiAnalysisResult.
         // For now, I will keep it but I might need to import it if it's in a package.
         // Since I'm moving everything to `papyrus.core.model`, I should probably move
