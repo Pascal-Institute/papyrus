@@ -1469,12 +1469,16 @@ object FinancialAnalyzer {
     /**
      * AI 지원 재무 분석 수행
      */
-    suspend fun analyzeWithAI(fileName: String, content: String): FinancialAnalysis {
+    suspend fun analyzeWithAI(
+        fileName: String, 
+        content: String, 
+        skipAiAnalysis: Boolean = false
+    ): FinancialAnalysis {
         // 기본 분석 수행
         val basicAnalysis = analyzeForBeginners(fileName, content)
         
-        // AI가 설정되지 않았으면 기본 분석만 반환
-        if (!AiAnalysisService.isConfigured()) {
+        // AI 분석을 스킵하거나 AI가 설정되지 않았으면 기본 분석만 반환
+        if (skipAiAnalysis || !AiAnalysisService.isConfigured()) {
             return basicAnalysis
         }
         
@@ -1534,6 +1538,73 @@ object FinancialAnalyzer {
         }
         
         return basicAnalysis.copy(
+            aiAnalysis = aiAnalysis,
+            aiSummary = aiSummary,
+            industryComparison = industryComparison,
+            investmentAdvice = investmentAdvice
+        )
+    }
+    
+    /**
+     * AI 재분석 수행 (기존 분석 결과에 AI 분석만 추가)
+     */
+    suspend fun reanalyzeWithAI(existingAnalysis: FinancialAnalysis, content: String): FinancialAnalysis {
+        if (!AiAnalysisService.isConfigured()) {
+            return existingAnalysis
+        }
+        
+        val aiAnalysis = try {
+            AiAnalysisService.analyzeFinancialData(
+                companyName = existingAnalysis.companyName ?: "Unknown Company",
+                metrics = existingAnalysis.metrics,
+                ratios = existingAnalysis.ratios,
+                rawText = content
+            )
+        } catch (e: Exception) {
+            null
+        }
+        
+        val aiSummary = try {
+            if (existingAnalysis.companyName != null && existingAnalysis.reportType != null) {
+                AiAnalysisService.generateQuickSummary(
+                    companyName = existingAnalysis.companyName,
+                    documentType = existingAnalysis.reportType,
+                    content = content
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+        
+        val industryComparison = try {
+            if (existingAnalysis.ratios.isNotEmpty() && existingAnalysis.companyName != null) {
+                AiAnalysisService.compareWithIndustry(
+                    companyName = existingAnalysis.companyName,
+                    ratios = existingAnalysis.ratios
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+        
+        val investmentAdvice = try {
+            if (existingAnalysis.healthScore != null && existingAnalysis.companyName != null) {
+                AiAnalysisService.generateInvestmentAdvice(
+                    companyName = existingAnalysis.companyName,
+                    analysis = existingAnalysis
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+        
+        return existingAnalysis.copy(
             aiAnalysis = aiAnalysis,
             aiSummary = aiSummary,
             industryComparison = industryComparison,

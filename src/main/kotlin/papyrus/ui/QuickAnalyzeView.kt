@@ -358,6 +358,7 @@ private fun QuickAnalyzeContentTab(content: String) {
 fun FinancialAnalysisPanel(
     analysis: FinancialAnalysis,
     onClose: () -> Unit,
+    onReanalyzeWithAI: ((FinancialAnalysis) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -366,18 +367,18 @@ fun FinancialAnalysisPanel(
     val hasAiAnalysis = analysis.aiAnalysis != null || analysis.aiSummary != null || 
                         analysis.industryComparison != null || analysis.investmentAdvice != null
     
-    // 초보자 친화적 탭 추가
+    // 깔끔한 탭 이름 (이모지 제거)
     val tabs = buildList {
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
-            add("📊 건강점수")
-            if (hasAiAnalysis) add("🤖 AI 분석")
-            add("💡 쉬운 설명")
-            add("📖 용어사전")
-            add("📈 상세 지표")
-            add("📄 원본")
+            add("Health Score")
+            if (hasAiAnalysis) add("AI Analysis")
+            add("Insights")
+            add("Glossary")
+            add("Ratios")
+            add("Raw Data")
         } else {
             add("Overview")
-            if (hasAiAnalysis) add("🤖 AI Analysis")
+            if (hasAiAnalysis) add("AI Analysis")
             add("Metrics")
             add("Raw Data")
         }
@@ -405,7 +406,7 @@ fun FinancialAnalysisPanel(
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
             when (selectedTab) {
                 0 -> HealthScoreTab(analysis)
-                1 -> if (hasAiAnalysis) AiAnalysisTab(analysis) else BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
+                1 -> if (hasAiAnalysis) AiAnalysisTab(analysis, onReanalyzeWithAI) else BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
                 2 -> if (hasAiAnalysis) BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways) else TermGlossaryTab(analysis.termExplanations)
                 3 -> if (hasAiAnalysis) TermGlossaryTab(analysis.termExplanations) else FinancialRatiosTab(analysis.ratios, analysis.metrics)
                 4 -> if (hasAiAnalysis) FinancialRatiosTab(analysis.ratios, analysis.metrics) else FinancialRawDataTab(analysis.rawContent)
@@ -414,7 +415,7 @@ fun FinancialAnalysisPanel(
         } else {
             when (selectedTab) {
                 0 -> FinancialOverviewTab(analysis)
-                1 -> if (hasAiAnalysis) AiAnalysisTab(analysis) else FinancialMetricsTab(analysis.metrics)
+                1 -> if (hasAiAnalysis) AiAnalysisTab(analysis, onReanalyzeWithAI) else FinancialMetricsTab(analysis.metrics)
                 2 -> if (hasAiAnalysis) FinancialMetricsTab(analysis.metrics) else FinancialRawDataTab(analysis.rawContent)
                 3 -> FinancialRawDataTab(analysis.rawContent)
             }
@@ -1633,10 +1634,10 @@ fun AnalysisErrorView(
 }
 
 /**
- * AI 분석 탭 - OpenRouter API를 통한 AI 재무 분석
+ * AI Analysis Tab - Clean and professional AI financial analysis display
  */
 @Composable
-private fun AiAnalysisTab(analysis: FinancialAnalysis) {
+private fun AiAnalysisTab(analysis: FinancialAnalysis, onReanalyze: ((FinancialAnalysis) -> Unit)?) {
     val scrollState = rememberScrollState()
     
     Column(
@@ -1645,38 +1646,61 @@ private fun AiAnalysisTab(analysis: FinancialAnalysis) {
             .verticalScroll(scrollState)
             .padding(horizontal = AppDimens.PaddingMedium)
     ) {
-        // AI 설정 상태 확인
+        // AI Configuration Check
         if (!papyrus.AiAnalysisService.isConfigured()) {
             AiConfigurationCard()
             return
         }
         
-        // AI 분석 결과가 없는 경우
-        if (analysis.aiAnalysis == null && analysis.aiSummary == null && 
-            analysis.industryComparison == null && analysis.investmentAdvice == null) {
-            AiNotAvailableCard()
+        // AI Analysis Results Check
+        val hasAnyAiResult = analysis.aiAnalysis != null || analysis.aiSummary != null || 
+                            analysis.industryComparison != null || analysis.investmentAdvice != null
+        
+        if (!hasAnyAiResult) {
+            AiNotAvailableCard(analysis, onReanalyze)
             return
         }
         
-        // AI 요약
+        // Reanalyze Button
+        if (onReanalyze != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                OutlinedButton(
+                    onClick = { onReanalyze(analysis) },
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Reanalyze",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Reanalyze with AI")
+                }
+            }
+        }
+        
+        // Summary Section
         if (analysis.aiSummary != null) {
             AiSummaryCard(analysis.aiSummary)
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
         }
         
-        // 상세 AI 분석
+        // Detailed Analysis
         if (analysis.aiAnalysis != null) {
             AiDetailedAnalysisCard(analysis.aiAnalysis)
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
         }
         
-        // 투자 조언
+        // Investment Advice
         if (analysis.investmentAdvice != null) {
             AiInvestmentAdviceCard(analysis.investmentAdvice)
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
         }
         
-        // 산업 비교
+        // Industry Comparison
         if (analysis.industryComparison != null) {
             AiIndustryComparisonCard(analysis.industryComparison)
         }
@@ -1697,7 +1721,7 @@ private fun AiConfigurationCard() {
         ) {
             Icon(
                 imageVector = Icons.Filled.Psychology,
-                contentDescription = "AI 설정",
+                contentDescription = "AI Configuration",
                 modifier = Modifier.size(56.dp),
                 tint = AppColors.Info
             )
@@ -1705,7 +1729,7 @@ private fun AiConfigurationCard() {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "🤖 AI 재무 분석 설정",
+                text = "AI Financial Analysis Setup",
                 style = AppTypography.Headline2,
                 color = AppColors.OnSurface
             )
@@ -1713,7 +1737,7 @@ private fun AiConfigurationCard() {
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "OpenRouter API를 사용하여 재무 데이터를 AI로 심층 분석합니다.",
+                text = "Configure OpenRouter API to enable in-depth AI-powered financial analysis.",
                 style = AppTypography.Body1,
                 color = AppColors.OnSurfaceSecondary,
                 textAlign = TextAlign.Center
@@ -1749,7 +1773,7 @@ private fun AiConfigurationCard() {
 }
 
 @Composable
-private fun AiNotAvailableCard() {
+private fun AiNotAvailableCard(analysis: FinancialAnalysis, onReanalyze: ((FinancialAnalysis) -> Unit)?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         backgroundColor = AppColors.WarningLight,
@@ -1762,7 +1786,7 @@ private fun AiNotAvailableCard() {
         ) {
             Icon(
                 imageVector = Icons.Filled.CloudOff,
-                contentDescription = "AI 없음",
+                contentDescription = "No AI Analysis",
                 modifier = Modifier.size(48.dp),
                 tint = AppColors.Warning
             )
@@ -1770,7 +1794,7 @@ private fun AiNotAvailableCard() {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "AI 분석 결과 없음",
+                text = "AI Analysis Not Available",
                 style = AppTypography.Headline3,
                 color = AppColors.OnSurface
             )
@@ -1778,11 +1802,29 @@ private fun AiNotAvailableCard() {
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "이 분석은 AI 분석 없이 수행되었습니다. OpenRouter API 키를 설정하면 더 상세한 AI 분석을 받을 수 있습니다.",
+                text = "This analysis was performed without AI. Configure your OpenRouter API key in settings to enable detailed AI analysis.",
                 style = AppTypography.Body1,
                 color = AppColors.OnSurfaceSecondary,
                 textAlign = TextAlign.Center
             )
+            
+            if (onReanalyze != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { onReanalyze(analysis) },
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = AppColors.Primary
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Reanalyze",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Analyze with AI")
+                }
+            }
         }
     }
 }
@@ -1799,13 +1841,13 @@ private fun AiSummaryCard(summary: String) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.AutoAwesome,
-                    contentDescription = "AI 요약",
+                    contentDescription = "AI Summary",
                     tint = AppColors.Primary,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "AI 요약",
+                    text = "Summary",
                     style = AppTypography.Headline3,
                     color = AppColors.OnSurface
                 )
@@ -1832,26 +1874,26 @@ private fun AiDetailedAnalysisCard(aiAnalysis: papyrus.AiAnalysisResult) {
         shape = AppShapes.Medium
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            // 헤더
+            // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
                     imageVector = Icons.Filled.Psychology,
-                    contentDescription = "AI 분석",
+                    contentDescription = "AI Analysis",
                     tint = AppColors.Primary,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "상세 AI 분석",
+                    text = "Detailed Analysis",
                     style = AppTypography.Headline3,
                     color = AppColors.OnSurface
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 
-                // 신뢰도 표시
+                // Confidence Badge
                 if (aiAnalysis.confidence > 0) {
                     Card(
                         backgroundColor = when {
@@ -1863,7 +1905,7 @@ private fun AiDetailedAnalysisCard(aiAnalysis: papyrus.AiAnalysisResult) {
                         shape = AppShapes.Pill
                     ) {
                         Text(
-                            text = "신뢰도 ${(aiAnalysis.confidence * 100).toInt()}%",
+                            text = "Confidence ${(aiAnalysis.confidence * 100).toInt()}%",
                             style = AppTypography.Caption,
                             color = AppColors.OnSurface,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -1882,11 +1924,11 @@ private fun AiDetailedAnalysisCard(aiAnalysis: papyrus.AiAnalysisResult) {
                 lineHeight = 26.sp
             )
             
-            // 핵심 인사이트
+            // Key Insights
             if (aiAnalysis.keyInsights.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "💡 핵심 인사이트",
+                    text = "Key Insights",
                     style = AppTypography.Body1.copy(fontWeight = FontWeight.Bold),
                     color = AppColors.OnSurface
                 )
@@ -1923,11 +1965,11 @@ private fun AiDetailedAnalysisCard(aiAnalysis: papyrus.AiAnalysisResult) {
                 }
             }
             
-            // 투자 권장사항
+            // Recommendations
             if (aiAnalysis.recommendations.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "📈 투자 권장사항",
+                    text = "Recommendations",
                     style = AppTypography.Body1.copy(fontWeight = FontWeight.Bold),
                     color = AppColors.OnSurface
                 )
@@ -1965,7 +2007,7 @@ private fun AiDetailedAnalysisCard(aiAnalysis: papyrus.AiAnalysisResult) {
                 }
             }
             
-            // 위험 평가
+            // Risk Assessment
             if (aiAnalysis.riskAssessment.isNotBlank()) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Card(
@@ -1978,13 +2020,13 @@ private fun AiDetailedAnalysisCard(aiAnalysis: papyrus.AiAnalysisResult) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Warning,
-                                contentDescription = "위험",
+                                contentDescription = "Risk",
                                 tint = AppColors.Warning,
                                 modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "⚠️ 위험 평가",
+                                text = "Risk Assessment",
                                 style = AppTypography.Body1.copy(fontWeight = FontWeight.Bold),
                                 color = AppColors.OnSurface
                             )
@@ -2036,13 +2078,13 @@ private fun AiInvestmentAdviceCard(advice: String) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.Lightbulb,
-                    contentDescription = "투자 조언",
+                    contentDescription = "Investment Advice",
                     tint = AppColors.Warning,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "투자 의사결정 지원",
+                    text = "Investment Strategy",
                     style = AppTypography.Headline3,
                     color = AppColors.OnSurface
                 )
@@ -2072,13 +2114,13 @@ private fun AiIndustryComparisonCard(comparison: String) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.CompareArrows,
-                    contentDescription = "산업 비교",
+                    contentDescription = "Industry Comparison",
                     tint = AppColors.Secondary,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "산업 비교 분석",
+                    text = "Industry Comparison",
                     style = AppTypography.Headline3,
                     color = AppColors.OnSurface
                 )

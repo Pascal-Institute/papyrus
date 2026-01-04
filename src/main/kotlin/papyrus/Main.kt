@@ -192,18 +192,29 @@ fun PapyrusApp() {
                             try {
                                 val rawHtml = SecApi.fetchDocumentContent(url)
                                 
-                                // AI 분석 메시지 업데이트
-                                if (AiAnalysisService.isConfigured()) {
+                                // 기존 분석 결과가 있는지 확인
+                                val existingAnalysis = (appState.analysisState as? AnalysisState.FinancialAnalysisResult)?.analysis
+                                val hasAiAnalysis = existingAnalysis?.aiAnalysis != null || 
+                                                   existingAnalysis?.aiSummary != null ||
+                                                   existingAnalysis?.industryComparison != null ||
+                                                   existingAnalysis?.investmentAdvice != null
+                                
+                                // AI 분석 스킵 여부 결정 (동일 파일이고 AI 분석이 있을 때)
+                                val skipAi = hasAiAnalysis && existingAnalysis?.fileName == filing.primaryDocument
+                                
+                                // AI 분석 메시지 업데이트 (스킵하지 않을 때만)
+                                if (!skipAi && AiAnalysisService.isConfigured()) {
                                     appState = appState.copy(
-                                        analysisState = AnalysisState.Loading("AI로 심층 분석 중...")
+                                        analysisState = AnalysisState.Loading("AI 분석 중...")
                                     )
                                 }
                                 
-                                // AI 지원 재무 분석 사용
+                                // 재무 분석 수행
                                 val analysis = withContext(kotlinx.coroutines.Dispatchers.IO) {
                                     FinancialAnalyzer.analyzeWithAI(
                                         filing.primaryDocument, 
-                                        rawHtml
+                                        rawHtml,
+                                        skipAiAnalysis = skipAi
                                     )
                                 }
                                 
@@ -290,6 +301,33 @@ fun PapyrusApp() {
                     onOpenInBrowser = { url ->
                         if (Desktop.isDesktopSupported()) {
                             Desktop.getDesktop().browse(URI(url))
+                        }
+                    },
+                    onReanalyzeWithAI = { analysis ->
+                        scope.launch {
+                            appState = appState.copy(
+                                analysisState = AnalysisState.Loading("AI 재분석 중...")
+                            )
+                            
+                            try {
+                                val reanalyzed = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    FinancialAnalyzer.reanalyzeWithAI(
+                                        analysis,
+                                        analysis.rawContent
+                                    )
+                                }
+                                
+                                appState = appState.copy(
+                                    analysisState = AnalysisState.FinancialAnalysisResult(reanalyzed)
+                                )
+                            } catch (e: Exception) {
+                                appState = appState.copy(
+                                    analysisState = AnalysisState.Error(
+                                        message = "AI 재분석 실패: ${e.message}",
+                                        retryAction = null
+                                    )
+                                )
+                            }
                         }
                     }
                 )
@@ -559,7 +597,8 @@ private fun RightPanel(
     onFileDropped: (java.io.File) -> Unit,
     onDragStateChange: (Boolean) -> Unit,
     onCloseAnalysis: () -> Unit,
-    onOpenInBrowser: (String) -> Unit
+    onOpenInBrowser: (String) -> Unit,
+    onReanalyzeWithAI: (FinancialAnalysis) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -602,7 +641,8 @@ private fun RightPanel(
                 is AnalysisState.FinancialAnalysisResult -> {
                     FinancialAnalysisPanel(
                         analysis = state.analysis,
-                        onClose = onCloseAnalysis
+                        onClose = onCloseAnalysis,
+                        onReanalyzeWithAI = onReanalyzeWithAI
                     )
                 }
                 
