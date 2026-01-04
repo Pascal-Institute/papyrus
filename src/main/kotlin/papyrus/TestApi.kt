@@ -9,6 +9,7 @@ import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import papyrus.core.model.TickerEntry
 
 fun main() = runBlocking {
     val client =

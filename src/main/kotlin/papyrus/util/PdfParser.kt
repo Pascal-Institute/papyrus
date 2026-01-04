@@ -1,4 +1,4 @@
-package papyrus
+package papyrus.util
 
 import java.io.File
 import org.apache.pdfbox.pdmodel.PDDocument

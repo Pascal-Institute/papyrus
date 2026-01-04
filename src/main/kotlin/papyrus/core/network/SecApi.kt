@@ -1,4 +1,4 @@
-package papyrus
+package papyrus.core.network
 
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -9,6 +9,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import papyrus.core.model.*
 
 object SecApi {
     private val client =

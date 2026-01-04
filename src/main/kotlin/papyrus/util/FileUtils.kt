@@ -1,4 +1,4 @@
-package papyrus
+package papyrus.util
 
 import java.io.File
 
@@ -8,7 +8,7 @@ object FileUtils {
         return when (file.extension.lowercase()) {
             "pdf" -> {
                 println("Extracting text from PDF: ${file.name}")
-                PdfParser.extractText(file)
+                PdfParser.extractText(file) // PdfParser is in the same package now
             }
             "html", "htm" -> {
                 println("Reading HTML file: ${file.name}")
