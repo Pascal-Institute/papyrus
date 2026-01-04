@@ -23,12 +23,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import papyrus.core.model.AiAnalysisResult
 import papyrus.core.model.BeginnerInsight
+import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.FinancialAnalysis
 import papyrus.core.model.FinancialHealthScore
 import papyrus.core.model.FinancialMetric
 import papyrus.core.model.FinancialRatio
 import papyrus.core.model.FinancialTermExplanation
 import papyrus.core.model.HealthStatus
+import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
 import papyrus.core.service.analyzer.AiAnalysisService
 
@@ -1525,10 +1527,21 @@ private fun FinancialOverviewTab(analysis: FinancialAnalysis) {
     val scrollState = rememberScrollState()
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
-        // Metrics Summary Cards
-        MetricsSummaryGrid(analysis.metrics)
-
-        Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+        // 빠른 재무 요약 카드 (새로운 컴포넌트)
+        if (analysis.extendedMetrics.isNotEmpty()) {
+            QuickFinancialSummaryCard(analysis)
+            Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+        }
+        
+        // 핵심 재무 지표 대시보드 (새로운 컴포넌트)
+        if (analysis.extendedMetrics.isNotEmpty()) {
+            KeyFinancialMetricsDashboard(analysis)
+            Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+        } else {
+            // 폴백: 기존 메트릭 요약 그리드
+            MetricsSummaryGrid(analysis.metrics)
+            Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+        }
 
         // Summary Text Card
         Card(
@@ -2524,3 +2537,486 @@ private fun AiIndustryComparisonCard(comparison: String) {
         }
     }
 }
+
+// ============================================================
+// 핵심 재무 지표 시각화 컴포넌트 (Key Financial Metrics Display)
+// ============================================================
+
+/**
+ * 핵심 재무 지표 대시보드 카드
+ * 파싱된 재무 데이터를 시각적으로 보여줍니다.
+ */
+@Composable
+fun KeyFinancialMetricsDashboard(
+    analysis: FinancialAnalysis,
+    modifier: Modifier = Modifier
+) {
+    val extendedMetrics = analysis.extendedMetrics
+    
+    // 카테고리별 메트릭 그룹화
+    val revenueMetrics = extendedMetrics.filter { 
+        it.category in listOf(
+            MetricCategory.REVENUE,
+            MetricCategory.GROSS_PROFIT,
+            MetricCategory.OPERATING_INCOME,
+            MetricCategory.NET_INCOME
+        )
+    }
+    
+    val balanceMetrics = extendedMetrics.filter {
+        it.category in listOf(
+            MetricCategory.TOTAL_ASSETS,
+            MetricCategory.CASH_AND_EQUIVALENTS,
+            MetricCategory.TOTAL_LIABILITIES,
+            MetricCategory.TOTAL_EQUITY
+        )
+    }
+    
+    val cashFlowMetrics = extendedMetrics.filter {
+        it.category in listOf(
+            MetricCategory.OPERATING_CASH_FLOW,
+            MetricCategory.FREE_CASH_FLOW,
+            MetricCategory.CAPITAL_EXPENDITURES
+        )
+    }
+    
+    Column(modifier = modifier) {
+        // 파싱 품질 표시
+        ParsingQualityIndicator(analysis)
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // 손익계산서 핵심 지표
+        if (revenueMetrics.isNotEmpty()) {
+            FinancialStatementCard(
+                title = "📊 Income Statement Highlights",
+                subtitle = "손익계산서 핵심 지표",
+                metrics = revenueMetrics,
+                accentColor = AppColors.Revenue
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+        
+        // 재무상태표 핵심 지표
+        if (balanceMetrics.isNotEmpty()) {
+            FinancialStatementCard(
+                title = "🏦 Balance Sheet Highlights",
+                subtitle = "재무상태표 핵심 지표",
+                metrics = balanceMetrics,
+                accentColor = AppColors.Primary
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+        
+        // 현금흐름표 핵심 지표
+        if (cashFlowMetrics.isNotEmpty()) {
+            FinancialStatementCard(
+                title = "💵 Cash Flow Highlights",
+                subtitle = "현금흐름표 핵심 지표",
+                metrics = cashFlowMetrics,
+                accentColor = AppColors.Success
+            )
+        }
+        
+        // 메트릭이 없는 경우
+        if (revenueMetrics.isEmpty() && balanceMetrics.isEmpty() && cashFlowMetrics.isEmpty()) {
+            NoMetricsFoundCard()
+        }
+    }
+}
+
+/**
+ * 파싱 품질 표시기
+ */
+@Composable
+private fun ParsingQualityIndicator(analysis: FinancialAnalysis) {
+    val metrics = analysis.extendedMetrics
+    val totalCount = metrics.size
+    val avgConfidence = if (metrics.isNotEmpty()) {
+        metrics.map { it.confidence }.average()
+    } else 0.0
+    
+    val qualityLevel = when {
+        totalCount >= 10 && avgConfidence >= 0.8 -> "High"
+        totalCount >= 5 && avgConfidence >= 0.6 -> "Medium"
+        totalCount >= 1 -> "Low"
+        else -> "None"
+    }
+    
+    val qualityColor = when (qualityLevel) {
+        "High" -> AppColors.Success
+        "Medium" -> AppColors.Warning
+        "Low" -> AppColors.Error
+        else -> AppColors.Divider
+    }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = 1.dp,
+        shape = AppShapes.Small,
+        backgroundColor = qualityColor.copy(alpha = 0.1f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(qualityColor, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Data Quality: $qualityLevel",
+                    style = AppTypography.Body2,
+                    fontWeight = FontWeight.Medium,
+                    color = AppColors.OnSurface
+                )
+            }
+            
+            Text(
+                text = "$totalCount metrics • ${String.format("%.0f", avgConfidence * 100)}% confidence",
+                style = AppTypography.Caption,
+                color = AppColors.OnSurfaceSecondary
+            )
+        }
+    }
+}
+
+/**
+ * 재무제표별 카드 컴포넌트
+ */
+@Composable
+private fun FinancialStatementCard(
+    title: String,
+    subtitle: String,
+    metrics: List<ExtendedFinancialMetric>,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = AppDimens.CardElevation,
+        shape = AppShapes.Medium,
+        backgroundColor = AppColors.Surface
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // 헤더
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = title,
+                        style = AppTypography.Subtitle1,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.OnSurface
+                    )
+                    Text(
+                        text = subtitle,
+                        style = AppTypography.Caption,
+                        color = AppColors.OnSurfaceSecondary
+                    )
+                }
+                
+                // 메트릭 수 표시
+                Box(
+                    modifier = Modifier
+                        .background(accentColor.copy(alpha = 0.1f), AppShapes.Pill)
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "${metrics.size} items",
+                        style = AppTypography.Caption,
+                        color = accentColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            Divider(color = AppColors.Divider)
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // 메트릭 그리드
+            metrics.chunked(2).forEach { rowMetrics ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowMetrics.forEach { metric ->
+                        MetricDisplayCard(
+                            metric = metric,
+                            accentColor = accentColor,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // 홀수 개일 경우 빈 공간 채우기
+                    if (rowMetrics.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+/**
+ * 개별 메트릭 표시 카드
+ */
+@Composable
+private fun MetricDisplayCard(
+    metric: ExtendedFinancialMetric,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val isNegative = (metric.rawValue ?: 0.0) < 0
+    val valueColor = if (isNegative) AppColors.Error else AppColors.OnSurface
+    
+    Card(
+        modifier = modifier,
+        elevation = 0.dp,
+        shape = AppShapes.Small,
+        backgroundColor = AppColors.SurfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            // 메트릭 이름
+            Text(
+                text = metric.name,
+                style = AppTypography.Caption,
+                color = AppColors.OnSurfaceSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // 값
+            Text(
+                text = metric.value,
+                style = AppTypography.Subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = valueColor
+            )
+            
+            // YoY 변화율 (있는 경우)
+            metric.yearOverYearChange?.let { yoy ->
+                Spacer(modifier = Modifier.height(4.dp))
+                val yoyColor = if (yoy >= 0) AppColors.Success else AppColors.Error
+                val yoySign = if (yoy >= 0) "+" else ""
+                val yoyIcon = if (yoy >= 0) Icons.Default.TrendingUp else Icons.Default.TrendingDown
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = yoyIcon,
+                        contentDescription = null,
+                        tint = yoyColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "$yoySign${String.format("%.1f", yoy)}% YoY",
+                        style = AppTypography.Caption,
+                        color = yoyColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
+            // 신뢰도 표시
+            if (metric.confidence < 0.9) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "⚠ ${String.format("%.0f", metric.confidence * 100)}% confidence",
+                    style = AppTypography.Caption,
+                    color = AppColors.Warning,
+                    fontSize = 10.sp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 메트릭이 없을 때 표시하는 카드
+ */
+@Composable
+private fun NoMetricsFoundCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = AppDimens.CardElevation,
+        shape = AppShapes.Medium,
+        backgroundColor = AppColors.WarningLight
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.SearchOff,
+                contentDescription = null,
+                tint = AppColors.Warning,
+                modifier = Modifier.size(48.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = "No Financial Metrics Detected",
+                style = AppTypography.Subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.OnSurface
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "The document may not contain standard financial statements, " +
+                       "or the format is not yet supported. Try using AI Analysis for deeper insights.",
+                style = AppTypography.Body2,
+                color = AppColors.OnSurfaceSecondary,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/**
+ * 빠른 재무 요약 카드 (단일 카드로 핵심 정보 표시)
+ */
+@Composable
+fun QuickFinancialSummaryCard(
+    analysis: FinancialAnalysis,
+    modifier: Modifier = Modifier
+) {
+    val metrics = analysis.extendedMetrics
+    
+    // 핵심 지표 추출
+    val revenue = metrics.find { it.category == MetricCategory.REVENUE }
+    val netIncome = metrics.find { it.category == MetricCategory.NET_INCOME }
+    val totalAssets = metrics.find { it.category == MetricCategory.TOTAL_ASSETS }
+    val eps = metrics.find { 
+        it.category == MetricCategory.EPS_BASIC || 
+        it.category == MetricCategory.EPS_DILUTED 
+    }
+    
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = AppDimens.CardElevationHigh,
+        shape = AppShapes.Medium,
+        backgroundColor = AppColors.Primary.copy(alpha = 0.05f)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // 헤더
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📊 Quick Financial Summary",
+                    style = AppTypography.Subtitle1,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.OnSurface
+                )
+                
+                analysis.reportType?.let { type ->
+                    Box(
+                        modifier = Modifier
+                            .background(AppColors.Primary.copy(alpha = 0.1f), AppShapes.Pill)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "Form $type",
+                            style = AppTypography.Caption,
+                            color = AppColors.Primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+            
+            analysis.companyName?.let { name ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = name,
+                    style = AppTypography.Body2,
+                    color = AppColors.OnSurfaceSecondary
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider(color = AppColors.Divider)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // 핵심 지표 그리드
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                QuickMetricItem(
+                    label = "Revenue",
+                    value = revenue?.value ?: "N/A",
+                    icon = Icons.Outlined.AttachMoney,
+                    color = AppColors.Revenue
+                )
+                
+                QuickMetricItem(
+                    label = "Net Income",
+                    value = netIncome?.value ?: "N/A",
+                    icon = Icons.Outlined.TrendingUp,
+                    color = AppColors.Income
+                )
+                
+                QuickMetricItem(
+                    label = "Total Assets",
+                    value = totalAssets?.value ?: "N/A",
+                    icon = Icons.Outlined.AccountBalance,
+                    color = AppColors.Primary
+                )
+                
+                QuickMetricItem(
+                    label = "EPS",
+                    value = eps?.value ?: "N/A",
+                    icon = Icons.Outlined.BarChart,
+                    color = AppColors.Secondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickMetricItem(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    color: Color
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = AppTypography.Caption,
+            color = AppColors.OnSurfaceSecondary
+        )
+        Text(
+            text = value,
+            style = AppTypography.Body2,
+            fontWeight = FontWeight.Bold,
+            color = AppColors.OnSurface
+        )
+    }
+}
+

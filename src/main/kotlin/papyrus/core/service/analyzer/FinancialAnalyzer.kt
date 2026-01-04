@@ -2,6 +2,7 @@ package papyrus.core.service.analyzer
 
 import papyrus.core.model.*
 import papyrus.core.service.parser.EnhancedFinancialParser
+import papyrus.core.service.parser.SecTableParser
 import papyrus.util.AnalysisCache
 
 object FinancialAnalyzer {
@@ -42,41 +43,103 @@ object FinancialAnalyzer {
 
     private val epsTerms = listOf("Earnings Per Share", "EPS", "Basic EPS", "Diluted EPS")
 
+    /**
+     * 향상된 문서 분석 (Enhanced Document Analysis)
+     * 
+     * 1단계: SecTableParser로 테이블 기반 정밀 파싱
+     * 2단계: EnhancedFinancialParser로 텍스트 패턴 파싱 보완
+     * 3단계: 구조화된 재무제표 데이터 생성
+     * 4단계: 핵심 재무 비율 계산
+     */
     fun analyzeDocument(fileName: String, content: String): FinancialAnalysis {
-        // Remove HTML tags and normalize whitespace using the enhanced parser
+        val startTime = System.currentTimeMillis()
+        
+        // 메타데이터 추출
         val cleanText = EnhancedFinancialParser.cleanHtml(content)
-
-        // Extract company name (usually in first few lines)
         val companyName = extractCompanyName(cleanText)
-
-        // Detect report type (10-K, 10-Q, etc.)
         val reportType = extractReportType(cleanText)
-
-        // Extract period
         val period = extractPeriod(cleanText)
-
-        // Extract financial metrics
-        val metrics = mutableListOf<FinancialMetric>()
-
-        // Search for each category
-        metrics.addAll(searchMetrics(cleanText, revenueTerms, "Revenue"))
-        metrics.addAll(searchMetrics(cleanText, incomeTerms, "Net Income"))
-        metrics.addAll(searchMetrics(cleanText, assetsTerms, "Assets"))
-        metrics.addAll(searchMetrics(cleanText, liabilitiesTerms, "Liabilities"))
-        metrics.addAll(searchMetrics(cleanText, equityTerms, "Equity"))
-        metrics.addAll(searchMetrics(cleanText, epsTerms, "EPS"))
-
-        // Generate summary
-        val summary = generateSummary(companyName, reportType, period, metrics)
+        
+        // 1단계: 테이블 기반 파싱 (가장 정확함)
+        val tableMetrics = mutableListOf<ExtendedFinancialMetric>()
+        var tablesFound = 0
+        try {
+            val tables = SecTableParser.parseFinancialTables(content)
+            tablesFound = tables.size
+            tableMetrics.addAll(SecTableParser.convertToMetrics(tables))
+            println("📊 Table parsing: Found ${tableMetrics.size} metrics from $tablesFound tables")
+        } catch (e: Exception) {
+            println("⚠ Table parsing error: ${e.message}")
+        }
+        
+        // 2단계: 텍스트 패턴 파싱 (보완)
+        val patternMetrics = mutableListOf<ExtendedFinancialMetric>()
+        val foundCategories = tableMetrics.map { it.category }.toSet()
+        
+        // 기본 메트릭 추출
+        val basicMetrics = mutableListOf<FinancialMetric>()
+        basicMetrics.addAll(searchMetrics(cleanText, revenueTerms, "Revenue"))
+        basicMetrics.addAll(searchMetrics(cleanText, incomeTerms, "Net Income"))
+        basicMetrics.addAll(searchMetrics(cleanText, assetsTerms, "Assets"))
+        basicMetrics.addAll(searchMetrics(cleanText, liabilitiesTerms, "Liabilities"))
+        basicMetrics.addAll(searchMetrics(cleanText, equityTerms, "Equity"))
+        basicMetrics.addAll(searchMetrics(cleanText, epsTerms, "EPS"))
+        
+        // ExtendedFinancialMetric으로 변환 (테이블에서 못 찾은 것만)
+        for (metric in basicMetrics) {
+            val category = inferCategory(metric.name)
+            if (category !in foundCategories && metric.rawValue != null) {
+                patternMetrics.add(ExtendedFinancialMetric(
+                    name = metric.name,
+                    value = metric.value,
+                    rawValue = metric.rawValue,
+                    category = category,
+                    source = "Pattern matching",
+                    confidence = 0.7,
+                    context = metric.context
+                ))
+            }
+        }
+        
+        // 3단계: 모든 메트릭 병합
+        val allExtendedMetrics = (tableMetrics + patternMetrics)
+            .groupBy { it.category }
+            .mapValues { (_, list) -> list.maxByOrNull { it.confidence } ?: list.first() }
+            .values.toList()
+        
+        // 기본 메트릭 리스트 생성 (호환성 유지)
+        val allBasicMetrics = allExtendedMetrics.map { ext ->
+            FinancialMetric(
+                name = ext.name,
+                value = ext.value,
+                rawValue = ext.rawValue,
+                context = ext.context
+            )
+        } + basicMetrics.filter { basic ->
+            allExtendedMetrics.none { it.name.equals(basic.name, ignoreCase = true) }
+        }
+        
+        // 4단계: 구조화된 데이터 및 핵심 비율 생성
+        val structuredData = buildStructuredFinancialData(
+            companyName, reportType, period, allExtendedMetrics
+        )
+        
+        // 처리 시간 기록
+        val processingTime = System.currentTimeMillis() - startTime
+        println("⏱ Analysis completed in ${processingTime}ms (${allExtendedMetrics.size} metrics)")
+        
+        // 요약 생성
+        val summary = generateEnhancedSummary(companyName, reportType, period, allBasicMetrics, structuredData)
 
         return FinancialAnalysis(
                 fileName = fileName,
                 companyName = companyName,
                 reportType = reportType,
                 periodEnding = period,
-                metrics = metrics,
-                rawContent = cleanText.take(50000), // Limit size
-                summary = summary
+                metrics = allBasicMetrics.distinctBy { it.name.lowercase() },
+                rawContent = cleanText.take(50000),
+                summary = summary,
+                extendedMetrics = allExtendedMetrics
         )
     }
 
@@ -250,6 +313,339 @@ object FinancialAnalyzer {
             value >= 1_000 -> String.format("$%.2fK", value / 1_000)
             else -> String.format("$%.2f", value)
         }
+    }
+    
+    /**
+     * 메트릭 이름에서 카테고리 추론
+     */
+    private fun inferCategory(name: String): MetricCategory {
+        val lower = name.lowercase()
+        return when {
+            lower.contains("revenue") || lower.contains("sales") -> MetricCategory.REVENUE
+            lower.contains("cost of") && (lower.contains("revenue") || lower.contains("sales") || lower.contains("goods")) -> MetricCategory.COST_OF_REVENUE
+            lower.contains("gross profit") || lower.contains("gross margin") -> MetricCategory.GROSS_PROFIT
+            lower.contains("operating income") || lower.contains("income from operations") -> MetricCategory.OPERATING_INCOME
+            lower.contains("net income") || lower.contains("net earnings") || lower.contains("net loss") -> MetricCategory.NET_INCOME
+            lower.contains("ebitda") -> MetricCategory.EBITDA
+            lower.contains("total assets") -> MetricCategory.TOTAL_ASSETS
+            lower.contains("current assets") -> MetricCategory.CURRENT_ASSETS
+            lower.contains("cash and") -> MetricCategory.CASH_AND_EQUIVALENTS
+            lower.contains("total liabilities") -> MetricCategory.TOTAL_LIABILITIES
+            lower.contains("current liabilities") -> MetricCategory.CURRENT_LIABILITIES
+            lower.contains("long-term debt") || lower.contains("long term debt") -> MetricCategory.LONG_TERM_DEBT
+            lower.contains("total equity") || lower.contains("stockholders") || lower.contains("shareholders") -> MetricCategory.TOTAL_EQUITY
+            lower.contains("retained earnings") -> MetricCategory.RETAINED_EARNINGS
+            lower.contains("eps") || lower.contains("earnings per share") -> MetricCategory.EPS_BASIC
+            lower.contains("diluted") && lower.contains("eps") -> MetricCategory.EPS_DILUTED
+            else -> MetricCategory.OTHER
+        }
+    }
+    
+    /**
+     * 구조화된 재무 데이터 생성
+     */
+    private fun buildStructuredFinancialData(
+        companyName: String?,
+        reportType: String?,
+        period: String?,
+        metrics: List<ExtendedFinancialMetric>
+    ): StructuredFinancialData {
+        // 카테고리별로 메트릭 맵 생성
+        val metricMap = metrics.associateBy { it.category }
+        
+        fun getMonetaryValue(category: MetricCategory): MonetaryValue? {
+            val metric = metricMap[category] ?: return null
+            val rawValue = metric.rawValue ?: return null
+            return MonetaryValue.fromDouble(rawValue).copy(
+                yearOverYearChange = metric.yearOverYearChange,
+                confidence = metric.confidence
+            )
+        }
+        
+        // 손익계산서 구성
+        val incomeStatement = StructuredIncomeStatement(
+            periodEnding = period,
+            periodType = metrics.firstOrNull()?.periodType,
+            totalRevenue = getMonetaryValue(MetricCategory.REVENUE),
+            costOfRevenue = getMonetaryValue(MetricCategory.COST_OF_REVENUE),
+            grossProfit = getMonetaryValue(MetricCategory.GROSS_PROFIT),
+            researchAndDevelopment = getMonetaryValue(MetricCategory.RD_EXPENSE),
+            sellingGeneralAdmin = getMonetaryValue(MetricCategory.SGA_EXPENSE),
+            operatingIncome = getMonetaryValue(MetricCategory.OPERATING_INCOME),
+            interestExpense = getMonetaryValue(MetricCategory.INTEREST_EXPENSE),
+            interestIncome = getMonetaryValue(MetricCategory.INTEREST_INCOME),
+            incomeBeforeTax = getMonetaryValue(MetricCategory.INCOME_BEFORE_TAX),
+            incomeTaxExpense = getMonetaryValue(MetricCategory.INCOME_TAX),
+            netIncome = getMonetaryValue(MetricCategory.NET_INCOME),
+            basicEPS = metricMap[MetricCategory.EPS_BASIC]?.rawValue,
+            dilutedEPS = metricMap[MetricCategory.EPS_DILUTED]?.rawValue
+        )
+        
+        // 재무상태표 구성
+        val balanceSheet = StructuredBalanceSheet(
+            periodEnding = period,
+            cashAndEquivalents = getMonetaryValue(MetricCategory.CASH_AND_EQUIVALENTS),
+            accountsReceivable = getMonetaryValue(MetricCategory.ACCOUNTS_RECEIVABLE),
+            inventory = getMonetaryValue(MetricCategory.INVENTORY),
+            totalCurrentAssets = getMonetaryValue(MetricCategory.CURRENT_ASSETS),
+            totalAssets = getMonetaryValue(MetricCategory.TOTAL_ASSETS),
+            accountsPayable = getMonetaryValue(MetricCategory.ACCOUNTS_PAYABLE),
+            totalCurrentLiabilities = getMonetaryValue(MetricCategory.CURRENT_LIABILITIES),
+            longTermDebt = getMonetaryValue(MetricCategory.LONG_TERM_DEBT),
+            totalLiabilities = getMonetaryValue(MetricCategory.TOTAL_LIABILITIES),
+            retainedEarnings = getMonetaryValue(MetricCategory.RETAINED_EARNINGS),
+            totalStockholdersEquity = getMonetaryValue(MetricCategory.TOTAL_EQUITY)
+        )
+        
+        // 현금흐름표 구성
+        val cashFlowStatement = StructuredCashFlowStatement(
+            periodEnding = period,
+            periodType = metrics.firstOrNull()?.periodType,
+            netCashFromOperating = getMonetaryValue(MetricCategory.OPERATING_CASH_FLOW),
+            capitalExpenditures = getMonetaryValue(MetricCategory.CAPITAL_EXPENDITURES),
+            netCashFromInvesting = getMonetaryValue(MetricCategory.INVESTING_CASH_FLOW),
+            dividendsPaid = getMonetaryValue(MetricCategory.DIVIDENDS_PAID),
+            netCashFromFinancing = getMonetaryValue(MetricCategory.FINANCING_CASH_FLOW),
+            freeCashFlow = getMonetaryValue(MetricCategory.FREE_CASH_FLOW)
+        )
+        
+        // 핵심 재무 비율 계산
+        val keyMetrics = calculateKeyMetrics(metricMap)
+        
+        // 데이터 품질 평가
+        val dataQuality = assessDataQuality(metrics)
+        val parsingConfidence = metrics.map { it.confidence }.average().takeIf { !it.isNaN() } ?: 0.0
+        
+        return StructuredFinancialData(
+            companyName = companyName,
+            reportType = reportType,
+            fiscalYear = extractFiscalYear(period),
+            fiscalPeriod = extractFiscalPeriod(period, reportType),
+            incomeStatement = incomeStatement,
+            balanceSheet = balanceSheet,
+            cashFlowStatement = cashFlowStatement,
+            keyMetrics = keyMetrics,
+            parsingConfidence = parsingConfidence,
+            dataQuality = dataQuality
+        )
+    }
+    
+    /**
+     * 핵심 재무 비율 계산
+     */
+    private fun calculateKeyMetrics(metricMap: Map<MetricCategory, ExtendedFinancialMetric>): KeyFinancialMetrics {
+        val revenue = metricMap[MetricCategory.REVENUE]?.rawValue
+        val grossProfit = metricMap[MetricCategory.GROSS_PROFIT]?.rawValue
+        val operatingIncome = metricMap[MetricCategory.OPERATING_INCOME]?.rawValue
+        val netIncome = metricMap[MetricCategory.NET_INCOME]?.rawValue
+        val totalAssets = metricMap[MetricCategory.TOTAL_ASSETS]?.rawValue
+        val totalEquity = metricMap[MetricCategory.TOTAL_EQUITY]?.rawValue
+        val totalLiabilities = metricMap[MetricCategory.TOTAL_LIABILITIES]?.rawValue
+        val currentAssets = metricMap[MetricCategory.CURRENT_ASSETS]?.rawValue
+        val currentLiabilities = metricMap[MetricCategory.CURRENT_LIABILITIES]?.rawValue
+        val inventory = metricMap[MetricCategory.INVENTORY]?.rawValue
+        val cash = metricMap[MetricCategory.CASH_AND_EQUIVALENTS]?.rawValue
+        val interestExpense = metricMap[MetricCategory.INTEREST_EXPENSE]?.rawValue
+        
+        return KeyFinancialMetrics(
+            // 수익성
+            grossMargin = if (revenue != null && grossProfit != null && revenue > 0) 
+                (grossProfit / revenue * 100).coerceIn(-1000.0, 1000.0) else null,
+            operatingMargin = if (revenue != null && operatingIncome != null && revenue > 0) 
+                (operatingIncome / revenue * 100).coerceIn(-1000.0, 1000.0) else null,
+            netProfitMargin = if (revenue != null && netIncome != null && revenue > 0) 
+                (netIncome / revenue * 100).coerceIn(-1000.0, 1000.0) else null,
+            returnOnAssets = if (netIncome != null && totalAssets != null && totalAssets > 0) 
+                (netIncome / totalAssets * 100).coerceIn(-1000.0, 1000.0) else null,
+            returnOnEquity = if (netIncome != null && totalEquity != null && totalEquity > 0) 
+                (netIncome / totalEquity * 100).coerceIn(-1000.0, 1000.0) else null,
+            
+            // 유동성
+            currentRatio = if (currentAssets != null && currentLiabilities != null && currentLiabilities > 0) 
+                (currentAssets / currentLiabilities).coerceIn(0.0, 100.0) else null,
+            quickRatio = if (currentAssets != null && inventory != null && currentLiabilities != null && currentLiabilities > 0) 
+                ((currentAssets - inventory) / currentLiabilities).coerceIn(0.0, 100.0) else null,
+            cashRatio = if (cash != null && currentLiabilities != null && currentLiabilities > 0) 
+                (cash / currentLiabilities).coerceIn(0.0, 100.0) else null,
+            
+            // 지급능력
+            debtToEquity = if (totalLiabilities != null && totalEquity != null && totalEquity > 0) 
+                (totalLiabilities / totalEquity * 100).coerceIn(0.0, 10000.0) else null,
+            debtRatio = if (totalLiabilities != null && totalAssets != null && totalAssets > 0) 
+                (totalLiabilities / totalAssets * 100).coerceIn(0.0, 100.0) else null,
+            interestCoverage = if (operatingIncome != null && interestExpense != null && interestExpense > 0) 
+                (operatingIncome / interestExpense).coerceIn(-100.0, 1000.0) else null,
+            
+            // 효율성
+            assetTurnover = if (revenue != null && totalAssets != null && totalAssets > 0) 
+                (revenue / totalAssets).coerceIn(0.0, 100.0) else null,
+            
+            // 성장성 (YoY 변화가 있으면)
+            revenueGrowth = metricMap[MetricCategory.REVENUE]?.yearOverYearChange,
+            netIncomeGrowth = metricMap[MetricCategory.NET_INCOME]?.yearOverYearChange
+        )
+    }
+    
+    /**
+     * 데이터 품질 평가
+     */
+    private fun assessDataQuality(metrics: List<ExtendedFinancialMetric>): DataQuality {
+        val coreCategories = setOf(
+            MetricCategory.REVENUE, MetricCategory.NET_INCOME, 
+            MetricCategory.TOTAL_ASSETS, MetricCategory.TOTAL_LIABILITIES,
+            MetricCategory.TOTAL_EQUITY
+        )
+        
+        val foundCore = metrics.count { it.category in coreCategories }
+        val avgConfidence = metrics.map { it.confidence }.average().takeIf { !it.isNaN() } ?: 0.0
+        val hasTableSource = metrics.any { it.source.contains("Table") }
+        
+        return when {
+            foundCore >= 4 && avgConfidence >= 0.8 && hasTableSource -> DataQuality.HIGH
+            foundCore >= 3 && avgConfidence >= 0.6 -> DataQuality.MEDIUM
+            foundCore >= 1 -> DataQuality.LOW
+            else -> DataQuality.UNKNOWN
+        }
+    }
+    
+    private fun extractFiscalYear(period: String?): String? {
+        if (period == null) return null
+        val yearMatch = Regex("""20\d{2}""").find(period)
+        return yearMatch?.value
+    }
+    
+    private fun extractFiscalPeriod(period: String?, reportType: String?): String? {
+        return when {
+            reportType == "10-K" -> "FY"
+            period?.lowercase()?.contains("q1") == true -> "Q1"
+            period?.lowercase()?.contains("q2") == true -> "Q2"
+            period?.lowercase()?.contains("q3") == true -> "Q3"
+            period?.lowercase()?.contains("q4") == true -> "Q4"
+            period?.lowercase()?.contains("march") == true -> "Q1"
+            period?.lowercase()?.contains("june") == true -> "Q2"
+            period?.lowercase()?.contains("september") == true -> "Q3"
+            period?.lowercase()?.contains("december") == true -> "Q4"
+            reportType == "10-Q" -> "Quarterly"
+            else -> null
+        }
+    }
+    
+    /**
+     * 향상된 요약 생성 (구조화된 데이터 활용)
+     */
+    private fun generateEnhancedSummary(
+        companyName: String?,
+        reportType: String?,
+        period: String?,
+        metrics: List<FinancialMetric>,
+        structuredData: StructuredFinancialData
+    ): String {
+        val sb = StringBuilder()
+        
+        // 헤더
+        sb.appendLine("📊 Financial Analysis Summary")
+        sb.appendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        sb.appendLine()
+        
+        // 기본 정보
+        companyName?.let { sb.appendLine("🏢 Company: $it") }
+        reportType?.let { sb.appendLine("📋 Report Type: SEC Form $it") }
+        period?.let { sb.appendLine("📅 Period: $it") }
+        
+        // 데이터 품질 표시
+        val qualityEmoji = when (structuredData.dataQuality) {
+            DataQuality.HIGH -> "🟢"
+            DataQuality.MEDIUM -> "🟡"
+            DataQuality.LOW -> "🟠"
+            DataQuality.UNKNOWN -> "⚪"
+        }
+        sb.appendLine("📈 Data Quality: $qualityEmoji ${structuredData.dataQuality.name}")
+        sb.appendLine()
+        
+        // 핵심 재무 지표 (구조화된 데이터 사용)
+        val income = structuredData.incomeStatement
+        val balance = structuredData.balanceSheet
+        val keyMetrics = structuredData.keyMetrics
+        
+        if (income != null || balance != null) {
+            sb.appendLine("📌 Key Financial Highlights")
+            sb.appendLine("─────────────────────────────")
+            
+            income?.totalRevenue?.let { sb.appendLine("  💰 Revenue: ${it.formatted}${formatYoY(it.yearOverYearChange)}") }
+            income?.grossProfit?.let { sb.appendLine("  📊 Gross Profit: ${it.formatted}") }
+            income?.operatingIncome?.let { sb.appendLine("  📈 Operating Income: ${it.formatted}") }
+            income?.netIncome?.let { sb.appendLine("  💵 Net Income: ${it.formatted}${formatYoY(it.yearOverYearChange)}") }
+            income?.basicEPS?.let { sb.appendLine("  📉 EPS (Basic): $${String.format("%.2f", it)}") }
+            sb.appendLine()
+            
+            balance?.totalAssets?.let { sb.appendLine("  🏦 Total Assets: ${it.formatted}") }
+            balance?.cashAndEquivalents?.let { sb.appendLine("  💵 Cash & Equivalents: ${it.formatted}") }
+            balance?.totalLiabilities?.let { sb.appendLine("  📋 Total Liabilities: ${it.formatted}") }
+            balance?.totalStockholdersEquity?.let { sb.appendLine("  💎 Shareholders' Equity: ${it.formatted}") }
+            sb.appendLine()
+        }
+        
+        // 핵심 비율
+        if (keyMetrics != null) {
+            val hasRatios = listOfNotNull(
+                keyMetrics.grossMargin, keyMetrics.operatingMargin, 
+                keyMetrics.netProfitMargin, keyMetrics.currentRatio
+            ).isNotEmpty()
+            
+            if (hasRatios) {
+                sb.appendLine("📐 Key Financial Ratios")
+                sb.appendLine("─────────────────────────────")
+                keyMetrics.grossMargin?.let { sb.appendLine("  • Gross Margin: ${String.format("%.1f", it)}%") }
+                keyMetrics.operatingMargin?.let { sb.appendLine("  • Operating Margin: ${String.format("%.1f", it)}%") }
+                keyMetrics.netProfitMargin?.let { sb.appendLine("  • Net Profit Margin: ${String.format("%.1f", it)}%") }
+                keyMetrics.returnOnEquity?.let { sb.appendLine("  • ROE: ${String.format("%.1f", it)}%") }
+                keyMetrics.currentRatio?.let { sb.appendLine("  • Current Ratio: ${String.format("%.2f", it)}x") }
+                keyMetrics.debtToEquity?.let { sb.appendLine("  • Debt/Equity: ${String.format("%.0f", it)}%") }
+                sb.appendLine()
+            }
+        }
+        
+        // 폴백: 기존 메트릭 그룹핑
+        if (structuredData.incomeStatement?.totalRevenue == null && metrics.isNotEmpty()) {
+            sb.appendLine("📌 Detected Metrics")
+            sb.appendLine("─────────────────────────────")
+            
+            val grouped = metrics.groupBy { metric ->
+                when {
+                    metric.name.contains("Revenue", ignoreCase = true) || 
+                    metric.name.contains("Sales", ignoreCase = true) -> "Revenue"
+                    metric.name.contains("Income", ignoreCase = true) || 
+                    metric.name.contains("Profit", ignoreCase = true) -> "Income"
+                    metric.name.contains("Assets", ignoreCase = true) -> "Assets"
+                    metric.name.contains("Liabilities", ignoreCase = true) -> "Liabilities"
+                    metric.name.contains("Equity", ignoreCase = true) -> "Equity"
+                    else -> "Other"
+                }
+            }
+            
+            for ((category, metricsList) in grouped) {
+                for (metric in metricsList.take(2)) {
+                    val formatted = metric.rawValue?.let { formatNumber(it) } ?: metric.value
+                    sb.appendLine("  • ${metric.name}: $formatted")
+                }
+            }
+            sb.appendLine()
+        }
+        
+        if (metrics.isEmpty() && structuredData.incomeStatement?.totalRevenue == null) {
+            sb.appendLine("⚠️ No financial metrics were automatically detected.")
+            sb.appendLine("   The document may be in an unsupported format or")
+            sb.appendLine("   may not contain standard financial statements.")
+        }
+        
+        return sb.toString()
+    }
+    
+    private fun formatYoY(change: Double?): String {
+        if (change == null) return ""
+        val sign = if (change >= 0) "+" else ""
+        val emoji = if (change >= 0) "📈" else "📉"
+        return " $emoji ${sign}${String.format("%.1f", change)}% YoY"
     }
 
     // ==========================================

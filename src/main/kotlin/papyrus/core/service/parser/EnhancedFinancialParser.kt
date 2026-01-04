@@ -377,10 +377,28 @@ object EnhancedFinancialParser {
                         detailedIncomePatterns +
                         detailedCashFlowPatterns
 
-        /** 문서에서 모든 재무 지표 추출 */
+        /**
+         * 문서에서 모든 재무 지표 추출 (향상된 버전)
+         * 
+         * 1. 먼저 SecTableParser로 테이블 기반 파싱 시도
+         * 2. 테이블 파싱이 부족하면 텍스트 패턴 파싱으로 보완
+         * 3. 두 결과를 병합하여 최적의 결과 반환
+         */
         fun parseFinancialMetrics(content: String): List<ExtendedFinancialMetric> {
-                val cleanText = cleanHtml(content)
                 val metrics = mutableListOf<ExtendedFinancialMetric>()
+                
+                // 1단계: 테이블 기반 파싱 (가장 정확함)
+                try {
+                        val tables = SecTableParser.parseFinancialTables(content)
+                        val tableMetrics = SecTableParser.convertToMetrics(tables)
+                        metrics.addAll(tableMetrics)
+                        println("✓ Table parsing: Found ${tableMetrics.size} metrics from ${tables.size} tables")
+                } catch (e: Exception) {
+                        println("⚠ Table parsing failed: ${e.message}")
+                }
+                
+                // 2단계: 텍스트 패턴 기반 파싱 (보완용)
+                val cleanText = cleanHtml(content)
 
                 // 금액 단위 감지 (thousands, millions, billions)
                 val unit = detectUnit(cleanText)
@@ -388,8 +406,14 @@ object EnhancedFinancialParser {
                 // 기간 감지
                 val period = detectPeriod(cleanText)
                 val periodType = detectPeriodType(cleanText)
+                
+                // 이미 테이블에서 찾은 카테고리는 제외
+                val foundCategories = metrics.map { it.category }.toSet()
 
                 for (pattern in allPatterns) {
+                        // 이미 테이블에서 찾은 카테고리는 스킵
+                        if (pattern.category in foundCategories) continue
+                        
                         val found =
                                 searchMetricValues(
                                         cleanText,
@@ -403,13 +427,52 @@ object EnhancedFinancialParser {
                         metrics.addAll(found)
                 }
 
-                // 중복 제거 및 가장 신뢰도 높은 것 선택
-                return deduplicateMetrics(metrics)
+                // 3단계: 중복 제거 및 가장 신뢰도 높은 것 선택
+                val deduplicated = deduplicateMetrics(metrics)
+                println("✓ Total metrics after deduplication: ${deduplicated.size}")
+                return deduplicated
         }
 
-        /** 재무제표 섹션 파싱 */
+        /** 재무제표 섹션 파싱 (향상된 버전) */
         fun parseFinancialStatements(content: String): List<FinancialStatement> {
                 val statements = mutableListOf<FinancialStatement>()
+                
+                // 먼저 테이블 파서로 시도
+                try {
+                        val tables = SecTableParser.parseFinancialTables(content)
+                        for (table in tables) {
+                                val tableMetrics = table.rows
+                                        .filter { it.category != null }
+                                        .map { row ->
+                                                ExtendedFinancialMetric(
+                                                        name = row.label,
+                                                        value = row.values.firstOrNull()?.toString() ?: "",
+                                                        rawValue = row.values.firstOrNull()?.toDouble(),
+                                                        category = row.category!!,
+                                                        confidence = if (row.isTotal) 0.95 else 0.85
+                                                )
+                                        }
+                                
+                                if (tableMetrics.isNotEmpty()) {
+                                        statements.add(FinancialStatement(
+                                                type = table.statementType,
+                                                periodEnding = table.periods.firstOrNull(),
+                                                periodType = PeriodType.QUARTERLY,
+                                                metrics = tableMetrics,
+                                                rawSection = table.rawHtml.take(2000)
+                                        ))
+                                }
+                        }
+                        
+                        if (statements.isNotEmpty()) {
+                                println("✓ Found ${statements.size} financial statements via table parsing")
+                                return statements
+                        }
+                } catch (e: Exception) {
+                        println("⚠ Table statement parsing failed: ${e.message}")
+                }
+                
+                // 폴백: 기존 텍스트 기반 파싱
                 val cleanText = cleanHtml(content)
 
                 // 손익계산서 찾기

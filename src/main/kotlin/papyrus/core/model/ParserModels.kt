@@ -1,6 +1,7 @@
 package papyrus.core.model
 
 import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 
 /** 확장된 재무 메트릭 - 더 상세한 정보 포함 */
 @Serializable
@@ -186,4 +187,255 @@ data class IndustryInfo(
         val sicDescription: String?,
         val sector: String?,
         val industry: String?
+)
+
+// ========================================
+// 구조화된 재무제표 모델 (Structured Financial Statements)
+// ========================================
+
+/**
+ * 완전한 재무제표 세트
+ * 손익계산서, 재무상태표, 현금흐름표를 구조화하여 담습니다.
+ */
+@Serializable
+data class StructuredFinancialData(
+        val companyName: String?,
+        val reportType: String?,      // 10-K, 10-Q, 8-K
+        val fiscalYear: String?,
+        val fiscalPeriod: String?,    // Q1, Q2, Q3, Q4, FY
+        val currency: String = "USD",
+        val incomeStatement: StructuredIncomeStatement? = null,
+        val balanceSheet: StructuredBalanceSheet? = null,
+        val cashFlowStatement: StructuredCashFlowStatement? = null,
+        val keyMetrics: KeyFinancialMetrics? = null,
+        val parsingConfidence: Double = 0.0,  // 0-1, 파싱 신뢰도
+        val dataQuality: DataQuality = DataQuality.UNKNOWN
+)
+
+enum class DataQuality {
+    HIGH,       // 테이블 파싱 성공, 모든 주요 항목 존재
+    MEDIUM,     // 일부 항목 누락 또는 패턴 파싱
+    LOW,        // 대부분 패턴 파싱, 신뢰도 낮음
+    UNKNOWN
+}
+
+/**
+ * 구조화된 손익계산서 (Income Statement)
+ */
+@Serializable
+data class StructuredIncomeStatement(
+        val periodEnding: String?,
+        val periodType: PeriodType?,
+        
+        // 매출
+        val totalRevenue: MonetaryValue? = null,
+        val productRevenue: MonetaryValue? = null,
+        val serviceRevenue: MonetaryValue? = null,
+        
+        // 비용
+        val costOfRevenue: MonetaryValue? = null,
+        val grossProfit: MonetaryValue? = null,
+        
+        // 영업비용
+        val researchAndDevelopment: MonetaryValue? = null,
+        val sellingGeneralAdmin: MonetaryValue? = null,
+        val totalOperatingExpenses: MonetaryValue? = null,
+        
+        // 이익
+        val operatingIncome: MonetaryValue? = null,
+        val interestExpense: MonetaryValue? = null,
+        val interestIncome: MonetaryValue? = null,
+        val otherIncome: MonetaryValue? = null,
+        val incomeBeforeTax: MonetaryValue? = null,
+        val incomeTaxExpense: MonetaryValue? = null,
+        val netIncome: MonetaryValue? = null,
+        
+        // 주당 지표
+        val basicEPS: Double? = null,
+        val dilutedEPS: Double? = null,
+        val basicSharesOutstanding: Long? = null,
+        val dilutedSharesOutstanding: Long? = null
+)
+
+/**
+ * 구조화된 재무상태표 (Balance Sheet)
+ */
+@Serializable
+data class StructuredBalanceSheet(
+        val periodEnding: String?,
+        
+        // 유동자산
+        val cashAndEquivalents: MonetaryValue? = null,
+        val shortTermInvestments: MonetaryValue? = null,
+        val accountsReceivable: MonetaryValue? = null,
+        val inventory: MonetaryValue? = null,
+        val prepaidExpenses: MonetaryValue? = null,
+        val otherCurrentAssets: MonetaryValue? = null,
+        val totalCurrentAssets: MonetaryValue? = null,
+        
+        // 비유동자산
+        val propertyPlantEquipment: MonetaryValue? = null,
+        val longTermInvestments: MonetaryValue? = null,
+        val goodwill: MonetaryValue? = null,
+        val intangibleAssets: MonetaryValue? = null,
+        val deferredTaxAssets: MonetaryValue? = null,
+        val otherNonCurrentAssets: MonetaryValue? = null,
+        val totalAssets: MonetaryValue? = null,
+        
+        // 유동부채
+        val accountsPayable: MonetaryValue? = null,
+        val shortTermDebt: MonetaryValue? = null,
+        val accruedExpenses: MonetaryValue? = null,
+        val deferredRevenue: MonetaryValue? = null,
+        val otherCurrentLiabilities: MonetaryValue? = null,
+        val totalCurrentLiabilities: MonetaryValue? = null,
+        
+        // 비유동부채
+        val longTermDebt: MonetaryValue? = null,
+        val deferredTaxLiabilities: MonetaryValue? = null,
+        val otherNonCurrentLiabilities: MonetaryValue? = null,
+        val totalLiabilities: MonetaryValue? = null,
+        
+        // 자본
+        val commonStock: MonetaryValue? = null,
+        val retainedEarnings: MonetaryValue? = null,
+        val accumulatedOtherComprehensiveIncome: MonetaryValue? = null,
+        val totalStockholdersEquity: MonetaryValue? = null,
+        val totalLiabilitiesAndEquity: MonetaryValue? = null
+)
+
+/**
+ * 구조화된 현금흐름표 (Cash Flow Statement)
+ */
+@Serializable
+data class StructuredCashFlowStatement(
+        val periodEnding: String?,
+        val periodType: PeriodType?,
+        
+        // 영업활동 현금흐름
+        val netIncome: MonetaryValue? = null,
+        val depreciation: MonetaryValue? = null,
+        val stockBasedCompensation: MonetaryValue? = null,
+        val changesInWorkingCapital: MonetaryValue? = null,
+        val netCashFromOperating: MonetaryValue? = null,
+        
+        // 투자활동 현금흐름
+        val capitalExpenditures: MonetaryValue? = null,
+        val purchaseOfInvestments: MonetaryValue? = null,
+        val saleOfInvestments: MonetaryValue? = null,
+        val acquisitions: MonetaryValue? = null,
+        val netCashFromInvesting: MonetaryValue? = null,
+        
+        // 재무활동 현금흐름
+        val dividendsPaid: MonetaryValue? = null,
+        val shareRepurchases: MonetaryValue? = null,
+        val debtRepayment: MonetaryValue? = null,
+        val debtIssuance: MonetaryValue? = null,
+        val netCashFromFinancing: MonetaryValue? = null,
+        
+        // 요약
+        val netChangeInCash: MonetaryValue? = null,
+        val beginningCash: MonetaryValue? = null,
+        val endingCash: MonetaryValue? = null,
+        
+        // 계산된 지표
+        val freeCashFlow: MonetaryValue? = null
+)
+
+/**
+ * 금액 값 (정밀도 유지)
+ */
+@Serializable
+data class MonetaryValue(
+        val amount: Double,           // 실제 금액 (달러 단위로 정규화)
+        val formatted: String,        // 표시용 포맷 (예: "$1.23B")
+        val originalUnit: MetricUnit, // 원본 문서의 단위
+        val isNegative: Boolean = false,
+        val yearOverYearChange: Double? = null,  // YoY 변화율 (%)
+        val confidence: Double = 1.0
+) {
+    companion object {
+        fun fromDouble(value: Double, unit: MetricUnit = MetricUnit.DOLLARS): MonetaryValue {
+            val absValue = kotlin.math.abs(value)
+            val formatted = when {
+                absValue >= 1_000_000_000 -> "$${String.format("%.2f", absValue / 1_000_000_000)}B"
+                absValue >= 1_000_000 -> "$${String.format("%.2f", absValue / 1_000_000)}M"
+                absValue >= 1_000 -> "$${String.format("%.2f", absValue / 1_000)}K"
+                else -> "$${String.format("%.2f", absValue)}"
+            }
+            return MonetaryValue(
+                amount = value,
+                formatted = if (value < 0) "-$formatted" else formatted,
+                originalUnit = unit,
+                isNegative = value < 0
+            )
+        }
+    }
+}
+
+/**
+ * 핵심 재무 지표 (계산된 비율)
+ */
+@Serializable
+data class KeyFinancialMetrics(
+        // 수익성
+        val grossMargin: Double? = null,          // 매출총이익률
+        val operatingMargin: Double? = null,      // 영업이익률
+        val netProfitMargin: Double? = null,      // 순이익률
+        val returnOnAssets: Double? = null,       // ROA
+        val returnOnEquity: Double? = null,       // ROE
+        
+        // 유동성
+        val currentRatio: Double? = null,         // 유동비율
+        val quickRatio: Double? = null,           // 당좌비율
+        val cashRatio: Double? = null,            // 현금비율
+        
+        // 지급능력
+        val debtToEquity: Double? = null,         // 부채비율
+        val debtRatio: Double? = null,            // 총부채비율
+        val interestCoverage: Double? = null,     // 이자보상배율
+        
+        // 효율성
+        val assetTurnover: Double? = null,        // 자산회전율
+        val inventoryTurnover: Double? = null,    // 재고회전율
+        val receivablesTurnover: Double? = null,  // 매출채권회전율
+        
+        // 성장성
+        val revenueGrowth: Double? = null,        // 매출 성장률 (YoY)
+        val netIncomeGrowth: Double? = null,      // 순이익 성장률 (YoY)
+        val epsGrowth: Double? = null             // EPS 성장률 (YoY)
+)
+
+/**
+ * SEC 보고서 메타데이터
+ */
+@Serializable
+data class SecReportMetadata(
+        val formType: String,           // 10-K, 10-Q, 8-K, 20-F
+        val filingDate: String?,
+        val reportDate: String?,
+        val fiscalYearEnd: String?,
+        val companyName: String?,
+        val ticker: String?,
+        val cik: String?,
+        val accessionNumber: String?,
+        val documentCount: Int = 0,
+        val primaryDocument: String?
+)
+
+/**
+ * 파싱 결과 요약
+ */
+@Serializable
+data class ParseSummary(
+        val totalMetricsFound: Int,
+        val incomeStatementMetrics: Int,
+        val balanceSheetMetrics: Int,
+        val cashFlowMetrics: Int,
+        val riskFactorsFound: Int,
+        val tablesProcessed: Int,
+        val parsingMethod: String,      // "table", "pattern", "hybrid"
+        val processingTimeMs: Long,
+        val warnings: List<String> = emptyList(),
+        val errors: List<String> = emptyList()
 )
