@@ -21,6 +21,7 @@ data class FinancialRatio(
         val category: RatioCategory
 )
 
+@Serializable
 enum class HealthStatus {
     EXCELLENT,
     GOOD,
@@ -29,6 +30,7 @@ enum class HealthStatus {
     WARNING
 }
 
+@Serializable
 enum class RatioCategory {
     PROFITABILITY, // 수익성
     LIQUIDITY, // 유동성
@@ -81,6 +83,7 @@ data class FinancialHealthScore(
 // Checking FileUtils list earlier: AiAnalysisService.kt exists.
 // I'll assume it's defined there. I will move it to AiModels.kt later.
 
+@Serializable
 data class FinancialAnalysis(
         val fileName: String,
         val companyName: String?,

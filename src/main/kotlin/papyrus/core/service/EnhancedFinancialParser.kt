@@ -368,52 +368,76 @@ object EnhancedFinancialParser {
         val notUsedDebt =
                 getValue(MetricCategory.LONG_TERM_DEBT) // Keep variable but unused or suppress
 
+        // Validation: Check if values look reasonable
+        // If gross profit > revenue, something is wrong with parsing
+        if (grossProfit != null && revenue != null && grossProfit > revenue * 1.5) {
+            println("WARNING: Gross profit ($grossProfit) > revenue ($revenue) * 1.5 - may indicate parsing error")
+        }
+        
         // 1. 매출총이익률 (Gross Margin)
         if (grossProfit != null && revenue != null && revenue > 0) {
             val ratio = (grossProfit / revenue) * 100
-            ratios.add(
-                    createRatio(
-                            "매출총이익률",
-                            "Gross Margin",
-                            ratio,
-                            "%",
-                            "매출에서 매출원가를 제외한 이익의 비율",
-                            RatioCategory.PROFITABILITY,
-                            assessProfitabilityHealth(ratio, 30.0, 50.0)
-                    )
-            )
+            
+            // Sanity check: if ratio is unreasonably high, skip it
+            if (ratio <= 100) {  // Gross margin should typically be < 100%
+                ratios.add(
+                        createRatio(
+                                "매출총이익률",
+                                "Gross Margin",
+                                ratio,
+                                "%",
+                                "매출에서 매출원가를 제외한 이익의 비율",
+                                RatioCategory.PROFITABILITY,
+                                assessProfitabilityHealth(ratio, 30.0, 50.0)
+                        )
+                )
+            } else {
+                println("WARNING: Gross Margin calculation resulted in $ratio% - skipping (likely parsing error)")
+            }
         }
 
         // 2. 영업이익률 (Operating Margin)
         if (operatingIncome != null && revenue != null && revenue > 0) {
             val ratio = (operatingIncome / revenue) * 100
-            ratios.add(
-                    createRatio(
-                            "영업이익률",
-                            "Operating Margin",
-                            ratio,
-                            "%",
-                            "영업활동으로 발생한 이익의 매출 대비 비율",
-                            RatioCategory.PROFITABILITY,
-                            assessProfitabilityHealth(ratio, 10.0, 20.0)
-                    )
-            )
+            
+            // Sanity check
+            if (ratio <= 100) {  // Operating margin should typically be < 100%
+                ratios.add(
+                        createRatio(
+                                "영업이익률",
+                                "Operating Margin",
+                                ratio,
+                                "%",
+                                "영업활동으로 발생한 이익의 매출 대비 비율",
+                                RatioCategory.PROFITABILITY,
+                                assessProfitabilityHealth(ratio, 10.0, 20.0)
+                        )
+                )
+            } else {
+                println("WARNING: Operating Margin calculation resulted in $ratio% - skipping (likely parsing error)")
+            }
         }
 
         // 3. 순이익률 (Net Profit Margin)
         if (netIncome != null && revenue != null && revenue > 0) {
             val ratio = (netIncome / revenue) * 100
-            ratios.add(
-                    createRatio(
-                            "순이익률",
-                            "Net Profit Margin",
-                            ratio,
-                            "%",
-                            "모든 비용을 제외한 순수익의 매출 대비 비율",
-                            RatioCategory.PROFITABILITY,
-                            assessProfitabilityHealth(ratio, 5.0, 15.0)
-                    )
-            )
+            
+            // Sanity check (allow negative for losses, but cap at reasonable positive values)
+            if (ratio <= 100) {  // Net margin should typically be < 100%
+                ratios.add(
+                        createRatio(
+                                "순이익률",
+                                "Net Profit Margin",
+                                ratio,
+                                "%",
+                                "모든 비용을 제외한 순수익의 매출 대비 비율",
+                                RatioCategory.PROFITABILITY,
+                                assessProfitabilityHealth(ratio, 5.0, 15.0)
+                        )
+                )
+            } else {
+                println("WARNING: Net Profit Margin calculation resulted in $ratio% - skipping (likely parsing error)")
+            }
         }
 
         // 4. ROA (Return on Assets)

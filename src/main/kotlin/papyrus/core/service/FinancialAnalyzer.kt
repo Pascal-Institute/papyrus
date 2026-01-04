@@ -1,6 +1,7 @@
 package papyrus.core.service
 
 import papyrus.core.model.*
+import papyrus.util.AnalysisCache
 
 object FinancialAnalyzer {
     // Key financial terms to search for
@@ -259,6 +260,14 @@ object FinancialAnalyzer {
 
     /** 초보자를 위한 심화 분석 - Enhanced Parser 사용 */
     fun analyzeForBeginners(fileName: String, content: String): FinancialAnalysis {
+        // Check cache first
+        val cached = AnalysisCache.loadAnalysis(content)
+        if (cached != null) {
+            println("✓ Loaded analysis from cache")
+            return cached
+        }
+        
+        println("Performing fresh analysis...")
         val basicAnalysis = analyzeDocument(fileName, content)
 
         // 향상된 파서로 더 많은 지표 추출
@@ -306,7 +315,7 @@ object FinancialAnalyzer {
                         riskFactors
                 )
 
-        return basicAnalysis.copy(
+        val result = basicAnalysis.copy(
                 metrics = allMetrics,
                 ratios = ratios,
                 beginnerInsights = insights,
@@ -315,6 +324,12 @@ object FinancialAnalyzer {
                 reportTypeExplanation = reportExplanation,
                 keyTakeaways = keyTakeaways
         )
+        
+        // Save to cache
+        AnalysisCache.saveAnalysis(content, result)
+        println("✓ Analysis cached for future use")
+        
+        return result
     }
 
     /** 기존 메트릭과 확장 메트릭 병합 */

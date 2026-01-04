@@ -1522,6 +1522,7 @@ private fun MetricDetailCard(metric: FinancialMetric) {
 @Composable
 private fun FinancialRawDataTab(rawContent: String) {
     val scrollState = rememberScrollState()
+    var copySuccess by remember { mutableStateOf(false) }
 
     Card(
             modifier = Modifier.fillMaxSize(),
@@ -1537,11 +1538,44 @@ private fun FinancialRawDataTab(rawContent: String) {
             ) {
                 SectionHeader(title = "Raw Document Content", icon = Icons.Outlined.Code)
 
-                Text(
-                        text = "${rawContent.length} characters",
-                        style = AppTypography.Caption,
-                        color = AppColors.OnSurfaceSecondary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                            text = "${rawContent.length} characters",
+                            style = AppTypography.Caption,
+                            color = AppColors.OnSurfaceSecondary
+                    )
+                    
+                    Spacer(modifier = Modifier.width(AppDimens.PaddingMedium))
+                    
+                    // Copy to clipboard button
+                    Button(
+                        onClick = {
+                            try {
+                                val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
+                                val stringSelection = java.awt.datatransfer.StringSelection(rawContent)
+                                clipboard.setContents(stringSelection, null)
+                                copySuccess = true
+                            } catch (e: Exception) {
+                                println("Failed to copy to clipboard: ${e.message}")
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Primary),
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ContentCopy,
+                            contentDescription = "Copy to clipboard",
+                            modifier = Modifier.size(16.dp),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (copySuccess) "Copied!" else "Copy",
+                            color = Color.White,
+                            style = AppTypography.Caption
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
@@ -1549,6 +1583,13 @@ private fun FinancialRawDataTab(rawContent: String) {
             Divider(color = AppColors.Divider)
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+            
+            if (copySuccess) {
+                LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(2000)
+                    copySuccess = false
+                }
+            }
 
             Box(
                     modifier =
