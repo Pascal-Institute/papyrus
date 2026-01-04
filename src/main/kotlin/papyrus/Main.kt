@@ -43,10 +43,16 @@ fun PapyrusApp() {
     // State management
     var appState by remember { mutableStateOf(AppState()) }
     
+    // 북마크 상태
+    var bookmarks by remember { mutableStateOf(BookmarkManager.getAllBookmarks()) }
+    var recentlyViewedCiks by remember { mutableStateOf(BookmarkManager.getRecentlyViewed()) }
+    
     // Load tickers on startup
     LaunchedEffect(Unit) {
         appState = appState.copy(isLoading = true)
         SecApi.loadTickers()
+        bookmarks = BookmarkManager.getAllBookmarks()
+        recentlyViewedCiks = BookmarkManager.getRecentlyViewed()
         appState = appState.copy(isLoading = false)
     }
     
@@ -59,6 +65,7 @@ fun PapyrusApp() {
                 // Left Panel: Search & Navigation
                 LeftPanel(
                     appState = appState,
+                    bookmarks = bookmarks,
                     onSearchTextChange = { query ->
                         appState = appState.copy(
                             searchText = query,
@@ -67,6 +74,10 @@ fun PapyrusApp() {
                     },
                     onTickerSelected = { ticker ->
                         scope.launch {
+                            // 최근 조회 기록 추가
+                            BookmarkManager.addToRecentlyViewed(ticker.cik)
+                            recentlyViewedCiks = BookmarkManager.getRecentlyViewed()
+                            
                             appState = appState.copy(
                                 selectedTicker = ticker,
                                 searchText = "",
@@ -83,6 +94,48 @@ fun PapyrusApp() {
                                 isLoading = false
                             )
                         }
+                    },
+                    onBookmarkClick = { ticker ->
+                        if (BookmarkManager.isBookmarked(ticker.cik)) {
+                            BookmarkManager.removeBookmark(ticker.cik)
+                        } else {
+                            BookmarkManager.addBookmark(ticker)
+                        }
+                        bookmarks = BookmarkManager.getAllBookmarks()
+                    },
+                    onBookmarkedTickerClick = { cik ->
+                        scope.launch {
+                            // CIK로 티커 정보 찾기
+                            val ticker = SecApi.searchTicker("").find { it.cik == cik }
+                                ?: bookmarks.find { it.cik == cik }?.let { 
+                                    TickerEntry(it.cik, it.ticker, it.companyName) 
+                                }
+                            
+                            if (ticker != null) {
+                                BookmarkManager.addToRecentlyViewed(cik)
+                                recentlyViewedCiks = BookmarkManager.getRecentlyViewed()
+                                
+                                appState = appState.copy(
+                                    selectedTicker = ticker,
+                                    searchText = "",
+                                    searchResults = emptyList(),
+                                    isLoading = true,
+                                    analysisState = AnalysisState.Idle
+                                )
+                                
+                                val sub = SecApi.getSubmissions(cik)
+                                val filings = sub?.filings?.recent?.let { SecApi.transformFilings(it) } ?: emptyList()
+                                
+                                appState = appState.copy(
+                                    submissions = filings,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                    },
+                    onRemoveBookmark = { cik ->
+                        BookmarkManager.removeBookmark(cik)
+                        bookmarks = BookmarkManager.getAllBookmarks()
                     },
                     onBackToSearch = {
                         appState = appState.copy(
@@ -208,8 +261,12 @@ fun PapyrusApp() {
 @Composable
 private fun LeftPanel(
     appState: AppState,
+    bookmarks: List<BookmarkedTicker>,
     onSearchTextChange: (String) -> Unit,
     onTickerSelected: (TickerEntry) -> Unit,
+    onBookmarkClick: (TickerEntry) -> Unit,
+    onBookmarkedTickerClick: (Int) -> Unit,
+    onRemoveBookmark: (Int) -> Unit,
     onBackToSearch: () -> Unit,
     onQuickAnalyze: (FilingItem) -> Unit,
     onOpenInBrowser: (FilingItem) -> Unit
@@ -252,18 +309,33 @@ private fun LeftPanel(
         
         // Content
         if (appState.selectedTicker == null) {
-            // Search Results
-            SearchResultsList(
-                results = appState.searchResults,
-                onTickerSelected = onTickerSelected
-            )
+            // Bookmarks and Search Results
+            Column(modifier = Modifier.fillMaxSize()) {
+                // 북마크 섹션 (검색어가 비어있을 때만 표시)
+                if (appState.searchText.isEmpty() && bookmarks.isNotEmpty()) {
+                    BookmarkHorizontalList(
+                        bookmarks = bookmarks,
+                        onTickerClick = onBookmarkedTickerClick,
+                        onRemove = onRemoveBookmark
+                    )
+                }
+                
+                // Search Results
+                SearchResultsList(
+                    results = appState.searchResults,
+                    onTickerSelected = onTickerSelected,
+                    showEmptyState = appState.searchText.isEmpty() && bookmarks.isEmpty()
+                )
+            }
         } else {
             // Company Detail & Filings
             CompanyFilingsPanel(
                 ticker = appState.selectedTicker,
                 filings = appState.submissions,
                 currentAnalyzingFiling = appState.currentAnalyzingFiling,
+                isBookmarked = BookmarkManager.isBookmarked(appState.selectedTicker.cik),
                 onBackClick = onBackToSearch,
+                onBookmarkClick = { onBookmarkClick(appState.selectedTicker) },
                 onQuickAnalyze = onQuickAnalyze,
                 onOpenInBrowser = onOpenInBrowser
             )
@@ -274,14 +346,17 @@ private fun LeftPanel(
 @Composable
 private fun SearchResultsList(
     results: List<TickerEntry>,
-    onTickerSelected: (TickerEntry) -> Unit
+    onTickerSelected: (TickerEntry) -> Unit,
+    showEmptyState: Boolean = true
 ) {
     if (results.isEmpty()) {
-        EmptyState(
-            icon = Icons.Outlined.Search,
-            title = "Search for companies",
-            description = "Enter a ticker symbol or company name"
-        )
+        if (showEmptyState) {
+            EmptyState(
+                icon = Icons.Outlined.Search,
+                title = "Search for companies",
+                description = "Enter a ticker symbol or company name"
+            )
+        }
     } else {
         LazyColumn(
             modifier = Modifier
@@ -304,7 +379,9 @@ private fun CompanyFilingsPanel(
     ticker: TickerEntry,
     filings: List<FilingItem>,
     currentAnalyzingFiling: String?,
+    isBookmarked: Boolean,
     onBackClick: () -> Unit,
+    onBookmarkClick: () -> Unit,
     onQuickAnalyze: (FilingItem) -> Unit,
     onOpenInBrowser: (FilingItem) -> Unit
 ) {
@@ -317,7 +394,9 @@ private fun CompanyFilingsPanel(
         ) {
             CompanyInfoCard(
                 ticker = ticker,
-                onBackClick = onBackClick
+                isBookmarked = isBookmarked,
+                onBackClick = onBackClick,
+                onBookmarkClick = onBookmarkClick
             )
         }
         

@@ -4,9 +4,11 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -232,12 +234,14 @@ fun TickerCard(
 }
 
 /**
- * Company Info Header Card
+ * Company Info Header Card with Bookmark
  */
 @Composable
 fun CompanyInfoCard(
     ticker: TickerEntry,
     onBackClick: () -> Unit,
+    isBookmarked: Boolean = false,
+    onBookmarkClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -272,6 +276,21 @@ fun CompanyInfoCard(
                             icon = Icons.Outlined.Numbers,
                             label = "CIK: ${ticker.cik}",
                             color = AppColors.Secondary
+                        )
+                    }
+                }
+                
+                // 북마크 버튼
+                if (onBookmarkClick != null) {
+                    IconButton(
+                        onClick = onBookmarkClick,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = if (isBookmarked) "Remove from bookmarks" else "Add to bookmarks",
+                            tint = if (isBookmarked) AppColors.Warning else AppColors.OnSurfaceSecondary,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
@@ -656,6 +675,265 @@ fun AnalysisTabRow(
                     )
                 }
             )
+        }
+    }
+}
+
+// ==========================================
+// 북마크 관련 컴포넌트
+// ==========================================
+
+/**
+ * 북마크 섹션 헤더
+ */
+@Composable
+fun BookmarkSectionHeader(
+    onViewAllClick: () -> Unit,
+    bookmarkCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.Bookmark,
+                contentDescription = null,
+                tint = AppColors.Warning,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "즐겨찾기",
+                style = AppTypography.Subtitle1,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.OnSurface
+            )
+            if (bookmarkCount > 0) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .background(AppColors.Warning, shape = AppShapes.Pill)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = bookmarkCount.toString(),
+                        style = AppTypography.Caption,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        
+        if (bookmarkCount > 3) {
+            TextButton(onClick = onViewAllClick) {
+                Text(
+                    text = "전체 보기",
+                    style = AppTypography.Caption,
+                    color = AppColors.Primary
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 북마크 티커 카드 (간략 버전)
+ */
+@Composable
+fun BookmarkedTickerCard(
+    ticker: String,
+    companyName: String,
+    onClick: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    
+    Card(
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
+        elevation = if (isHovered) AppDimens.CardElevationHigh else 1.dp,
+        shape = AppShapes.Medium,
+        backgroundColor = if (isHovered) AppColors.WarningLight else AppColors.Surface
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = AppDimens.PaddingSmall, vertical = AppDimens.PaddingSmall),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 티커 배지
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(AppColors.Warning.copy(alpha = 0.15f), shape = AppShapes.Small),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = ticker.take(4),
+                    style = AppTypography.Caption,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.Warning
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = ticker,
+                    style = AppTypography.Caption,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.OnSurface
+                )
+                Text(
+                    text = companyName,
+                    style = AppTypography.Caption,
+                    color = AppColors.OnSurfaceSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            
+            // 호버 시 삭제 버튼 표시
+            AnimatedVisibility(visible = isHovered) {
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Remove",
+                        tint = AppColors.Error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 북마크 리스트 (가로 스크롤)
+ */
+@Composable
+fun BookmarkHorizontalList(
+    bookmarks: List<papyrus.BookmarkedTicker>,
+    onTickerClick: (Int) -> Unit,
+    onRemove: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (bookmarks.isEmpty()) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            elevation = 0.dp,
+            backgroundColor = AppColors.SurfaceVariant,
+            shape = AppShapes.Medium
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppDimens.PaddingMedium),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Outlined.BookmarkBorder,
+                    contentDescription = null,
+                    tint = AppColors.OnSurfaceSecondary,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "즐겨찾기가 없습니다",
+                    style = AppTypography.Body2,
+                    color = AppColors.OnSurfaceSecondary
+                )
+                Text(
+                    text = "관심 있는 티커를 북마크하세요",
+                    style = AppTypography.Caption,
+                    color = AppColors.OnSurfaceSecondary.copy(alpha = 0.7f)
+                )
+            }
+        }
+    } else {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
+        ) {
+            bookmarks.take(5).forEach { bookmark ->
+                BookmarkedTickerCard(
+                    ticker = bookmark.ticker,
+                    companyName = bookmark.companyName,
+                    onClick = { onTickerClick(bookmark.cik) },
+                    onRemove = { onRemove(bookmark.cik) },
+                    modifier = Modifier.width(160.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 최근 조회 섹션
+ */
+@Composable
+fun RecentlyViewedSection(
+    recentTickers: List<papyrus.TickerEntry>,
+    onTickerClick: (papyrus.TickerEntry) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (recentTickers.isEmpty()) return
+    
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.History,
+                contentDescription = null,
+                tint = AppColors.OnSurfaceSecondary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "최근 조회",
+                style = AppTypography.Caption,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.OnSurfaceSecondary
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            recentTickers.take(4).forEach { ticker ->
+                TextButton(
+                    onClick = { onTickerClick(ticker) },
+                    modifier = Modifier
+                        .background(AppColors.SurfaceVariant, shape = AppShapes.Pill)
+                ) {
+                    Text(
+                        text = ticker.ticker,
+                        style = AppTypography.Caption,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.Primary
+                    )
+                }
+            }
         }
     }
 }

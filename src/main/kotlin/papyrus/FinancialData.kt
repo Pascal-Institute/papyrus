@@ -347,34 +347,59 @@ object FinancialAnalyzer {
     }
 
     // ==========================================
-    // 초보자 친화적 분석 기능
+    // 초보자 친화적 분석 기능 (향상된 파서 사용)
     // ==========================================
 
     /**
-     * 초보자를 위한 심화 분석
+     * 초보자를 위한 심화 분석 - Enhanced Parser 사용
      */
     fun analyzeForBeginners(fileName: String, content: String): FinancialAnalysis {
         val basicAnalysis = analyzeDocument(fileName, content)
         
-        // 재무 비율 계산
-        val ratios = calculateFinancialRatios(basicAnalysis.metrics)
+        // 향상된 파서로 더 많은 지표 추출
+        val extendedMetrics = EnhancedFinancialParser.parseFinancialMetrics(content)
+        val financialStatements = EnhancedFinancialParser.parseFinancialStatements(content)
+        val riskFactors = EnhancedFinancialParser.parseRiskFactors(content)
         
-        // 초보자 인사이트 생성
-        val insights = generateBeginnerInsights(basicAnalysis, ratios)
+        // 기존 메트릭과 새 메트릭 병합
+        val allMetrics = mergeMetrics(basicAnalysis.metrics, extendedMetrics)
+        
+        // 향상된 비율 계산
+        val ratios = if (extendedMetrics.isNotEmpty()) {
+            EnhancedFinancialParser.calculateRatios(extendedMetrics)
+        } else {
+            calculateFinancialRatios(basicAnalysis.metrics)
+        }
+        
+        // 초보자 인사이트 생성 (확장된 데이터 사용)
+        val insights = generateEnhancedBeginnerInsights(
+            basicAnalysis, 
+            ratios, 
+            extendedMetrics, 
+            financialStatements,
+            riskFactors
+        )
         
         // 용어 설명 생성
         val termExplanations = generateTermExplanations(basicAnalysis.metrics)
         
         // 재무 건전성 점수 계산
-        val healthScore = calculateHealthScore(basicAnalysis.metrics, ratios)
+        val healthScore = calculateEnhancedHealthScore(allMetrics, ratios, riskFactors)
         
         // 보고서 유형 설명
         val reportExplanation = getReportTypeExplanation(basicAnalysis.reportType)
         
         // 핵심 요점 생성
-        val keyTakeaways = generateKeyTakeaways(basicAnalysis, ratios, healthScore)
+        val keyTakeaways = generateEnhancedKeyTakeaways(
+            basicAnalysis, 
+            ratios, 
+            healthScore, 
+            extendedMetrics,
+            riskFactors
+        )
         
         return basicAnalysis.copy(
+            metrics = allMetrics,
             ratios = ratios,
             beginnerInsights = insights,
             termExplanations = termExplanations,
@@ -383,9 +408,548 @@ object FinancialAnalyzer {
             keyTakeaways = keyTakeaways
         )
     }
+    
+    /**
+     * 기존 메트릭과 확장 메트릭 병합
+     */
+    private fun mergeMetrics(
+        basic: List<FinancialMetric>, 
+        extended: List<ExtendedFinancialMetric>
+    ): List<FinancialMetric> {
+        val merged = basic.toMutableList()
+        
+        // 확장 메트릭 중 기존에 없는 것 추가
+        for (ext in extended) {
+            val exists = basic.any { it.name.equals(ext.name, ignoreCase = true) }
+            if (!exists && ext.rawValue != null) {
+                merged.add(FinancialMetric(
+                    name = ext.name,
+                    value = ext.value,
+                    rawValue = ext.rawValue,
+                    context = ext.context
+                ))
+            }
+        }
+        
+        return merged
+    }
+    
+    /**
+     * 확장된 초보자 인사이트 생성
+     */
+    private fun generateEnhancedBeginnerInsights(
+        analysis: FinancialAnalysis,
+        ratios: List<FinancialRatio>,
+        extendedMetrics: List<ExtendedFinancialMetric>,
+        statements: List<FinancialStatement>,
+        riskFactors: List<RiskFactor>
+    ): List<BeginnerInsight> {
+        val insights = mutableListOf<BeginnerInsight>()
+        
+        // 회사 규모 인사이트
+        val revenue = extendedMetrics.find { it.category == MetricCategory.REVENUE }?.rawValue
+            ?: findMetricValue(analysis.metrics, listOf("Revenue", "Sales", "Total Revenue"))
+        
+        if (revenue != null) {
+            insights.add(createCompanySizeInsight(revenue))
+        }
+        
+        // 수익성 인사이트
+        val profitMargin = ratios.find { it.name.contains("순이익률") }
+        val grossMargin = ratios.find { it.name.contains("매출총이익률") }
+        val operatingMargin = ratios.find { it.name.contains("영업이익률") }
+        
+        if (profitMargin != null || grossMargin != null || operatingMargin != null) {
+            insights.add(createProfitabilityInsight(profitMargin, grossMargin, operatingMargin))
+        }
+        
+        // 재무 안정성 인사이트
+        val debtRatio = ratios.find { it.name.contains("부채비율") }
+        val currentRatio = ratios.find { it.name.contains("유동비율") }
+        
+        if (debtRatio != null || currentRatio != null) {
+            insights.add(createFinancialStabilityInsight(debtRatio, currentRatio))
+        }
+        
+        // 현금 흐름 인사이트
+        val cashFlow = extendedMetrics.find { it.category == MetricCategory.OPERATING_CASH_FLOW }
+        val freeCashFlow = extendedMetrics.find { it.category == MetricCategory.FREE_CASH_FLOW }
+        val cash = extendedMetrics.find { it.category == MetricCategory.CASH_AND_EQUIVALENTS }
+        
+        if (cashFlow != null || freeCashFlow != null || cash != null) {
+            insights.add(createCashFlowInsight(cashFlow, freeCashFlow, cash))
+        }
+        
+        // 위험 요소 인사이트
+        if (riskFactors.isNotEmpty()) {
+            insights.add(createRiskInsight(riskFactors))
+        }
+        
+        // 보고서 유형 인사이트
+        if (analysis.reportType != null) {
+            insights.add(createReportTypeInsight(analysis.reportType))
+        }
+        
+        // 투자 효율성 인사이트 (ROE, ROA)
+        val roe = ratios.find { it.name.contains("ROE") || it.name.contains("자기자본이익률") }
+        val roa = ratios.find { it.name.contains("ROA") || it.name.contains("총자산이익률") }
+        
+        if (roe != null || roa != null) {
+            insights.add(createInvestmentEfficiencyInsight(roe, roa))
+        }
+        
+        return insights
+    }
+    
+    private fun createCompanySizeInsight(revenue: Double): BeginnerInsight {
+        val sizeInfo = when {
+            revenue >= 50_000_000_000 -> Pair("초대형 기업", "포춘 500 수준의 글로벌 대기업")
+            revenue >= 10_000_000_000 -> Pair("대기업", "국내외 유명 대기업과 비슷한 규모")
+            revenue >= 1_000_000_000 -> Pair("중대형 기업", "안정적인 대형 기업")
+            revenue >= 100_000_000 -> Pair("중형 기업", "성장 중인 중견 기업")
+            revenue >= 10_000_000 -> Pair("중소기업", "성장 가능성이 있는 기업")
+            else -> Pair("소규모 기업", "초기 단계 또는 소규모 기업")
+        }
+        val sizeCategory = sizeInfo.first
+        val comparisonText = sizeInfo.second
+        
+        return BeginnerInsight(
+            title = "회사 규모 분석",
+            emoji = "🏢",
+            summary = "$sizeCategory (연매출 ${formatNumber(revenue)})",
+            detailedExplanation = """
+                이 회사의 연간 매출 규모는 ${formatNumber(revenue)}입니다.
+                ${comparisonText}에 해당합니다.
+                
+                📊 규모별 특징:
+                • 대기업: 안정적이지만 성장률은 낮을 수 있음
+                • 중형기업: 성장과 안정성의 균형
+                • 소형기업: 높은 성장 가능성, 하지만 리스크도 높음
+            """.trimIndent(),
+            whatItMeans = "매출은 회사가 제품이나 서비스를 팔아서 벌어들인 총 금액입니다. 회사의 '크기'를 나타내는 가장 기본적인 지표입니다.",
+            whyItMatters = "매출 규모는 회사의 시장 지위, 협상력, 그리고 경기 변동에 대한 저항력을 보여줍니다. 일반적으로 규모가 클수록 안정적입니다.",
+            actionableAdvice = "같은 산업의 경쟁사들과 매출을 비교해 보세요. 또한 매출 성장률도 함께 확인하면 회사의 성장성을 파악할 수 있습니다."
+        )
+    }
+    
+    private fun createProfitabilityInsight(
+        netMargin: FinancialRatio?,
+        grossMargin: FinancialRatio?,
+        opMargin: FinancialRatio?
+    ): BeginnerInsight {
+        val mainRatio = netMargin ?: opMargin ?: grossMargin
+        val status = when (mainRatio?.healthStatus) {
+            HealthStatus.EXCELLENT -> "매우 우수"
+            HealthStatus.GOOD -> "양호"
+            HealthStatus.NEUTRAL -> "보통"
+            HealthStatus.CAUTION -> "주의 필요"
+            HealthStatus.WARNING -> "심각"
+            null -> "분석 불가"
+        }
+        
+        val ratioDetails = buildString {
+            grossMargin?.let { appendLine("• 매출총이익률: ${it.formattedValue}") }
+            opMargin?.let { appendLine("• 영업이익률: ${it.formattedValue}") }
+            netMargin?.let { appendLine("• 순이익률: ${it.formattedValue}") }
+        }
+        
+        return BeginnerInsight(
+            title = "수익성 분석",
+            emoji = "💰",
+            summary = "$status (${mainRatio?.formattedValue ?: "N/A"})",
+            detailedExplanation = """
+                이 회사의 수익성 지표입니다:
+                $ratioDetails
+                
+                📈 수익성 해석:
+                • 매출총이익률: 제품/서비스 자체의 수익성
+                • 영업이익률: 영업활동의 효율성
+                • 순이익률: 최종적으로 남는 이익
+            """.trimIndent(),
+            whatItMeans = """
+                수익성 지표는 '100원 팔았을 때 실제로 얼마가 남는가'를 보여줍니다.
+                
+                예시: 순이익률 10% = 100원 매출 시 10원이 순이익
+            """.trimIndent(),
+            whyItMatters = "수익성이 높을수록 회사가 효율적으로 돈을 벌고 있다는 뜻입니다. 주주에게 배당을 주거나 미래 성장에 투자할 여력이 있습니다.",
+            actionableAdvice = when (mainRatio?.healthStatus) {
+                HealthStatus.EXCELLENT, HealthStatus.GOOD -> "수익성이 좋습니다! 이 수익이 지속 가능한지, 그리고 경쟁사 대비 어느 수준인지 확인해 보세요."
+                HealthStatus.NEUTRAL -> "업계 평균과 비교해 보세요. 마진 개선 가능성이 있는지 확인하세요."
+                HealthStatus.CAUTION, HealthStatus.WARNING -> "수익성이 낮습니다. 비용 구조나 가격 경쟁력에 문제가 없는지 살펴보세요."
+                null -> "재무제표에서 수익성 지표를 찾을 수 없습니다. 원본 문서를 확인해 주세요."
+            }
+        )
+    }
+    
+    private fun createFinancialStabilityInsight(
+        debtRatio: FinancialRatio?,
+        currentRatio: FinancialRatio?
+    ): BeginnerInsight {
+        val status = when {
+            debtRatio?.healthStatus == HealthStatus.WARNING || 
+                currentRatio?.healthStatus == HealthStatus.WARNING -> "위험"
+            debtRatio?.healthStatus == HealthStatus.CAUTION ||
+                currentRatio?.healthStatus == HealthStatus.CAUTION -> "주의 필요"
+            debtRatio?.healthStatus == HealthStatus.EXCELLENT &&
+                (currentRatio?.healthStatus == HealthStatus.EXCELLENT || currentRatio == null) -> "매우 안정적"
+            else -> "양호"
+        }
+        
+        return BeginnerInsight(
+            title = "재무 안정성",
+            emoji = "⚖️",
+            summary = "$status",
+            detailedExplanation = buildString {
+                appendLine("이 회사의 재무 안정성 지표입니다:")
+                appendLine()
+                debtRatio?.let { 
+                    appendLine("📊 부채비율: ${it.formattedValue}")
+                    appendLine("   → ${it.interpretation}")
+                }
+                currentRatio?.let {
+                    appendLine()
+                    appendLine("💧 유동비율: ${it.formattedValue}")
+                    appendLine("   → ${it.interpretation}")
+                }
+            },
+            whatItMeans = """
+                • 부채비율: 자기 돈(자본) 대비 빌린 돈(부채)의 비율
+                  예: 100% = 자기 돈만큼 빚이 있음
+                  
+                • 유동비율: 1년 내 갚아야 할 빚 대비 현금화 가능 자산
+                  예: 2.0 = 단기 부채의 2배만큼 자산이 있음
+            """.trimIndent(),
+            whyItMatters = "재무 안정성이 낮으면 경기 침체나 금리 인상 시 위험할 수 있습니다. 특히 부채가 많으면 이자 비용이 수익을 깎아먹을 수 있습니다.",
+            actionableAdvice = when (status) {
+                "매우 안정적", "양호" -> "재무가 안정적입니다. 다만 지나치게 보수적인 경영은 아닌지도 확인해 보세요."
+                "주의 필요" -> "부채 수준을 주시하세요. 향후 금리 인상 시 이자 부담이 커질 수 있습니다."
+                else -> "재무 위험이 높습니다. 단기 부채 상환 계획과 현금 흐름을 면밀히 확인하세요."
+            }
+        )
+    }
+    
+    private fun createCashFlowInsight(
+        operatingCashFlow: ExtendedFinancialMetric?,
+        freeCashFlow: ExtendedFinancialMetric?,
+        cash: ExtendedFinancialMetric?
+    ): BeginnerInsight {
+        val cashFlowValue = operatingCashFlow?.rawValue
+        val fcfValue = freeCashFlow?.rawValue
+        val cashValue = cash?.rawValue
+        
+        val status = when {
+            cashFlowValue != null && cashFlowValue > 0 && fcfValue != null && fcfValue > 0 -> "건강함"
+            cashFlowValue != null && cashFlowValue > 0 -> "양호"
+            cashFlowValue != null && cashFlowValue < 0 -> "주의 필요"
+            else -> "분석 필요"
+        }
+        
+        return BeginnerInsight(
+            title = "현금 흐름 분석",
+            emoji = "💵",
+            summary = status,
+            detailedExplanation = buildString {
+                appendLine("현금 흐름은 회사의 '실제 돈의 움직임'을 보여줍니다:")
+                appendLine()
+                operatingCashFlow?.let { 
+                    appendLine("📈 영업현금흐름: ${it.value}")
+                    if (it.rawValue != null && it.rawValue > 0) {
+                        appendLine("   → 영업활동에서 현금이 들어오고 있습니다 ✅")
+                    } else {
+                        appendLine("   → 영업활동에서 현금이 나가고 있습니다 ⚠️")
+                    }
+                }
+                freeCashFlow?.let {
+                    appendLine()
+                    appendLine("💰 잉여현금흐름(FCF): ${it.value}")
+                    appendLine("   → 투자 후 자유롭게 쓸 수 있는 현금")
+                }
+                cash?.let {
+                    appendLine()
+                    appendLine("🏦 보유 현금: ${it.value}")
+                }
+            },
+            whatItMeans = """
+                • 영업현금흐름: 본업에서 실제로 들어온 현금
+                • 잉여현금흐름(FCF): 투자 후 남는 현금 (배당, 자사주 매입에 사용 가능)
+                • 보유 현금: 지금 당장 쓸 수 있는 현금
+                
+                💡 순이익이 있어도 현금흐름이 마이너스면 위험할 수 있습니다!
+            """.trimIndent(),
+            whyItMatters = "현금은 회사의 생명줄입니다. 아무리 이익이 나도 현금이 없으면 부도가 날 수 있습니다. 현금흐름은 회계 조작이 어려워 신뢰도가 높습니다.",
+            actionableAdvice = when (status) {
+                "건강함" -> "현금 창출 능력이 우수합니다! 이 현금을 어떻게 활용하는지 확인해 보세요."
+                "양호" -> "영업에서 현금이 들어오고 있습니다. 투자 활동과 재무 활동도 함께 확인하세요."
+                "주의 필요" -> "영업현금흐름이 마이너스입니다. 일시적인지 구조적인지 파악이 필요합니다."
+                else -> "현금흐름표를 직접 확인해 보세요."
+            }
+        )
+    }
+    
+    private fun createRiskInsight(riskFactors: List<RiskFactor>): BeginnerInsight {
+        val highRisks = riskFactors.filter { it.severity == RiskSeverity.HIGH || it.severity == RiskSeverity.CRITICAL }
+        val riskByCategory = riskFactors.groupBy { it.category }
+        
+        val mainRisks = buildString {
+            riskFactors.take(5).forEachIndexed { index, risk ->
+                val emoji = when (risk.category) {
+                    RiskCategory.MARKET -> "📊"
+                    RiskCategory.OPERATIONAL -> "⚙️"
+                    RiskCategory.FINANCIAL -> "💰"
+                    RiskCategory.REGULATORY -> "📜"
+                    RiskCategory.COMPETITIVE -> "🏃"
+                    RiskCategory.TECHNOLOGY -> "💻"
+                    RiskCategory.LEGAL -> "⚖️"
+                    RiskCategory.ENVIRONMENTAL -> "🌍"
+                    RiskCategory.GEOPOLITICAL -> "🌐"
+                    RiskCategory.OTHER -> "📌"
+                }
+                appendLine("${index + 1}. $emoji ${risk.title.take(50)}...")
+            }
+        }
+        
+        return BeginnerInsight(
+            title = "주요 위험 요소",
+            emoji = "⚠️",
+            summary = "${riskFactors.size}개 위험 요소 (고위험 ${highRisks.size}개)",
+            detailedExplanation = """
+                SEC 보고서에서 발견된 주요 위험 요소입니다:
+                
+                $mainRisks
+                
+                📊 카테고리별 분류:
+                ${riskByCategory.entries.take(5).joinToString("\n") { (cat, risks) ->
+                    "• ${cat.name}: ${risks.size}개"
+                }}
+            """.trimIndent(),
+            whatItMeans = """
+                위험 요소(Risk Factors)는 회사가 직면한 잠재적 문제들입니다.
+                SEC는 모든 상장기업에 위험 요소 공시를 의무화하고 있습니다.
+                
+                💡 모든 회사에 위험 요소가 있는 것은 정상입니다!
+            """.trimIndent(),
+            whyItMatters = "위험 요소를 미리 알면 투자 결정에 도움이 됩니다. 특히 경쟁 위험, 규제 위험, 재무 위험은 주의 깊게 살펴봐야 합니다.",
+            actionableAdvice = if (highRisks.isNotEmpty()) {
+                "고위험 요소가 있습니다. 해당 위험이 현실화될 가능성과 영향을 신중히 판단하세요."
+            } else {
+                "위험 요소들이 관리 가능한 수준인지, 경쟁사와 비교하여 어떤지 확인해 보세요."
+            }
+        )
+    }
+    
+    private fun createReportTypeInsight(reportType: String): BeginnerInsight {
+        return BeginnerInsight(
+            title = "이 보고서는?",
+            emoji = "📋",
+            summary = "SEC Form $reportType",
+            detailedExplanation = getReportTypeExplanation(reportType) ?: "SEC 공시 보고서입니다.",
+            whatItMeans = when (reportType) {
+                "10-K" -> "연간 보고서(10-K)는 회사의 1년간 성과를 담은 '성적표'입니다. 가장 포괄적인 재무 정보를 담고 있습니다."
+                "10-Q" -> "분기 보고서(10-Q)는 3개월간의 성과를 보여줍니다. 연간 보고서보다 간략하지만 최신 상황을 파악할 수 있습니다."
+                "8-K" -> "수시 보고서(8-K)는 중요한 사건 발생 시 제출됩니다. 인수합병, CEO 교체 등 큰 뉴스가 있을 때 나옵니다."
+                else -> "SEC에 제출되는 공식 재무 보고서입니다."
+            },
+            whyItMatters = "SEC 보고서는 법적으로 정확해야 하므로 회사 홍보 자료보다 신뢰할 수 있습니다. 투자 결정의 핵심 자료입니다.",
+            actionableAdvice = when (reportType) {
+                "10-K" -> "연간보고서의 'Business', 'Risk Factors', 'MD&A' 섹션을 중점적으로 읽어보세요."
+                "10-Q" -> "전 분기, 전년 동기와 비교하면서 트렌드를 파악하세요."
+                "8-K" -> "어떤 중요 사건이 발생했는지, 그 영향은 무엇인지 확인하세요."
+                else -> "재무제표와 주석을 꼼꼼히 읽어보세요."
+            }
+        )
+    }
+    
+    private fun createInvestmentEfficiencyInsight(
+        roe: FinancialRatio?,
+        roa: FinancialRatio?
+    ): BeginnerInsight {
+        val mainRatio = roe ?: roa
+        val status = when (mainRatio?.healthStatus) {
+            HealthStatus.EXCELLENT -> "매우 효율적"
+            HealthStatus.GOOD -> "효율적"
+            HealthStatus.NEUTRAL -> "보통"
+            HealthStatus.CAUTION -> "비효율적"
+            HealthStatus.WARNING -> "매우 비효율적"
+            null -> "분석 불가"
+        }
+        
+        return BeginnerInsight(
+            title = "투자 효율성",
+            emoji = "📈",
+            summary = status,
+            detailedExplanation = buildString {
+                appendLine("이 회사가 자본을 얼마나 효율적으로 활용하는지 보여줍니다:")
+                appendLine()
+                roe?.let {
+                    appendLine("👤 ROE (자기자본이익률): ${it.formattedValue}")
+                    appendLine("   → ${it.interpretation}")
+                }
+                roa?.let {
+                    appendLine()
+                    appendLine("🏢 ROA (총자산이익률): ${it.formattedValue}")
+                    appendLine("   → ${it.interpretation}")
+                }
+            },
+            whatItMeans = """
+                • ROE: 주주가 투자한 돈으로 얼마나 벌었는가
+                  예: ROE 15% = 100만원 투자하면 15만원 수익 창출
+                  
+                • ROA: 회사의 모든 자산으로 얼마나 벌었는가
+                  예: ROA 5% = 100억 자산으로 5억 수익 창출
+            """.trimIndent(),
+            whyItMatters = "높은 ROE/ROA는 경영진이 자본을 효율적으로 운용하고 있다는 뜻입니다. 다만 부채를 많이 쓰면 ROE가 높아질 수 있어 함께 분석해야 합니다.",
+            actionableAdvice = when (mainRatio?.healthStatus) {
+                HealthStatus.EXCELLENT, HealthStatus.GOOD -> "투자 효율성이 좋습니다! 이 수준이 지속 가능한지 확인하세요."
+                HealthStatus.NEUTRAL -> "평균 수준입니다. 업계 평균과 비교해 보세요."
+                HealthStatus.CAUTION, HealthStatus.WARNING -> "자본 활용 효율성이 낮습니다. 경영 효율화가 필요할 수 있습니다."
+                null -> "ROE/ROA를 계산하기 위한 데이터가 부족합니다."
+            }
+        )
+    }
+    
+    /**
+     * 향상된 건강 점수 계산
+     */
+    private fun calculateEnhancedHealthScore(
+        metrics: List<FinancialMetric>,
+        ratios: List<FinancialRatio>,
+        riskFactors: List<RiskFactor>
+    ): FinancialHealthScore {
+        var totalScore = 0
+        var count = 0
+        val strengths = mutableListOf<String>()
+        val weaknesses = mutableListOf<String>()
+        val recommendations = mutableListOf<String>()
+        
+        // 비율 기반 점수
+        for (ratio in ratios) {
+            val score = when (ratio.healthStatus) {
+                HealthStatus.EXCELLENT -> 100
+                HealthStatus.GOOD -> 80
+                HealthStatus.NEUTRAL -> 60
+                HealthStatus.CAUTION -> 40
+                HealthStatus.WARNING -> 20
+            }
+            totalScore += score
+            count++
+            
+            when (ratio.healthStatus) {
+                HealthStatus.EXCELLENT -> strengths.add("🌟 ${ratio.name}: ${ratio.formattedValue}")
+                HealthStatus.GOOD -> strengths.add("✅ ${ratio.name}: ${ratio.formattedValue}")
+                HealthStatus.CAUTION -> weaknesses.add("⚠️ ${ratio.name}: ${ratio.formattedValue}")
+                HealthStatus.WARNING -> weaknesses.add("🚨 ${ratio.name}: ${ratio.formattedValue}")
+                else -> {}
+            }
+        }
+        
+        // 위험 요소 반영 (고위험이 많으면 감점)
+        val highRiskCount = riskFactors.count { 
+            it.severity == RiskSeverity.HIGH || it.severity == RiskSeverity.CRITICAL 
+        }
+        if (highRiskCount > 0) {
+            totalScore -= highRiskCount * 5
+            weaknesses.add("⚠️ 고위험 요소 ${highRiskCount}개 발견")
+        }
+        
+        // 데이터 충분성 보너스
+        if (metrics.size >= 10) {
+            totalScore += 5
+        }
+        
+        val overallScore = if (count > 0) (totalScore / count).coerceIn(0, 100) else 50
+        val grade = when {
+            overallScore >= 90 -> "A+"
+            overallScore >= 85 -> "A"
+            overallScore >= 80 -> "B+"
+            overallScore >= 75 -> "B"
+            overallScore >= 70 -> "C+"
+            overallScore >= 60 -> "C"
+            overallScore >= 50 -> "D"
+            else -> "F"
+        }
+        
+        val summary = when {
+            overallScore >= 80 -> "📈 전반적으로 재무 상태가 양호합니다. 안정적인 투자 대상으로 고려할 수 있습니다."
+            overallScore >= 60 -> "📊 평균적인 재무 상태입니다. 몇 가지 개선이 필요한 부분이 있습니다."
+            overallScore >= 40 -> "⚠️ 주의가 필요한 재무 상태입니다. 투자 전 심층 분석을 권장합니다."
+            else -> "🚨 재무 상태에 심각한 문제가 있을 수 있습니다. 신중한 판단이 필요합니다."
+        }
+        
+        // 권장사항 생성
+        if (weaknesses.any { it.contains("부채") }) {
+            recommendations.add("💡 부채 수준을 주시하세요. 금리 인상 시 이자 부담이 커질 수 있습니다.")
+        }
+        if (weaknesses.any { it.contains("이익") || it.contains("수익") }) {
+            recommendations.add("💡 수익성 개선 노력이 필요합니다. 비용 구조를 확인해 보세요.")
+        }
+        if (highRiskCount > 0) {
+            recommendations.add("💡 고위험 요소들을 면밀히 검토하세요. 해당 위험의 현실화 가능성을 평가하세요.")
+        }
+        if (ratios.size < 3) {
+            recommendations.add("💡 더 정확한 분석을 위해 전체 재무제표를 확인해 보세요.")
+        }
+        if (overallScore >= 70) {
+            recommendations.add("💡 경쟁사와 비교 분석을 통해 상대적 위치를 파악해 보세요.")
+        }
+        
+        return FinancialHealthScore(
+            overallScore = overallScore,
+            grade = grade,
+            summary = summary,
+            strengths = strengths.take(5),
+            weaknesses = weaknesses.take(5),
+            recommendations = recommendations.take(4)
+        )
+    }
+    
+    /**
+     * 향상된 핵심 요점 생성
+     */
+    private fun generateEnhancedKeyTakeaways(
+        analysis: FinancialAnalysis,
+        ratios: List<FinancialRatio>,
+        healthScore: FinancialHealthScore,
+        extendedMetrics: List<ExtendedFinancialMetric>,
+        riskFactors: List<RiskFactor>
+    ): List<String> {
+        val takeaways = mutableListOf<String>()
+        
+        // 건강 점수
+        takeaways.add("📊 재무 건전성: ${healthScore.grade} (${healthScore.overallScore}점)")
+        
+        // 회사 정보
+        analysis.companyName?.let { takeaways.add("🏢 $it") }
+        analysis.reportType?.let { takeaways.add("📋 SEC Form $it 보고서") }
+        
+        // 주요 수치
+        val revenue = extendedMetrics.find { it.category == MetricCategory.REVENUE }
+        val netIncome = extendedMetrics.find { it.category == MetricCategory.NET_INCOME }
+        
+        revenue?.let { takeaways.add("💰 매출: ${it.value}") }
+        netIncome?.let { takeaways.add("💵 순이익: ${it.value}") }
+        
+        // 강점/약점
+        val excellentRatios = ratios.filter { it.healthStatus == HealthStatus.EXCELLENT }
+        val warningRatios = ratios.filter { it.healthStatus == HealthStatus.WARNING }
+        
+        if (excellentRatios.isNotEmpty()) {
+            takeaways.add("⭐ 강점: ${excellentRatios.first().name.substringBefore("(").trim()}")
+        }
+        if (warningRatios.isNotEmpty()) {
+            takeaways.add("🚨 주의: ${warningRatios.first().name.substringBefore("(").trim()}")
+        }
+        
+        // 위험 요소
+        if (riskFactors.isNotEmpty()) {
+            val highRisks = riskFactors.count { it.severity == RiskSeverity.HIGH }
+            takeaways.add("⚠️ 위험 요소: ${riskFactors.size}개 (고위험 ${highRisks}개)")
+        }
+        
+        return takeaways.take(7)
+    }
 
     /**
-     * 재무 비율 계산
+     * 재무 비율 계산 (기본)
      */
     private fun calculateFinancialRatios(metrics: List<FinancialMetric>): List<FinancialRatio> {
         val ratios = mutableListOf<FinancialRatio>()
