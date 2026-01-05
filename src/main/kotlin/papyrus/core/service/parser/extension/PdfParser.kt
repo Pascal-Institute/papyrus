@@ -72,20 +72,13 @@ class PdfParser : DocumentParser {
                 // Decode entities
                 cleaned = decodeHtmlEntities(cleaned)
 
-                // Normalize whitespace while preserving table structure
-                cleaned = cleaned.replace(Regex("\\s+"), " ")
-                cleaned = cleaned.replace(Regex("\\n\\s*\\n+"), "\n\n")
-
-                return cleaned.trim()
+                // Normalize whitespace
+                return SecTextNormalization.normalizeWhitespace(cleaned)
         }
 
         /** Decode HTML entities */
         private fun decodeHtmlEntities(text: String): String {
-                return text.replace("&nbsp;", " ")
-                        .replace("&amp;", "&")
-                        .replace("&lt;", "<")
-                        .replace("&gt;", ">")
-                        .replace("&quot;", "\"")
+                return SecTextNormalization.decodeBasicEntities(text)
                         .replace("&apos;", "'")
         }
 }

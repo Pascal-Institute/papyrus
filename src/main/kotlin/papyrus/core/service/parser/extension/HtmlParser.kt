@@ -84,10 +84,7 @@ class HtmlParser : DocumentParser {
                 cleaned = decodeHtmlEntities(cleaned)
 
                 // Normalize whitespace
-                cleaned = cleaned.replace(Regex("\\s+"), " ")
-                cleaned = cleaned.replace(Regex("\\n\\s*\\n+"), "\n\n")
-
-                return cleaned.trim()
+                return SecTextNormalization.normalizeWhitespace(cleaned)
         }
 
         /** Detect if document contains XBRL data */
@@ -111,11 +108,9 @@ class HtmlParser : DocumentParser {
 
         /** Decode common HTML entities */
         private fun decodeHtmlEntities(text: String): String {
-                return text.replace("&nbsp;", " ")
-                        .replace("&amp;", "&")
-                        .replace("&lt;", "<")
-                        .replace("&gt;", ">")
-                        .replace("&quot;", "\"")
+                val basicDecoded = SecTextNormalization.decodeBasicEntities(text)
+
+                return basicDecoded
                         .replace("&apos;", "'")
                         .replace("&#39;", "'")
                         .replace("&#160;", " ")

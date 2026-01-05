@@ -564,19 +564,15 @@ object SecTableParser {
         cleaned = cleaned.replace(Regex("""<[^>]+>"""), " ")
         
         // HTML 엔티티 디코딩
-        cleaned = cleaned.replace("&nbsp;", " ")
+        cleaned = SecTextNormalization.decodeBasicEntities(cleaned)
         cleaned = cleaned.replace("&#160;", " ")
-        cleaned = cleaned.replace("&amp;", "&")
-        cleaned = cleaned.replace("&lt;", "<")
-        cleaned = cleaned.replace("&gt;", ">")
-        cleaned = cleaned.replace("&quot;", "\"")
         cleaned = cleaned.replace("&#8211;", "-")
         cleaned = cleaned.replace("&#8212;", "-")
         cleaned = cleaned.replace("—", "-")
         cleaned = cleaned.replace("–", "-")
         
         // 공백 정리
-        cleaned = cleaned.replace(Regex("""\s+"""), " ").trim()
+        cleaned = SecTextNormalization.normalizeWhitespace(cleaned)
         
         return cleaned
     }
@@ -605,9 +601,8 @@ object SecTableParser {
         cleaned = cleaned.replace(Regex("""<[^>]+>"""), " ")
         
         // HTML 엔티티 처리
-        cleaned = cleaned.replace("&nbsp;", " ")
+        cleaned = SecTextNormalization.decodeBasicEntities(cleaned)
         cleaned = cleaned.replace("&#160;", " ")
-        cleaned = cleaned.replace("&amp;", "&")
         
         return cleaned
     }

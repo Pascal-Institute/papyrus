@@ -30,46 +30,42 @@ abstract class BaseSecReportParser<T : SecReportParseResult>(
 
     /** HTML 정리 (공통) */
     protected fun cleanHtml(html: String): String {
-        var cleaned = html
+        return SecTextNormalization.cleanHtmlToText(html)
+    }
 
-        // Remove script and style tags
-        cleaned =
-                cleaned.replace(
-                        Regex(
-                                "<(SCRIPT|script)[^>]*>.*?</(SCRIPT|script)>",
-                                RegexOption.DOT_MATCHES_ALL
-                        ),
-                        ""
-                )
-        cleaned =
-                cleaned.replace(
-                        Regex(
-                                "<(STYLE|style)[^>]*>.*?</(STYLE|style)>",
-                                RegexOption.DOT_MATCHES_ALL
-                        ),
-                        ""
-                )
+    /**
+     * Extract sections by detecting a single header match per logical section name.
+     * This is useful for forms like S-1 / DEF 14A / 20-F where sections are not strictly item-numbered.
+     */
+    protected fun extractNamedSections(
+            content: String,
+            sectionPatterns: List<Pair<String, Regex>>
+    ): Map<String, String> {
+        val sections = mutableMapOf<String, String>()
 
-        // Remove XBRL tags but keep content
-        cleaned = cleaned.replace(Regex("</?ix:[^>]+>"), "")
-        cleaned = cleaned.replace(Regex("</?xbrli:[^>]+>"), "")
+        val headerMatches =
+                sectionPatterns
+                        .mapNotNull { (sectionName, pattern) ->
+                            pattern.find(content)?.let { match ->
+                                Triple(match.range.first, sectionName, match.value)
+                            }
+                        }
+                        .sortedBy { it.first }
 
-        // Remove HTML tags
-        cleaned = cleaned.replace(Regex("<[^>]+>"), " ")
+        for (i in headerMatches.indices) {
+            val (startIndex, sectionName, _) = headerMatches[i]
+            val endIndex =
+                    if (i < headerMatches.size - 1) {
+                        headerMatches[i + 1].first
+                    } else {
+                        null
+                    }
 
-        // Decode HTML entities
-        cleaned =
-                cleaned.replace("&nbsp;", " ")
-                        .replace("&amp;", "&")
-                        .replace("&lt;", "<")
-                        .replace("&gt;", ">")
-                        .replace("&quot;", "\"")
-                        .replace("&#39;", "'")
+            val sectionContent = extractSection(content, startIndex, endIndex)
+            sections[sectionName] = sectionContent
+        }
 
-        // Normalize whitespace
-        cleaned = cleaned.replace(Regex("\\s+"), " ").trim()
-
-        return cleaned
+        return sections
     }
 
     /** 섹션 헤더 패턴 매칭 */

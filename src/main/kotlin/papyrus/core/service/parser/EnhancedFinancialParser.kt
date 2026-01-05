@@ -1777,11 +1777,8 @@ object EnhancedFinancialParser {
                 cleaned = cleaned.replace(Regex("<[^>]*>"), " ")
 
                 // Decode HTML entities
-                cleaned = cleaned.replace(Regex("&nbsp;|&#160;|&#xA0;"), " ")
-                cleaned = cleaned.replace(Regex("&amp;"), "&")
-                cleaned = cleaned.replace(Regex("&lt;"), "<")
-                cleaned = cleaned.replace(Regex("&gt;"), ">")
-                cleaned = cleaned.replace(Regex("&quot;"), "\"")
+                cleaned = SecTextNormalization.decodeBasicEntities(cleaned)
+                cleaned = cleaned.replace(Regex("&#160;|&#xA0;"), " ")
                 cleaned = cleaned.replace(Regex("&apos;|&#39;"), "'")
                 cleaned = cleaned.replace(Regex("&#8211;|&#8212;|&mdash;|&ndash;"), "-")
                 cleaned =
@@ -1796,10 +1793,7 @@ object EnhancedFinancialParser {
                         ) // Replace named entities with space
 
                 // Normalize whitespace (but keep newlines)
-                cleaned = cleaned.replace(Regex("[ \\t]+"), " ") // Collapse spaces/tabs
-                cleaned = cleaned.replace(Regex("\\n\\s*\\n"), "\n\n") // Max 2 newlines
-
-                return cleaned.trim()
+                return SecTextNormalization.normalizeWhitespacePreserveNewlines(cleaned)
         }
 
         private fun detectUnit(text: String): MetricUnit {

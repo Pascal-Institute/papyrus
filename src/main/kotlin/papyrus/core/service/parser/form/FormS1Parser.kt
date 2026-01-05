@@ -55,8 +55,6 @@ class FormS1Parser : BaseSecReportParser<FormS1ParseResult>(SecReportType.FORM_S
         }
 
         override fun extractSections(content: String): Map<String, String> {
-                val sections = mutableMapOf<String, String>()
-
                 // S-1 주요 섹션 패턴들
                 val sectionPatterns =
                         listOf(
@@ -99,30 +97,7 @@ class FormS1Parser : BaseSecReportParser<FormS1ParseResult>(SecReportType.FORM_S
                                         Regex("(?i)legal\\s+matters", RegexOption.IGNORE_CASE)
                         )
 
-                val headerMatches =
-                        sectionPatterns
-                                .mapNotNull { (sectionName, pattern) ->
-                                        pattern.find(content)?.let {
-                                                Triple(it.range.first, sectionName, it.value)
-                                        }
-                                }
-                                .sortedBy { it.first }
-
-                // 각 섹션 추출
-                for (i in headerMatches.indices) {
-                        val (startIndex, sectionName, _) = headerMatches[i]
-                        val endIndex =
-                                if (i < headerMatches.size - 1) {
-                                        headerMatches[i + 1].first
-                                } else {
-                                        null
-                                }
-
-                        val sectionContent = extractSection(content, startIndex, endIndex)
-                        sections[sectionName] = sectionContent
-                }
-
-                return sections
+                return extractNamedSections(content, sectionPatterns)
         }
 
         private fun extractProspectus(content: String): String? {

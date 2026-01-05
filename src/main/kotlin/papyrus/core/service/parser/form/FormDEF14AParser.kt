@@ -50,8 +50,6 @@ class FormDEF14AParser : BaseSecReportParser<FormDEF14AParseResult>(SecReportTyp
         }
 
         override fun extractSections(content: String): Map<String, String> {
-                val sections = mutableMapOf<String, String>()
-
                 val sectionPatterns =
                         listOf(
                                 "Meeting Information" to
@@ -89,29 +87,7 @@ class FormDEF14AParser : BaseSecReportParser<FormDEF14AParseResult>(SecReportTyp
                                         Regex("(?i)security\\s+ownership", RegexOption.IGNORE_CASE)
                         )
 
-                val headerMatches =
-                        sectionPatterns
-                                .mapNotNull { (sectionName, pattern) ->
-                                        pattern.find(content)?.let {
-                                                Triple(it.range.first, sectionName, it.value)
-                                        }
-                                }
-                                .sortedBy { it.first }
-
-                for (i in headerMatches.indices) {
-                        val (startIndex, sectionName, _) = headerMatches[i]
-                        val endIndex =
-                                if (i < headerMatches.size - 1) {
-                                        headerMatches[i + 1].first
-                                } else {
-                                        null
-                                }
-
-                        val sectionContent = extractSection(content, startIndex, endIndex)
-                        sections[sectionName] = sectionContent
-                }
-
-                return sections
+                return extractNamedSections(content, sectionPatterns)
         }
 
         private fun extractMeetingDate(content: String): String? {

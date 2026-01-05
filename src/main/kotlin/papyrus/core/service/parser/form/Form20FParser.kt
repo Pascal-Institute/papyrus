@@ -48,8 +48,6 @@ class Form20FParser : BaseSecReportParser<Form20FParseResult>(SecReportType.FORM
         }
 
         override fun extractSections(content: String): Map<String, String> {
-                val sections = mutableMapOf<String, String>()
-
                 // 20-F Item 패턴들 (10-K와 유사하지만 번호가 다름)
                 val sectionPatterns =
                         listOf(
@@ -80,29 +78,7 @@ class Form20FParser : BaseSecReportParser<Form20FParseResult>(SecReportType.FORM
                                         )
                         )
 
-                val headerMatches =
-                        sectionPatterns
-                                .mapNotNull { (sectionName, pattern) ->
-                                        pattern.find(content)?.let {
-                                                Triple(it.range.first, sectionName, it.value)
-                                        }
-                                }
-                                .sortedBy { it.first }
-
-                for (i in headerMatches.indices) {
-                        val (startIndex, sectionName, _) = headerMatches[i]
-                        val endIndex =
-                                if (i < headerMatches.size - 1) {
-                                        headerMatches[i + 1].first
-                                } else {
-                                        null
-                                }
-
-                        val sectionContent = extractSection(content, startIndex, endIndex)
-                        sections[sectionName] = sectionContent
-                }
-
-                return sections
+                return extractNamedSections(content, sectionPatterns)
         }
 
         private fun extractMdAndA(content: String): ManagementDiscussion? {
