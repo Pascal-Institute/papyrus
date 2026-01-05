@@ -23,20 +23,20 @@ data class FinancialRatio(
 
 @Serializable
 enum class HealthStatus {
-    EXCELLENT,
-    GOOD,
-    NEUTRAL,
-    CAUTION,
-    WARNING
+        EXCELLENT,
+        GOOD,
+        NEUTRAL,
+        CAUTION,
+        WARNING
 }
 
 @Serializable
 enum class RatioCategory {
-    PROFITABILITY, // 수익성
-    LIQUIDITY, // 유동성
-    SOLVENCY, // 지급능력
-    EFFICIENCY, // 효율성
-    VALUATION // 가치평가
+        PROFITABILITY, // 수익성
+        LIQUIDITY, // 유동성
+        SOLVENCY, // 지급능력
+        EFFICIENCY, // 효율성
+        VALUATION // 가치평가
 }
 
 @Serializable
@@ -99,10 +99,12 @@ data class FinancialAnalysis(
         val reportTypeExplanation: String? = null,
         val keyTakeaways: List<String> = emptyList(),
         val extendedMetrics: List<ExtendedFinancialMetric> = emptyList(),
-        // We will use Any? or a specific type if we move AiAnalysisResult.
-        // For now, I will keep it but I might need to import it if it's in a package.
-        // Since I'm moving everything to `papyrus.core.model`, I should probably move
-        // AiAnalysisResult here or to AiModels.kt.
+
+        // Enhanced financial information (AGENTS.md principle 3 & 5)
+        val segmentAnalysis: List<SegmentRevenue> = emptyList(), // 세그먼트별 매출 분석
+        val managementDiscussion: ManagementDiscussion? = null, // 경영진 논의 및 분석
+
+        // AI Analysis
         val aiAnalysis: AiAnalysisResult? = null,
         val aiSummary: String? = null,
         val industryComparison: String? = null,

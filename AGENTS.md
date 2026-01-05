@@ -46,6 +46,13 @@ Every line of code in an agent should make its intent obvious to anyone reading 
 - **Financial Validation Checks:** Implement "sanity checks" to verify that outputs are financially plausible. Prevent the agent from providing "hallucinated" or mathematically impossible financial results.
 - **Traceability:** Maintain clear references to the sources of financial data (e.g., specific regulatory filings or market indices) within the code or metadata to ensure auditability.
 
+#### 5. Consult Sample SEC Reports for Data Extraction
+- Resolve Ambiguity with Real Data: When it is unclear which specific values or insights to extract from SEC filings, do not rely on assumptions.
+
+- Reference Authority: Analyze the actual SEC reports located in src\main\resources\samples to understand the standard data structures and reporting formats.
+
+- Model Development based on Samples: Use these samples to determine the most relevant financial metrics and narrative elements to target, ensuring the agent extracts high-value information that reflects real-world reporting.
+
 ---
 
 ### Implementation Example (Kotlin)

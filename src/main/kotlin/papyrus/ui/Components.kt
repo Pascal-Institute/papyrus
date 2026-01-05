@@ -34,58 +34,58 @@ import papyrus.core.model.TickerEntry
 /** Enhanced App Header with gradient background */
 @Composable
 fun AppHeader(title: String, subtitle: String? = null, onSettingsClick: (() -> Unit)? = null) {
-    Surface(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = AppDimens.CardElevation,
-            color = AppColors.Primary
-    ) {
-        Box(
-                modifier =
-                        Modifier.fillMaxWidth()
-                                .background(
-                                        Brush.horizontalGradient(
-                                                colors =
-                                                        listOf(
-                                                                AppColors.Primary,
-                                                                AppColors.PrimaryVariant
-                                                        )
-                                        )
-                                )
-                                .padding(AppDimens.PaddingMedium)
+        Surface(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = AppDimens.CardElevation,
+                color = AppColors.Primary
         ) {
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                            text = title,
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                    )
-                    if (subtitle != null) {
-                        Text(
-                                text = subtitle,
-                                color = Color.White.copy(alpha = 0.8f),
-                                fontSize = 12.sp
-                        )
-                    }
-                }
+                Box(
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .background(
+                                                Brush.horizontalGradient(
+                                                        colors =
+                                                                listOf(
+                                                                        AppColors.Primary,
+                                                                        AppColors.PrimaryVariant
+                                                                )
+                                                )
+                                        )
+                                        .padding(AppDimens.PaddingMedium)
+                ) {
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Column {
+                                        Text(
+                                                text = title,
+                                                color = Color.White,
+                                                fontSize = 20.sp,
+                                                fontWeight = FontWeight.Bold
+                                        )
+                                        if (subtitle != null) {
+                                                Text(
+                                                        text = subtitle,
+                                                        color = Color.White.copy(alpha = 0.8f),
+                                                        fontSize = 12.sp
+                                                )
+                                        }
+                                }
 
-                if (onSettingsClick != null) {
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(
-                                Icons.Default.Settings,
-                                contentDescription = "Settings",
-                                tint = Color.White
-                        )
-                    }
+                                if (onSettingsClick != null) {
+                                        IconButton(onClick = onSettingsClick) {
+                                                Icon(
+                                                        Icons.Default.Settings,
+                                                        contentDescription = "Settings",
+                                                        tint = Color.White
+                                                )
+                                        }
+                                }
+                        }
                 }
-            }
         }
-    }
 }
 
 /** Modern Search Box with animation */
@@ -97,130 +97,136 @@ fun SearchBox(
         isLoading: Boolean = false,
         modifier: Modifier = Modifier
 ) {
-    Card(
-            modifier = modifier.fillMaxWidth(),
-            elevation = AppDimens.CardElevation,
-            shape = AppShapes.Medium,
-            backgroundColor = AppColors.Surface
-    ) {
-        Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Card(
+                modifier = modifier.fillMaxWidth(),
+                elevation = AppDimens.CardElevation,
+                shape = AppShapes.Medium,
+                backgroundColor = AppColors.Surface
         ) {
-            Icon(
-                    Icons.Default.Search,
-                    contentDescription = null,
-                    tint = AppColors.OnSurfaceSecondary,
-                    modifier = Modifier.size(20.dp)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            TextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    placeholder = {
-                        Text(
-                                placeholder,
-                                color = AppColors.OnSurfaceSecondary,
-                                style = AppTypography.Body2
+                Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.size(20.dp)
                         )
-                    },
-                    colors =
-                            TextFieldDefaults.textFieldColors(
-                                    backgroundColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    cursorColor = AppColors.Primary
-                            ),
-                    singleLine = true,
-                    modifier = Modifier.weight(1f)
-            )
 
-            AnimatedVisibility(visible = isLoading) {
-                CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = AppColors.Primary
-                )
-            }
+                        Spacer(modifier = Modifier.width(8.dp))
 
-            AnimatedVisibility(visible = value.isNotEmpty() && !isLoading) {
-                IconButton(onClick = { onValueChange("") }, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                            Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            tint = AppColors.OnSurfaceSecondary,
-                            modifier = Modifier.size(18.dp)
-                    )
+                        TextField(
+                                value = value,
+                                onValueChange = onValueChange,
+                                placeholder = {
+                                        Text(
+                                                placeholder,
+                                                color = AppColors.OnSurfaceSecondary,
+                                                style = AppTypography.Body2
+                                        )
+                                },
+                                colors =
+                                        TextFieldDefaults.textFieldColors(
+                                                backgroundColor = Color.Transparent,
+                                                focusedIndicatorColor = Color.Transparent,
+                                                unfocusedIndicatorColor = Color.Transparent,
+                                                cursorColor = AppColors.Primary
+                                        ),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                        )
+
+                        AnimatedVisibility(visible = isLoading) {
+                                CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = AppColors.Primary
+                                )
+                        }
+
+                        AnimatedVisibility(visible = value.isNotEmpty() && !isLoading) {
+                                IconButton(
+                                        onClick = { onValueChange("") },
+                                        modifier = Modifier.size(32.dp)
+                                ) {
+                                        Icon(
+                                                Icons.Default.Clear,
+                                                contentDescription = "Clear",
+                                                tint = AppColors.OnSurfaceSecondary,
+                                                modifier = Modifier.size(18.dp)
+                                        )
+                                }
+                        }
                 }
-            }
         }
-    }
 }
 
 /** Enhanced Ticker Card with hover effect */
 @Composable
 fun TickerCard(ticker: TickerEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
+        val interactionSource = remember { MutableInteractionSource() }
+        val isHovered by interactionSource.collectIsHoveredAsState()
 
-    Card(
-            modifier =
-                    modifier.fillMaxWidth()
-                            .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = onClick
-                            ),
-            elevation = if (isHovered) AppDimens.CardElevationHigh else AppDimens.CardElevation,
-            shape = AppShapes.Medium,
-            backgroundColor = if (isHovered) AppColors.PrimaryLight else AppColors.Surface
-    ) {
-        Row(
-                modifier = Modifier.padding(AppDimens.PaddingMedium),
-                verticalAlignment = Alignment.CenterVertically
+        Card(
+                modifier =
+                        modifier.fillMaxWidth()
+                                .clickable(
+                                        interactionSource = interactionSource,
+                                        indication = null,
+                                        onClick = onClick
+                                ),
+                elevation = if (isHovered) AppDimens.CardElevationHigh else AppDimens.CardElevation,
+                shape = AppShapes.Medium,
+                backgroundColor = if (isHovered) AppColors.PrimaryLight else AppColors.Surface
         ) {
-            // Ticker Symbol Badge
-            Box(
-                    modifier =
-                            Modifier.size(48.dp)
-                                    .background(AppColors.PrimaryLight, shape = AppShapes.Medium),
-                    contentAlignment = Alignment.Center
-            ) {
-                Text(
-                        text = ticker.ticker.take(3),
-                        style = AppTypography.Subtitle1,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Primary
-                )
-            }
+                Row(
+                        modifier = Modifier.padding(AppDimens.PaddingMedium),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        // Ticker Symbol Badge
+                        Box(
+                                modifier =
+                                        Modifier.size(48.dp)
+                                                .background(
+                                                        AppColors.PrimaryLight,
+                                                        shape = AppShapes.Medium
+                                                ),
+                                contentAlignment = Alignment.Center
+                        ) {
+                                Text(
+                                        text = ticker.ticker.take(3),
+                                        style = AppTypography.Subtitle1,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.Primary
+                                )
+                        }
 
-            Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                        text = ticker.ticker,
-                        style = AppTypography.Subtitle1,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Primary
-                )
-                Text(
-                        text = ticker.title,
-                        style = AppTypography.Body2,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = AppColors.OnSurfaceSecondary
-                )
-            }
+                        Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                        text = ticker.ticker,
+                                        style = AppTypography.Subtitle1,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.Primary
+                                )
+                                Text(
+                                        text = ticker.title,
+                                        style = AppTypography.Body2,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = AppColors.OnSurfaceSecondary
+                                )
+                        }
 
-            Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = AppColors.OnSurfaceSecondary
-            )
+                        Icon(
+                                Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = AppColors.OnSurfaceSecondary
+                        )
+                }
         }
-    }
 }
 
 /** Company Info Header Card with Bookmark */
@@ -232,104 +238,114 @@ fun CompanyInfoCard(
         onBookmarkClick: (() -> Unit)? = null,
         modifier: Modifier = Modifier
 ) {
-    Card(
-            modifier = modifier.fillMaxWidth(),
-            elevation = 0.dp,
-            shape = AppShapes.Large,
-            backgroundColor = AppColors.PrimaryLight
-    ) {
-        Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                            text = ticker.title,
-                            style = AppTypography.Headline3,
-                            color = AppColors.OnSurface,
-                            fontWeight = FontWeight.Bold
-                    )
+        Card(
+                modifier = modifier.fillMaxWidth(),
+                elevation = 0.dp,
+                shape = AppShapes.Large,
+                backgroundColor = AppColors.PrimaryLight
+        ) {
+                Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                        ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                                text = ticker.title,
+                                                style = AppTypography.Headline3,
+                                                color = AppColors.OnSurface,
+                                                fontWeight = FontWeight.Bold
+                                        )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        InfoChip(
-                                icon = Icons.Outlined.Tag,
-                                label = ticker.ticker,
-                                color = AppColors.Primary
-                        )
-                        InfoChip(
-                                icon = Icons.Outlined.Numbers,
-                                label = "CIK: ${ticker.cik}",
-                                color = AppColors.Secondary
-                        )
-                    }
+                                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                InfoChip(
+                                                        icon = Icons.Outlined.Tag,
+                                                        label = ticker.ticker,
+                                                        color = AppColors.Primary
+                                                )
+                                                InfoChip(
+                                                        icon = Icons.Outlined.Numbers,
+                                                        label = "CIK: ${ticker.cik}",
+                                                        color = AppColors.Secondary
+                                                )
+                                        }
+                                }
+
+                                // 북마크 버튼
+                                if (onBookmarkClick != null) {
+                                        IconButton(
+                                                onClick = onBookmarkClick,
+                                                modifier = Modifier.size(40.dp)
+                                        ) {
+                                                Icon(
+                                                        if (isBookmarked) Icons.Filled.Bookmark
+                                                        else Icons.Outlined.BookmarkBorder,
+                                                        contentDescription =
+                                                                if (isBookmarked)
+                                                                        "Remove from bookmarks"
+                                                                else "Add to bookmarks",
+                                                        tint =
+                                                                if (isBookmarked) AppColors.Warning
+                                                                else AppColors.OnSurfaceSecondary,
+                                                        modifier = Modifier.size(28.dp)
+                                                )
+                                        }
+                                }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedButton(
+                                onClick = onBackClick,
+                                colors =
+                                        ButtonDefaults.outlinedButtonColors(
+                                                contentColor = AppColors.Primary
+                                        ),
+                                border =
+                                        ButtonDefaults.outlinedBorder.copy(
+                                                brush =
+                                                        Brush.horizontalGradient(
+                                                                listOf(
+                                                                        AppColors.Primary,
+                                                                        AppColors.Primary
+                                                                )
+                                                        )
+                                        ),
+                                shape = AppShapes.Small
+                        ) {
+                                Icon(
+                                        Icons.Default.ArrowBack,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Back to Search")
+                        }
                 }
-
-                // 북마크 버튼
-                if (onBookmarkClick != null) {
-                    IconButton(onClick = onBookmarkClick, modifier = Modifier.size(40.dp)) {
-                        Icon(
-                                if (isBookmarked) Icons.Filled.Bookmark
-                                else Icons.Outlined.BookmarkBorder,
-                                contentDescription =
-                                        if (isBookmarked) "Remove from bookmarks"
-                                        else "Add to bookmarks",
-                                tint =
-                                        if (isBookmarked) AppColors.Warning
-                                        else AppColors.OnSurfaceSecondary,
-                                modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                    onClick = onBackClick,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.Primary),
-                    border =
-                            ButtonDefaults.outlinedBorder.copy(
-                                    brush =
-                                            Brush.horizontalGradient(
-                                                    listOf(AppColors.Primary, AppColors.Primary)
-                                            )
-                            ),
-                    shape = AppShapes.Small
-            ) {
-                Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Back to Search")
-            }
         }
-    }
 }
 
 /** Small info chip component */
 @Composable
 fun InfoChip(icon: ImageVector, label: String, color: Color, modifier: Modifier = Modifier) {
-    Row(
-            modifier =
-                    modifier.background(color.copy(alpha = 0.1f), shape = AppShapes.Pill)
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-                text = label,
-                style = AppTypography.Caption,
-                color = color,
-                fontWeight = FontWeight.Medium
-        )
-    }
+        Row(
+                modifier =
+                        modifier.background(color.copy(alpha = 0.1f), shape = AppShapes.Pill)
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                        text = label,
+                        style = AppTypography.Caption,
+                        color = color,
+                        fontWeight = FontWeight.Medium
+                )
+        }
 }
 
 /** Enhanced Filing Row Card */
@@ -342,141 +358,229 @@ fun FilingCard(
         isAnalyzing: Boolean = false,
         modifier: Modifier = Modifier
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
+        val interactionSource = remember { MutableInteractionSource() }
+        val isHovered by interactionSource.collectIsHoveredAsState()
 
-    Card(
-            modifier = modifier.fillMaxWidth(),
-            elevation = if (isHovered) AppDimens.CardElevationHigh else 1.dp,
-            shape = AppShapes.Medium,
-            backgroundColor = AppColors.Surface
-    ) {
-        Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            // Header Row
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Form Type Badge
-                FormTypeBadge(formType = filing.form)
+        // 파일 형식 선택 상태 (기본값: PDF)
+        var selectedFileFormat by remember { mutableStateOf(FileFormatType.PDF) }
 
-                // Date
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                            Icons.Outlined.CalendarToday,
-                            contentDescription = null,
-                            tint = AppColors.OnSurfaceSecondary,
-                            modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                            text = filing.filingDate,
-                            style = AppTypography.Caption,
-                            color = AppColors.OnSurfaceSecondary
-                    )
+        Card(
+                modifier = modifier.fillMaxWidth(),
+                elevation = if (isHovered) AppDimens.CardElevationHigh else 1.dp,
+                shape = AppShapes.Medium,
+                backgroundColor = AppColors.Surface
+        ) {
+                Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+                        // Header Row
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                // Form Type Badge
+                                FormTypeBadge(formType = filing.form)
+
+                                // Date
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                                Icons.Outlined.CalendarToday,
+                                                contentDescription = null,
+                                                tint = AppColors.OnSurfaceSecondary,
+                                                modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                                text = filing.filingDate,
+                                                style = AppTypography.Caption,
+                                                color = AppColors.OnSurfaceSecondary
+                                        )
+                                }
+                        }
+
+                        if (filing.description.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                        text = filing.description,
+                                        style = AppTypography.Body2,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = AppColors.OnSurfaceSecondary
+                                )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // File Format Selector Row
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Text(
+                                        text = "보고서 형식:",
+                                        style = AppTypography.Caption,
+                                        color = AppColors.OnSurfaceSecondary,
+                                        fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                FileFormatSelector(
+                                        selectedFormat = selectedFileFormat,
+                                        onFormatSelected = { selectedFileFormat = it }
+                                )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Action Buttons
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                                // Quick Analyze Button (Primary Action)
+                                Button(
+                                        onClick = { onQuickAnalyze(filing.accessionNumber) },
+                                        enabled = !isAnalyzing,
+                                        colors =
+                                                ButtonDefaults.buttonColors(
+                                                        backgroundColor = selectedFileFormat.color,
+                                                        contentColor = Color.White,
+                                                        disabledBackgroundColor =
+                                                                selectedFileFormat.color.copy(
+                                                                        alpha = 0.5f
+                                                                )
+                                                ),
+                                        shape = AppShapes.Small,
+                                        modifier =
+                                                Modifier.weight(1f).height(AppDimens.ButtonHeight)
+                                ) {
+                                        if (isAnalyzing) {
+                                                CircularProgressIndicator(
+                                                        modifier = Modifier.size(18.dp),
+                                                        strokeWidth = 2.dp,
+                                                        color = Color.White
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                        } else {
+                                                Icon(
+                                                        selectedFileFormat.icon,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                        }
+                                        Text(
+                                                if (isAnalyzing) "Analyzing..."
+                                                else "Analyze ${selectedFileFormat.displayName}"
+                                        )
+                                }
+
+                                // Open in Browser Button (Secondary Action)
+                                OutlinedButton(
+                                        onClick = { onOpenBrowser(filing.accessionNumber) },
+                                        colors =
+                                                ButtonDefaults.outlinedButtonColors(
+                                                        contentColor = AppColors.OnSurfaceSecondary
+                                                ),
+                                        shape = AppShapes.Small,
+                                        modifier = Modifier.height(AppDimens.ButtonHeight)
+                                ) {
+                                        Icon(
+                                                Icons.Default.OpenInNew,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                        )
+                                }
+                        }
                 }
-            }
-
-            if (filing.description.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                        text = filing.description,
-                        style = AppTypography.Body2,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = AppColors.OnSurfaceSecondary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Action Buttons
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Quick Analyze Button (Primary Action)
-                Button(
-                        onClick = { onQuickAnalyze(filing.accessionNumber) },
-                        enabled = !isAnalyzing,
-                        colors =
-                                ButtonDefaults.buttonColors(
-                                        backgroundColor = AppColors.Primary,
-                                        contentColor = Color.White,
-                                        disabledBackgroundColor =
-                                                AppColors.Primary.copy(alpha = 0.5f)
-                                ),
-                        shape = AppShapes.Small,
-                        modifier = Modifier.weight(1f).height(AppDimens.ButtonHeight)
-                ) {
-                    if (isAnalyzing) {
-                        CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    } else {
-                        Icon(
-                                Icons.Default.Analytics,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                    Text(if (isAnalyzing) "Analyzing..." else "Quick Analyze")
-                }
-
-                // Open in Browser Button (Secondary Action)
-                OutlinedButton(
-                        onClick = { onOpenBrowser(filing.accessionNumber) },
-                        colors =
-                                ButtonDefaults.outlinedButtonColors(
-                                        contentColor = AppColors.OnSurfaceSecondary
-                                ),
-                        shape = AppShapes.Small,
-                        modifier = Modifier.height(AppDimens.ButtonHeight)
-                ) {
-                    Icon(
-                            Icons.Default.OpenInNew,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
         }
-    }
+}
+
+// File Format Types
+enum class FileFormatType(
+        val displayName: String,
+        val extension: String,
+        val icon: ImageVector,
+        val color: Color
+) {
+        PDF("PDF", "pdf", Icons.Outlined.PictureAsPdf, Color(0xFFE53935)),
+        HTML("HTML", "html", Icons.Outlined.Code, Color(0xFF1E88E5)),
+        HTM("HTM", "htm", Icons.Outlined.Code, Color(0xFF1E88E5)),
+        TXT("TXT", "txt", Icons.Outlined.Description, Color(0xFF43A047))
+}
+
+@Composable
+private fun FileFormatSelector(
+        selectedFormat: FileFormatType,
+        onFormatSelected: (FileFormatType) -> Unit
+) {
+        Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+                FileFormatType.values().forEach { format ->
+                        val isSelected = format == selectedFormat
+                        val backgroundColor =
+                                if (isSelected) format.color.copy(alpha = 0.15f)
+                                else Color.Transparent
+                        val borderColor = if (isSelected) format.color else AppColors.Divider
+
+                        Box(
+                                modifier =
+                                        Modifier.size(36.dp)
+                                                .background(
+                                                        backgroundColor,
+                                                        shape = AppShapes.Small
+                                                )
+                                                .border(
+                                                        width = if (isSelected) 2.dp else 1.dp,
+                                                        color = borderColor,
+                                                        shape = AppShapes.Small
+                                                )
+                                                .clickable { onFormatSelected(format) }
+                                                .padding(6.dp),
+                                contentAlignment = Alignment.Center
+                        ) {
+                                Icon(
+                                        format.icon,
+                                        contentDescription = format.displayName,
+                                        tint =
+                                                if (isSelected) format.color
+                                                else AppColors.OnSurfaceSecondary,
+                                        modifier = Modifier.size(20.dp)
+                                )
+                        }
+                }
+        }
 }
 
 /** Form Type Badge with color coding */
 @Composable
 fun FormTypeBadge(formType: String) {
-    val (backgroundColor, textColor) =
-            when {
-                formType.contains("10-K", ignoreCase = true) ->
-                        AppColors.SuccessLight to AppColors.Success
-                formType.contains("10-Q", ignoreCase = true) ->
-                        AppColors.InfoLight to AppColors.Info
-                formType.contains("8-K", ignoreCase = true) ->
-                        AppColors.WarningLight to AppColors.Warning
-                formType.contains("S-1", ignoreCase = true) ->
-                        AppColors.SecondaryLight to AppColors.Secondary
-                else -> AppColors.SurfaceVariant to AppColors.OnSurfaceSecondary
-            }
+        val (backgroundColor, textColor) =
+                when {
+                        formType.contains("10-K", ignoreCase = true) ->
+                                AppColors.SuccessLight to AppColors.Success
+                        formType.contains("10-Q", ignoreCase = true) ->
+                                AppColors.InfoLight to AppColors.Info
+                        formType.contains("8-K", ignoreCase = true) ->
+                                AppColors.WarningLight to AppColors.Warning
+                        formType.contains("S-1", ignoreCase = true) ->
+                                AppColors.SecondaryLight to AppColors.Secondary
+                        else -> AppColors.SurfaceVariant to AppColors.OnSurfaceSecondary
+                }
 
-    Box(
-            modifier =
-                    Modifier.background(backgroundColor, shape = AppShapes.Small)
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-    ) {
-        Text(
-                text = formType,
-                style = AppTypography.Caption,
-                fontWeight = FontWeight.Bold,
-                color = textColor
-        )
-    }
+        Box(
+                modifier =
+                        Modifier.background(backgroundColor, shape = AppShapes.Small)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+        ) {
+                Text(
+                        text = formType,
+                        style = AppTypography.Caption,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                )
+        }
 }
 
 /** Empty State component */
@@ -487,92 +591,114 @@ fun EmptyState(
         description: String,
         modifier: Modifier = Modifier
 ) {
-    Column(
-            modifier = modifier.fillMaxWidth().padding(AppDimens.PaddingXLarge),
-            horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(AppDimens.IconHuge),
-                tint = AppColors.Divider
-        )
+        Column(
+                modifier = modifier.fillMaxWidth().padding(AppDimens.PaddingXLarge),
+                horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+                Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(AppDimens.IconHuge),
+                        tint = AppColors.Divider
+                )
 
-        Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+                Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-        Text(text = title, style = AppTypography.Subtitle1, color = AppColors.OnSurfaceSecondary)
+                Text(
+                        text = title,
+                        style = AppTypography.Subtitle1,
+                        color = AppColors.OnSurfaceSecondary
+                )
 
-        Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+                Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-        Text(
-                text = description,
-                style = AppTypography.Body2,
-                color = AppColors.OnSurfaceSecondary.copy(alpha = 0.7f)
-        )
-    }
+                Text(
+                        text = description,
+                        style = AppTypography.Body2,
+                        color = AppColors.OnSurfaceSecondary.copy(alpha = 0.7f)
+                )
+        }
 }
 
 /** Loading Indicator component */
 @Composable
 fun LoadingIndicator(message: String = "Loading...", modifier: Modifier = Modifier) {
-    Column(
-            modifier = modifier.fillMaxWidth().padding(AppDimens.PaddingLarge),
-            horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(color = AppColors.Primary, modifier = Modifier.size(48.dp))
+        Column(
+                modifier = modifier.fillMaxWidth().padding(AppDimens.PaddingLarge),
+                horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+                CircularProgressIndicator(
+                        color = AppColors.Primary,
+                        modifier = Modifier.size(48.dp)
+                )
 
-        Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+                Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-        Text(text = message, style = AppTypography.Body2, color = AppColors.OnSurfaceSecondary)
-    }
+                Text(
+                        text = message,
+                        style = AppTypography.Body2,
+                        color = AppColors.OnSurfaceSecondary
+                )
+        }
 }
 
 /** Status indicator component */
 @Composable
 fun StatusIndicator(status: AnalysisStatus, modifier: Modifier = Modifier) {
-    val (color, icon, text) =
-            when (status) {
-                AnalysisStatus.IDLE ->
-                        Triple(AppColors.OnSurfaceSecondary, Icons.Default.HourglassEmpty, "Ready")
-                AnalysisStatus.LOADING -> Triple(AppColors.Info, Icons.Default.Sync, "Loading...")
-                AnalysisStatus.ANALYZING ->
-                        Triple(AppColors.Warning, Icons.Default.Analytics, "Analyzing...")
-                AnalysisStatus.SUCCESS ->
-                        Triple(AppColors.Success, Icons.Default.CheckCircle, "Complete")
-                AnalysisStatus.ERROR -> Triple(AppColors.Error, Icons.Default.Error, "Error")
-            }
+        val (color, icon, text) =
+                when (status) {
+                        AnalysisStatus.IDLE ->
+                                Triple(
+                                        AppColors.OnSurfaceSecondary,
+                                        Icons.Default.HourglassEmpty,
+                                        "Ready"
+                                )
+                        AnalysisStatus.LOADING ->
+                                Triple(AppColors.Info, Icons.Default.Sync, "Loading...")
+                        AnalysisStatus.ANALYZING ->
+                                Triple(AppColors.Warning, Icons.Default.Analytics, "Analyzing...")
+                        AnalysisStatus.SUCCESS ->
+                                Triple(AppColors.Success, Icons.Default.CheckCircle, "Complete")
+                        AnalysisStatus.ERROR ->
+                                Triple(AppColors.Error, Icons.Default.Error, "Error")
+                }
 
-    Row(
-            modifier =
-                    modifier.background(color.copy(alpha = 0.1f), shape = AppShapes.Pill)
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (status == AnalysisStatus.LOADING || status == AnalysisStatus.ANALYZING) {
-            CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp,
-                    color = color
-            )
-        } else {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
+        Row(
+                modifier =
+                        modifier.background(color.copy(alpha = 0.1f), shape = AppShapes.Pill)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+                if (status == AnalysisStatus.LOADING || status == AnalysisStatus.ANALYZING) {
+                        CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = color
+                        )
+                } else {
+                        Icon(
+                                icon,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(16.dp)
+                        )
+                }
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                        text = text,
+                        style = AppTypography.Caption,
+                        color = color,
+                        fontWeight = FontWeight.Medium
+                )
         }
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-                text = text,
-                style = AppTypography.Caption,
-                color = color,
-                fontWeight = FontWeight.Medium
-        )
-    }
 }
 
 enum class AnalysisStatus {
-    IDLE,
-    LOADING,
-    ANALYZING,
-    SUCCESS,
-    ERROR
+        IDLE,
+        LOADING,
+        ANALYZING,
+        SUCCESS,
+        ERROR
 }
 
 /** Section Header component */
@@ -583,31 +709,31 @@ fun SectionHeader(
         action: (@Composable () -> Unit)? = null,
         modifier: Modifier = Modifier
 ) {
-    Row(
-            modifier = modifier.fillMaxWidth().padding(vertical = AppDimens.PaddingSmall),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) {
-                Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = AppColors.Primary,
-                        modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            Text(
-                    text = title,
-                    style = AppTypography.Subtitle1,
-                    fontWeight = FontWeight.Bold,
-                    color = AppColors.OnSurface
-            )
-        }
+        Row(
+                modifier = modifier.fillMaxWidth().padding(vertical = AppDimens.PaddingSmall),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (icon != null) {
+                                Icon(
+                                        icon,
+                                        contentDescription = null,
+                                        tint = AppColors.Primary,
+                                        modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                                text = title,
+                                style = AppTypography.Subtitle1,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.OnSurface
+                        )
+                }
 
-        action?.invoke()
-    }
+                action?.invoke()
+        }
 }
 
 /** Tab component for switching views */
@@ -618,27 +744,27 @@ fun AnalysisTabRow(
         tabs: List<String>,
         modifier: Modifier = Modifier
 ) {
-    TabRow(
-            selectedTabIndex = selectedTab,
-            modifier = modifier,
-            backgroundColor = AppColors.Surface,
-            contentColor = AppColors.Primary
-    ) {
-        tabs.forEachIndexed { index, title ->
-            Tab(
-                    selected = selectedTab == index,
-                    onClick = { onTabSelected(index) },
-                    text = {
-                        Text(
-                                text = title,
-                                fontWeight =
-                                        if (selectedTab == index) FontWeight.Bold
-                                        else FontWeight.Normal
+        TabRow(
+                selectedTabIndex = selectedTab,
+                modifier = modifier,
+                backgroundColor = AppColors.Surface,
+                contentColor = AppColors.Primary
+        ) {
+                tabs.forEachIndexed { index, title ->
+                        Tab(
+                                selected = selectedTab == index,
+                                onClick = { onTabSelected(index) },
+                                text = {
+                                        Text(
+                                                text = title,
+                                                fontWeight =
+                                                        if (selectedTab == index) FontWeight.Bold
+                                                        else FontWeight.Normal
+                                        )
+                                }
                         )
-                    }
-            )
+                }
         }
-    }
 }
 
 // ==========================================
@@ -652,48 +778,55 @@ fun BookmarkSectionHeader(
         bookmarkCount: Int,
         modifier: Modifier = Modifier
 ) {
-    Row(
-            modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                    Icons.Filled.Bookmark,
-                    contentDescription = null,
-                    tint = AppColors.Warning,
-                    modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                    text = "즐겨찾기",
-                    style = AppTypography.Subtitle1,
-                    fontWeight = FontWeight.Bold,
-                    color = AppColors.OnSurface
-            )
-            if (bookmarkCount > 0) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                        modifier =
-                                Modifier.background(AppColors.Warning, shape = AppShapes.Pill)
-                                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                            text = bookmarkCount.toString(),
-                            style = AppTypography.Caption,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                    )
+        Row(
+                modifier = modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                                Icons.Filled.Bookmark,
+                                contentDescription = null,
+                                tint = AppColors.Warning,
+                                modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                                text = "즐겨찾기",
+                                style = AppTypography.Subtitle1,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.OnSurface
+                        )
+                        if (bookmarkCount > 0) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                        modifier =
+                                                Modifier.background(
+                                                                AppColors.Warning,
+                                                                shape = AppShapes.Pill
+                                                        )
+                                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                        Text(
+                                                text = bookmarkCount.toString(),
+                                                style = AppTypography.Caption,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold
+                                        )
+                                }
+                        }
                 }
-            }
-        }
 
-        if (bookmarkCount > 3) {
-            TextButton(onClick = onViewAllClick) {
-                Text(text = "전체 보기", style = AppTypography.Caption, color = AppColors.Primary)
-            }
+                if (bookmarkCount > 3) {
+                        TextButton(onClick = onViewAllClick) {
+                                Text(
+                                        text = "전체 보기",
+                                        style = AppTypography.Caption,
+                                        color = AppColors.Primary
+                                )
+                        }
+                }
         }
-    }
 }
 
 /** 북마크 티커 카드 (간략 버전) */
@@ -705,77 +838,77 @@ fun BookmarkedTickerCard(
         onRemove: () -> Unit,
         modifier: Modifier = Modifier
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
+        val interactionSource = remember { MutableInteractionSource() }
+        val isHovered by interactionSource.collectIsHoveredAsState()
 
-    Card(
-            modifier =
-                    modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = onClick
-                    ),
-            elevation = if (isHovered) AppDimens.CardElevationHigh else 1.dp,
-            shape = AppShapes.Medium,
-            backgroundColor = if (isHovered) AppColors.WarningLight else AppColors.Surface
-    ) {
-        Row(
+        Card(
                 modifier =
-                        Modifier.padding(
-                                horizontal = AppDimens.PaddingSmall,
-                                vertical = AppDimens.PaddingSmall
+                        modifier.clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = onClick
                         ),
-                verticalAlignment = Alignment.CenterVertically
+                elevation = if (isHovered) AppDimens.CardElevationHigh else 1.dp,
+                shape = AppShapes.Medium,
+                backgroundColor = if (isHovered) AppColors.WarningLight else AppColors.Surface
         ) {
-            // 티커 배지
-            Box(
-                    modifier =
-                            Modifier.size(36.dp)
-                                    .background(
-                                            AppColors.Warning.copy(alpha = 0.15f),
-                                            shape = AppShapes.Small
-                                    ),
-                    contentAlignment = Alignment.Center
-            ) {
-                Text(
-                        text = ticker.take(4),
-                        style = AppTypography.Caption,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Warning
-                )
-            }
+                Row(
+                        modifier =
+                                Modifier.padding(
+                                        horizontal = AppDimens.PaddingSmall,
+                                        vertical = AppDimens.PaddingSmall
+                                ),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        // 티커 배지
+                        Box(
+                                modifier =
+                                        Modifier.size(36.dp)
+                                                .background(
+                                                        AppColors.Warning.copy(alpha = 0.15f),
+                                                        shape = AppShapes.Small
+                                                ),
+                                contentAlignment = Alignment.Center
+                        ) {
+                                Text(
+                                        text = ticker.take(4),
+                                        style = AppTypography.Caption,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.Warning
+                                )
+                        }
 
-            Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                        text = ticker,
-                        style = AppTypography.Caption,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.OnSurface
-                )
-                Text(
-                        text = companyName,
-                        style = AppTypography.Caption,
-                        color = AppColors.OnSurfaceSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                )
-            }
+                        Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                        text = ticker,
+                                        style = AppTypography.Caption,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.OnSurface
+                                )
+                                Text(
+                                        text = companyName,
+                                        style = AppTypography.Caption,
+                                        color = AppColors.OnSurfaceSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                )
+                        }
 
-            // 호버 시 삭제 버튼 표시
-            AnimatedVisibility(visible = isHovered) {
-                IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Remove",
-                            tint = AppColors.Error,
-                            modifier = Modifier.size(16.dp)
-                    )
+                        // 호버 시 삭제 버튼 표시
+                        AnimatedVisibility(visible = isHovered) {
+                                IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                                        Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = "Remove",
+                                                tint = AppColors.Error,
+                                                modifier = Modifier.size(16.dp)
+                                        )
+                                }
+                        }
                 }
-            }
         }
-    }
 }
 
 /** Bookmark list (horizontal scroll) */
@@ -786,52 +919,52 @@ fun BookmarkHorizontalList(
         onRemove: (Int) -> Unit,
         modifier: Modifier = Modifier
 ) {
-    if (bookmarks.isEmpty()) {
-        Card(
-                modifier = modifier.fillMaxWidth(),
-                elevation = 0.dp,
-                backgroundColor = AppColors.SurfaceVariant,
-                shape = AppShapes.Medium
-        ) {
-            Column(
-                    modifier = Modifier.fillMaxWidth().padding(AppDimens.PaddingMedium),
-                    horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                        Icons.Outlined.BookmarkBorder,
-                        contentDescription = null,
-                        tint = AppColors.OnSurfaceSecondary,
-                        modifier = Modifier.size(32.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                        text = "즐겨찾기가 없습니다",
-                        style = AppTypography.Body2,
-                        color = AppColors.OnSurfaceSecondary
-                )
-                Text(
-                        text = "관심 있는 티커를 북마크하세요",
-                        style = AppTypography.Caption,
-                        color = AppColors.OnSurfaceSecondary.copy(alpha = 0.7f)
-                )
-            }
+        if (bookmarks.isEmpty()) {
+                Card(
+                        modifier = modifier.fillMaxWidth(),
+                        elevation = 0.dp,
+                        backgroundColor = AppColors.SurfaceVariant,
+                        shape = AppShapes.Medium
+                ) {
+                        Column(
+                                modifier = Modifier.fillMaxWidth().padding(AppDimens.PaddingMedium),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                                Icon(
+                                        Icons.Outlined.BookmarkBorder,
+                                        contentDescription = null,
+                                        tint = AppColors.OnSurfaceSecondary,
+                                        modifier = Modifier.size(32.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                        text = "즐겨찾기가 없습니다",
+                                        style = AppTypography.Body2,
+                                        color = AppColors.OnSurfaceSecondary
+                                )
+                                Text(
+                                        text = "관심 있는 티커를 북마크하세요",
+                                        style = AppTypography.Caption,
+                                        color = AppColors.OnSurfaceSecondary.copy(alpha = 0.7f)
+                                )
+                        }
+                }
+        } else {
+                Row(
+                        modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
+                ) {
+                        for (bookmark in bookmarks.take(5)) {
+                                BookmarkedTickerCard(
+                                        ticker = bookmark.ticker,
+                                        companyName = bookmark.companyName,
+                                        onClick = { onTickerClick(bookmark.cik) },
+                                        onRemove = { onRemove(bookmark.cik) },
+                                        modifier = Modifier.width(160.dp)
+                                )
+                        }
+                }
         }
-    } else {
-        Row(
-                modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
-        ) {
-            for (bookmark in bookmarks.take(5)) {
-                BookmarkedTickerCard(
-                        ticker = bookmark.ticker,
-                        companyName = bookmark.companyName,
-                        onClick = { onTickerClick(bookmark.cik) },
-                        onRemove = { onRemove(bookmark.cik) },
-                        modifier = Modifier.width(160.dp)
-                )
-            }
-        }
-    }
 }
 
 /** Recent views section */
@@ -841,50 +974,53 @@ fun RecentlyViewedSection(
         onTickerClick: (TickerEntry) -> Unit,
         modifier: Modifier = Modifier
 ) {
-    if (recentTickers.isEmpty()) return
+        if (recentTickers.isEmpty()) return
 
-    Column(modifier = modifier) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                    Icons.Outlined.History,
-                    contentDescription = null,
-                    tint = AppColors.OnSurfaceSecondary,
-                    modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                    text = "Recent Views",
-                    style = AppTypography.Caption,
-                    fontWeight = FontWeight.Bold,
-                    color = AppColors.OnSurfaceSecondary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            for (ticker in recentTickers.take(4)) {
-                TextButton(
-                        onClick = { onTickerClick(ticker) },
-                        modifier =
-                                Modifier.background(
-                                        AppColors.SurfaceVariant,
-                                        shape = AppShapes.Pill
-                                )
+        Column(modifier = modifier) {
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                            text = ticker.ticker,
-                            style = AppTypography.Caption,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.Primary
-                    )
+                        Icon(
+                                Icons.Outlined.History,
+                                contentDescription = null,
+                                tint = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                                text = "Recent Views",
+                                style = AppTypography.Caption,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.OnSurfaceSecondary
+                        )
                 }
-            }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                        for (ticker in recentTickers.take(4)) {
+                                TextButton(
+                                        onClick = { onTickerClick(ticker) },
+                                        modifier =
+                                                Modifier.background(
+                                                        AppColors.SurfaceVariant,
+                                                        shape = AppShapes.Pill
+                                                )
+                                ) {
+                                        Text(
+                                                text = ticker.ticker,
+                                                style = AppTypography.Caption,
+                                                fontWeight = FontWeight.Bold,
+                                                color = AppColors.Primary
+                                        )
+                                }
+                        }
+                }
         }
-    }
 }
 
 // ===== News Components =====
@@ -892,40 +1028,40 @@ fun RecentlyViewedSection(
 /** 뉴스 섹션 헤더 */
 @Composable
 fun NewsSectionHeader(companyName: String, articleCount: Int, modifier: Modifier = Modifier) {
-    Row(
-            modifier =
-                    modifier.fillMaxWidth()
-                            .padding(
-                                    horizontal = AppDimens.PaddingMedium,
-                                    vertical = AppDimens.PaddingSmall
-                            ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-    ) {
         Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                        modifier.fillMaxWidth()
+                                .padding(
+                                        horizontal = AppDimens.PaddingMedium,
+                                        vertical = AppDimens.PaddingSmall
+                                ),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                    Icons.Outlined.Newspaper,
-                    contentDescription = null,
-                    tint = AppColors.Primary,
-                    modifier = Modifier.size(24.dp)
-            )
-            Text(
-                    text = "$companyName 관련 뉴스",
-                    style = AppTypography.Headline3,
-                    color = AppColors.OnSurface,
-                    fontWeight = FontWeight.Bold
-            )
-        }
+                Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        Icon(
+                                Icons.Outlined.Newspaper,
+                                contentDescription = null,
+                                tint = AppColors.Primary,
+                                modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                                text = "$companyName 관련 뉴스",
+                                style = AppTypography.Headline3,
+                                color = AppColors.OnSurface,
+                                fontWeight = FontWeight.Bold
+                        )
+                }
 
-        Text(
-                text = "$articleCount articles",
-                style = AppTypography.Caption,
-                color = AppColors.OnSurfaceSecondary
-        )
-    }
+                Text(
+                        text = "$articleCount articles",
+                        style = AppTypography.Caption,
+                        color = AppColors.OnSurfaceSecondary
+                )
+        }
 }
 
 /** 개별 뉴스 카드 */
@@ -935,96 +1071,97 @@ fun NewsArticleCard(
         onOpenInBrowser: (String) -> Unit,
         modifier: Modifier = Modifier
 ) {
-    Card(
-            modifier = modifier.fillMaxWidth().clickable { onOpenInBrowser(article.url) },
-            elevation = 2.dp,
-            shape = AppShapes.Medium,
-            backgroundColor = AppColors.Surface
-    ) {
-        Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            // 제목
-            Text(
-                    text = article.title,
-                    style = AppTypography.Headline3,
-                    color = AppColors.OnSurface,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 설명
-            if (!article.description.isNullOrEmpty()) {
-                Text(
-                        text = article.description,
-                        style = AppTypography.Body2,
-                        color = AppColors.OnSurfaceSecondary,
-                        maxLines = 3,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // 메타 정보
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 출처
-                    Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                                Icons.Outlined.Source,
-                                contentDescription = null,
-                                tint = AppColors.Primary,
-                                modifier = Modifier.size(14.dp)
-                        )
+        Card(
+                modifier = modifier.fillMaxWidth().clickable { onOpenInBrowser(article.url) },
+                elevation = 2.dp,
+                shape = AppShapes.Medium,
+                backgroundColor = AppColors.Surface
+        ) {
+                Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+                        // 제목
                         Text(
-                                text = article.source,
-                                style = AppTypography.Caption,
-                                color = AppColors.Primary,
-                                fontWeight = FontWeight.SemiBold
+                                text = article.title,
+                                style = AppTypography.Headline3,
+                                color = AppColors.OnSurface,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
-                    }
 
-                    // 날짜
-                    Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                                Icons.Outlined.Schedule,
-                                contentDescription = null,
-                                tint = AppColors.OnSurfaceSecondary,
-                                modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                                text = article.publishedAt,
-                                style = AppTypography.Caption,
-                                color = AppColors.OnSurfaceSecondary
-                        )
-                    }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // 설명
+                        if (!article.description.isNullOrEmpty()) {
+                                Text(
+                                        text = article.description,
+                                        style = AppTypography.Body2,
+                                        color = AppColors.OnSurfaceSecondary,
+                                        maxLines = 3,
+                                        overflow =
+                                                androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        // 메타 정보
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Row(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                        // 출처
+                                        Row(
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                Icon(
+                                                        Icons.Outlined.Source,
+                                                        contentDescription = null,
+                                                        tint = AppColors.Primary,
+                                                        modifier = Modifier.size(14.dp)
+                                                )
+                                                Text(
+                                                        text = article.source,
+                                                        style = AppTypography.Caption,
+                                                        color = AppColors.Primary,
+                                                        fontWeight = FontWeight.SemiBold
+                                                )
+                                        }
+
+                                        // 날짜
+                                        Row(
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                Icon(
+                                                        Icons.Outlined.Schedule,
+                                                        contentDescription = null,
+                                                        tint = AppColors.OnSurfaceSecondary,
+                                                        modifier = Modifier.size(14.dp)
+                                                )
+                                                Text(
+                                                        text = article.publishedAt,
+                                                        style = AppTypography.Caption,
+                                                        color = AppColors.OnSurfaceSecondary
+                                                )
+                                        }
+                                }
+
+                                // 외부 링크 아이콘
+                                Icon(
+                                        Icons.Outlined.OpenInNew,
+                                        contentDescription = "Open in browser",
+                                        tint = AppColors.Primary,
+                                        modifier = Modifier.size(18.dp)
+                                )
+                        }
                 }
-
-                // 외부 링크 아이콘
-                Icon(
-                        Icons.Outlined.OpenInNew,
-                        contentDescription = "Open in browser",
-                        tint = AppColors.Primary,
-                        modifier = Modifier.size(18.dp)
-                )
-            }
         }
-    }
 }
 
 /** 뉴스 리스트 (스크롤 가능) */
@@ -1034,37 +1171,48 @@ fun NewsArticleList(
         onOpenInBrowser: (String) -> Unit,
         modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        NewsSectionHeader(companyName = news.companyName, articleCount = news.articles.size)
+        Column(modifier = modifier.fillMaxSize()) {
+                NewsSectionHeader(companyName = news.companyName, articleCount = news.articles.size)
 
-        if (news.articles.isEmpty()) {
-            EmptyState(
-                    icon = Icons.Outlined.Newspaper,
-                    title = "뉴스가 없습니다",
-                    description = "현재 이 기업에 대한 최신 뉴스가 없습니다"
-            )
-        } else {
-            LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = AppDimens.PaddingMedium),
-                    verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingMedium)
-            ) {
-                items(news.articles) { article ->
-                    NewsArticleCard(article = article, onOpenInBrowser = onOpenInBrowser)
-                }
+                if (news.articles.isEmpty()) {
+                        EmptyState(
+                                icon = Icons.Outlined.Newspaper,
+                                title = "뉴스가 없습니다",
+                                description = "현재 이 기업에 대한 최신 뉴스가 없습니다"
+                        )
+                } else {
+                        LazyColumn(
+                                modifier =
+                                        Modifier.fillMaxSize()
+                                                .padding(horizontal = AppDimens.PaddingMedium),
+                                verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingMedium)
+                        ) {
+                                items(news.articles) { article ->
+                                        NewsArticleCard(
+                                                article = article,
+                                                onOpenInBrowser = onOpenInBrowser
+                                        )
+                                }
 
-                // 마지막 업데이트 시간
-                item {
-                    Text(
-                            text = "Last updated: ${news.lastUpdated}",
-                            style = AppTypography.Caption,
-                            color = AppColors.OnSurfaceSecondary,
-                            modifier =
-                                    Modifier.fillMaxWidth()
-                                            .padding(vertical = AppDimens.PaddingMedium),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                                // 마지막 업데이트 시간
+                                item {
+                                        Text(
+                                                text = "Last updated: ${news.lastUpdated}",
+                                                style = AppTypography.Caption,
+                                                color = AppColors.OnSurfaceSecondary,
+                                                modifier =
+                                                        Modifier.fillMaxWidth()
+                                                                .padding(
+                                                                        vertical =
+                                                                                AppDimens
+                                                                                        .PaddingMedium
+                                                                ),
+                                                textAlign =
+                                                        androidx.compose.ui.text.style.TextAlign
+                                                                .Center
+                                        )
+                                }
+                        }
                 }
-            }
         }
-    }
 }

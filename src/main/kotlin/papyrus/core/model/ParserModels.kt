@@ -1,7 +1,6 @@
 package papyrus.core.model
 
 import kotlinx.serialization.Serializable
-import java.math.BigDecimal
 
 /** 확장된 재무 메트릭 - 더 상세한 정보 포함 */
 @Serializable
@@ -73,12 +72,12 @@ enum class MetricCategory {
     OTHER_CURRENT_ASSETS,
     FIXED_ASSETS,
     DEFERRED_TAX_ASSETS,
-    
+
     // Inventory Detail
     RAW_MATERIALS,
     WORK_IN_PROCESS,
     FINISHED_GOODS,
-    
+
     // Balance Sheet - Liabilities (재무상태표 - 부채)
     TOTAL_LIABILITIES,
     CURRENT_LIABILITIES,
@@ -88,7 +87,7 @@ enum class MetricCategory {
     OPERATING_LEASE,
     LONG_TERM_LEASE,
     DEFERRED_REVENUE,
-    
+
     // Balance Sheet - Equity (재무상태표 - 자본)
     TOTAL_EQUITY,
     RETAINED_EARNINGS,
@@ -190,57 +189,84 @@ data class IndustryInfo(
 )
 
 // ========================================
+// 세그먼트 분석 및 MD&A 모델
+// ========================================
+
+/** 세그먼트별 매출 정보 */
+@Serializable
+data class SegmentRevenue(
+        val segmentName: String, // 세그먼트 이름 (예: "Americas", "iPhone")
+        val segmentType: SegmentType, // 세그먼트 유형
+        val revenue: Double, // 매출액
+        val percentOfTotal: Double? = null, // 전체 매출 대비 비율 (%)
+        val operatingIncome: Double? = null, // 영업이익 (있는 경우)
+        val source: String = "" // 데이터 출처 (페이지/라인 번호)
+)
+
+enum class SegmentType {
+    GEOGRAPHIC, // 지역별
+    PRODUCT, // 제품별
+    SERVICE, // 서비스별
+    CUSTOMER, // 고객 유형별
+    OTHER
+}
+
+/** 경영진 논의 및 분석 (MD&A) */
+@Serializable
+data class ManagementDiscussion(
+        val keyBusinessDrivers: List<String>, // 핵심 비즈니스 동인
+        val marketConditions: String, // 시장 상황
+        val futureOutlook: String, // 향후 전망
+        val criticalAccountingPolicies: List<String> // 중요한 회계 정책
+)
+
+// ========================================
 // 구조화된 재무제표 모델 (Structured Financial Statements)
 // ========================================
 
-/**
- * 완전한 재무제표 세트
- * 손익계산서, 재무상태표, 현금흐름표를 구조화하여 담습니다.
- */
+/** 완전한 재무제표 세트 손익계산서, 재무상태표, 현금흐름표를 구조화하여 담습니다. */
 @Serializable
 data class StructuredFinancialData(
         val companyName: String?,
-        val reportType: String?,      // 10-K, 10-Q, 8-K
+        val reportType: String?, // 10-K, 10-Q, 8-K
         val fiscalYear: String?,
-        val fiscalPeriod: String?,    // Q1, Q2, Q3, Q4, FY
+        val fiscalPeriod: String?, // Q1, Q2, Q3, Q4, FY
         val currency: String = "USD",
         val incomeStatement: StructuredIncomeStatement? = null,
         val balanceSheet: StructuredBalanceSheet? = null,
         val cashFlowStatement: StructuredCashFlowStatement? = null,
         val keyMetrics: KeyFinancialMetrics? = null,
-        val parsingConfidence: Double = 0.0,  // 0-1, 파싱 신뢰도
+        val parsingConfidence: Double = 0.0, // 0-1, 파싱 신뢰도
         val dataQuality: DataQuality = DataQuality.UNKNOWN
 )
 
 enum class DataQuality {
-    HIGH,       // 테이블 파싱 성공, 모든 주요 항목 존재
-    MEDIUM,     // 일부 항목 누락 또는 패턴 파싱
-    LOW,        // 대부분 패턴 파싱, 신뢰도 낮음
+    HIGH, // 테이블 파싱 성공, 모든 주요 항목 존재
+    MEDIUM, // 일부 항목 누락 또는 패턴 파싱
+    LOW, // 대부분 패턴 파싱, 신뢰도 낮음
     UNKNOWN
 }
 
-/**
- * 구조화된 손익계산서 (Income Statement)
- */
+/** 구조화된 손익계산서 (Income Statement) */
 @Serializable
 data class StructuredIncomeStatement(
         val periodEnding: String?,
         val periodType: PeriodType?,
-        
+
         // 매출
         val totalRevenue: MonetaryValue? = null,
         val productRevenue: MonetaryValue? = null,
         val serviceRevenue: MonetaryValue? = null,
-        
+
         // 비용
         val costOfRevenue: MonetaryValue? = null,
         val grossProfit: MonetaryValue? = null,
-        
+
         // 영업비용
         val researchAndDevelopment: MonetaryValue? = null,
         val sellingGeneralAdmin: MonetaryValue? = null,
         val totalOperatingExpenses: MonetaryValue? = null,
-        
+
         // 이익
         val operatingIncome: MonetaryValue? = null,
         val interestExpense: MonetaryValue? = null,
@@ -249,7 +275,7 @@ data class StructuredIncomeStatement(
         val incomeBeforeTax: MonetaryValue? = null,
         val incomeTaxExpense: MonetaryValue? = null,
         val netIncome: MonetaryValue? = null,
-        
+
         // 주당 지표
         val basicEPS: Double? = null,
         val dilutedEPS: Double? = null,
@@ -257,13 +283,11 @@ data class StructuredIncomeStatement(
         val dilutedSharesOutstanding: Long? = null
 )
 
-/**
- * 구조화된 재무상태표 (Balance Sheet)
- */
+/** 구조화된 재무상태표 (Balance Sheet) */
 @Serializable
 data class StructuredBalanceSheet(
         val periodEnding: String?,
-        
+
         // 유동자산
         val cashAndEquivalents: MonetaryValue? = null,
         val shortTermInvestments: MonetaryValue? = null,
@@ -272,7 +296,7 @@ data class StructuredBalanceSheet(
         val prepaidExpenses: MonetaryValue? = null,
         val otherCurrentAssets: MonetaryValue? = null,
         val totalCurrentAssets: MonetaryValue? = null,
-        
+
         // 비유동자산
         val propertyPlantEquipment: MonetaryValue? = null,
         val longTermInvestments: MonetaryValue? = null,
@@ -281,7 +305,7 @@ data class StructuredBalanceSheet(
         val deferredTaxAssets: MonetaryValue? = null,
         val otherNonCurrentAssets: MonetaryValue? = null,
         val totalAssets: MonetaryValue? = null,
-        
+
         // 유동부채
         val accountsPayable: MonetaryValue? = null,
         val shortTermDebt: MonetaryValue? = null,
@@ -289,13 +313,13 @@ data class StructuredBalanceSheet(
         val deferredRevenue: MonetaryValue? = null,
         val otherCurrentLiabilities: MonetaryValue? = null,
         val totalCurrentLiabilities: MonetaryValue? = null,
-        
+
         // 비유동부채
         val longTermDebt: MonetaryValue? = null,
         val deferredTaxLiabilities: MonetaryValue? = null,
         val otherNonCurrentLiabilities: MonetaryValue? = null,
         val totalLiabilities: MonetaryValue? = null,
-        
+
         // 자본
         val commonStock: MonetaryValue? = null,
         val retainedEarnings: MonetaryValue? = null,
@@ -304,114 +328,108 @@ data class StructuredBalanceSheet(
         val totalLiabilitiesAndEquity: MonetaryValue? = null
 )
 
-/**
- * 구조화된 현금흐름표 (Cash Flow Statement)
- */
+/** 구조화된 현금흐름표 (Cash Flow Statement) */
 @Serializable
 data class StructuredCashFlowStatement(
         val periodEnding: String?,
         val periodType: PeriodType?,
-        
+
         // 영업활동 현금흐름
         val netIncome: MonetaryValue? = null,
         val depreciation: MonetaryValue? = null,
         val stockBasedCompensation: MonetaryValue? = null,
         val changesInWorkingCapital: MonetaryValue? = null,
         val netCashFromOperating: MonetaryValue? = null,
-        
+
         // 투자활동 현금흐름
         val capitalExpenditures: MonetaryValue? = null,
         val purchaseOfInvestments: MonetaryValue? = null,
         val saleOfInvestments: MonetaryValue? = null,
         val acquisitions: MonetaryValue? = null,
         val netCashFromInvesting: MonetaryValue? = null,
-        
+
         // 재무활동 현금흐름
         val dividendsPaid: MonetaryValue? = null,
         val shareRepurchases: MonetaryValue? = null,
         val debtRepayment: MonetaryValue? = null,
         val debtIssuance: MonetaryValue? = null,
         val netCashFromFinancing: MonetaryValue? = null,
-        
+
         // 요약
         val netChangeInCash: MonetaryValue? = null,
         val beginningCash: MonetaryValue? = null,
         val endingCash: MonetaryValue? = null,
-        
+
         // 계산된 지표
         val freeCashFlow: MonetaryValue? = null
 )
 
-/**
- * 금액 값 (정밀도 유지)
- */
+/** 금액 값 (정밀도 유지) */
 @Serializable
 data class MonetaryValue(
-        val amount: Double,           // 실제 금액 (달러 단위로 정규화)
-        val formatted: String,        // 표시용 포맷 (예: "$1.23B")
+        val amount: Double, // 실제 금액 (달러 단위로 정규화)
+        val formatted: String, // 표시용 포맷 (예: "$1.23B")
         val originalUnit: MetricUnit, // 원본 문서의 단위
         val isNegative: Boolean = false,
-        val yearOverYearChange: Double? = null,  // YoY 변화율 (%)
+        val yearOverYearChange: Double? = null, // YoY 변화율 (%)
         val confidence: Double = 1.0
 ) {
     companion object {
         fun fromDouble(value: Double, unit: MetricUnit = MetricUnit.DOLLARS): MonetaryValue {
             val absValue = kotlin.math.abs(value)
-            val formatted = when {
-                absValue >= 1_000_000_000 -> "$${String.format("%.2f", absValue / 1_000_000_000)}B"
-                absValue >= 1_000_000 -> "$${String.format("%.2f", absValue / 1_000_000)}M"
-                absValue >= 1_000 -> "$${String.format("%.2f", absValue / 1_000)}K"
-                else -> "$${String.format("%.2f", absValue)}"
-            }
+            val formatted =
+                    when {
+                        absValue >= 1_000_000_000 ->
+                                "$${String.format("%.2f", absValue / 1_000_000_000)}B"
+                        absValue >= 1_000_000 -> "$${String.format("%.2f", absValue / 1_000_000)}M"
+                        absValue >= 1_000 -> "$${String.format("%.2f", absValue / 1_000)}K"
+                        else -> "$${String.format("%.2f", absValue)}"
+                    }
             return MonetaryValue(
-                amount = value,
-                formatted = if (value < 0) "-$formatted" else formatted,
-                originalUnit = unit,
-                isNegative = value < 0
+                    amount = value,
+                    formatted = if (value < 0) "-$formatted" else formatted,
+                    originalUnit = unit,
+                    isNegative = value < 0
             )
         }
     }
 }
 
-/**
- * 핵심 재무 지표 (계산된 비율)
- */
+/** 핵심 재무 지표 (계산된 비율) */
 @Serializable
 data class KeyFinancialMetrics(
         // 수익성
-        val grossMargin: Double? = null,          // 매출총이익률
-        val operatingMargin: Double? = null,      // 영업이익률
-        val netProfitMargin: Double? = null,      // 순이익률
-        val returnOnAssets: Double? = null,       // ROA
-        val returnOnEquity: Double? = null,       // ROE
-        
+        val grossMargin: Double? = null, // 매출총이익률
+        val operatingMargin: Double? = null, // 영업이익률
+        val netProfitMargin: Double? = null, // 순이익률
+        val returnOnAssets: Double? = null, // ROA
+        val returnOnEquity: Double? = null, // ROE
+
         // 유동성
-        val currentRatio: Double? = null,         // 유동비율
-        val quickRatio: Double? = null,           // 당좌비율
-        val cashRatio: Double? = null,            // 현금비율
-        
+        val currentRatio: Double? = null, // 유동비율
+        val quickRatio: Double? = null, // 당좌비율
+        val cashRatio: Double? = null, // 현금비율
+
         // 지급능력
-        val debtToEquity: Double? = null,         // 부채비율
-        val debtRatio: Double? = null,            // 총부채비율
-        val interestCoverage: Double? = null,     // 이자보상배율
-        
+        val debtToEquity: Double? = null, // 부채비율
+        val debtRatio: Double? = null, // 총부채비율
+        val interestCoverage: Double? = null, // 이자보상배율
+
         // 효율성
-        val assetTurnover: Double? = null,        // 자산회전율
-        val inventoryTurnover: Double? = null,    // 재고회전율
-        val receivablesTurnover: Double? = null,  // 매출채권회전율
-        
+        val assetTurnover: Double? = null, // 자산회전율
+        val inventoryTurnover: Double? = null, // 재고회전율
+        val receivablesTurnover: Double? = null, // 매출채권회전율
+
         // 성장성
-        val revenueGrowth: Double? = null,        // 매출 성장률 (YoY)
-        val netIncomeGrowth: Double? = null,      // 순이익 성장률 (YoY)
-        val epsGrowth: Double? = null             // EPS 성장률 (YoY)
+        val revenueGrowth: Double? = null, // 매출 성장률 (YoY)
+        val netIncomeGrowth: Double? = null, // 순이익 성장률 (YoY)
+        val epsGrowth: Double? = null // EPS 성장률 (YoY)
 )
 
-/**
- * SEC 보고서 메타데이터
- */
+/** SEC 보고서 메타데이터 */
 @Serializable
 data class SecReportMetadata(
-        val formType: String,           // 10-K, 10-Q, 8-K, 20-F
+        val formType: String, // 10-K, 10-Q, 8-K, 20-F
         val filingDate: String?,
         val reportDate: String?,
         val fiscalYearEnd: String?,
@@ -423,9 +441,7 @@ data class SecReportMetadata(
         val primaryDocument: String?
 )
 
-/**
- * 파싱 결과 요약
- */
+/** 파싱 결과 요약 */
 @Serializable
 data class ParseSummary(
         val totalMetricsFound: Int,
@@ -434,7 +450,7 @@ data class ParseSummary(
         val cashFlowMetrics: Int,
         val riskFactorsFound: Int,
         val tablesProcessed: Int,
-        val parsingMethod: String,      // "table", "pattern", "hybrid"
+        val parsingMethod: String, // "table", "pattern", "hybrid"
         val processingTimeMs: Long,
         val warnings: List<String> = emptyList(),
         val errors: List<String> = emptyList()
