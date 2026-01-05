@@ -34,6 +34,42 @@ import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
 import papyrus.core.service.analyzer.AiAnalysisService
 
+private val uiEmojiMarkers = listOf(
+        "✅",
+        "⚠️",
+        "⚠",
+        "📌",
+        "📊",
+        "📈",
+        "📋",
+        "🔍",
+        "✨",
+        "🚀",
+        "⭐",
+        "💡",
+        "🏢",
+        "💰",
+        "⚖️",
+        "💵",
+        "💧",
+        "🏦",
+        "👤",
+        "⚙️",
+        "📜",
+        "🏃",
+        "💻",
+        "🌍",
+        "🌐"
+)
+
+private fun sanitizeUiText(text: String): String {
+    var result = text
+    for (marker in uiEmojiMarkers) {
+        result = result.replace(marker, "")
+    }
+    return result.replace("\uFE0F", "")
+}
+
 /** Helper function to format currency values */
 private fun formatCurrency(value: Double): String {
     return when {
@@ -549,7 +585,7 @@ private fun HealthScoreTab(analysis: FinancialAnalysis) {
             ) {
                 // Strengths card
                 StrengthWeaknessCard(
-                        title = "💪 Strengths",
+                    title = "Strengths",
                         items = healthScore.strengths,
                         backgroundColor = AppColors.SuccessLight,
                         modifier = Modifier.weight(1f)
@@ -557,7 +593,7 @@ private fun HealthScoreTab(analysis: FinancialAnalysis) {
 
                 // Weaknesses card
                 StrengthWeaknessCard(
-                        title = "⚠️ Needs Improvement",
+                    title = "Needs Improvement",
                         items = healthScore.weaknesses,
                         backgroundColor = AppColors.WarningLight,
                         modifier = Modifier.weight(1f)
@@ -699,7 +735,7 @@ private fun StrengthWeaknessCard(
             } else {
                 items.forEach { item ->
                     Text(
-                            text = item,
+                            text = sanitizeUiText(item).trim(),
                             style = AppTypography.Body2,
                             color = AppColors.OnSurface,
                             modifier = Modifier.padding(vertical = 2.dp)
@@ -719,13 +755,13 @@ private fun RecommendationsCard(recommendations: List<String>) {
             backgroundColor = AppColors.InfoLight
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            SectionHeader(title = "💡 투자 팁 & 권장사항", icon = Icons.Outlined.Lightbulb)
+            SectionHeader(title = "투자 팁 & 권장사항", icon = Icons.Outlined.Lightbulb)
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
             recommendations.forEach { recommendation ->
                 Text(
-                        text = recommendation,
+                        text = sanitizeUiText(recommendation).trim(),
                         style = AppTypography.Body2,
                         color = AppColors.OnSurface,
                         modifier = Modifier.padding(vertical = 4.dp)
@@ -744,13 +780,13 @@ private fun KeyTakeawaysCard(takeaways: List<String>) {
             backgroundColor = AppColors.PrimaryLight
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            SectionHeader(title = "📌 핵심 요점", icon = Icons.Outlined.Star)
+            SectionHeader(title = "핵심 요점", icon = Icons.Outlined.Star)
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
             takeaways.forEach { takeaway ->
                 Text(
-                        text = takeaway,
+                        text = sanitizeUiText(takeaway).trim(),
                         style = AppTypography.Body2,
                         color = AppColors.OnSurface,
                         modifier = Modifier.padding(vertical = 4.dp),
@@ -790,7 +826,11 @@ private fun ReportTypeCard(reportType: String?, explanation: String?) {
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-            Text(text = explanation, style = AppTypography.Body2, color = AppColors.OnSurface)
+            Text(
+                    text = sanitizeUiText(explanation).trim(),
+                    style = AppTypography.Body2,
+                    color = AppColors.OnSurface
+            )
         }
     }
 }
@@ -829,7 +869,12 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
                     verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = insight.emoji, fontSize = 28.sp)
+                    Icon(
+                        imageVector = Icons.Outlined.Lightbulb,
+                        contentDescription = null,
+                        tint = AppColors.Primary,
+                        modifier = Modifier.size(28.dp)
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
@@ -839,7 +884,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
                                 color = AppColors.Primary
                         )
                         Text(
-                                text = insight.summary,
+                            text = sanitizeUiText(insight.summary).trim(),
                                 style = AppTypography.Body2,
                                 color = AppColors.OnSurface
                         )
@@ -862,7 +907,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
 
                     // 상세 설명
                     InsightSection(
-                            title = "📝 상세 설명",
+                            title = "상세 설명",
                             content = insight.detailedExplanation,
                             backgroundColor = AppColors.SurfaceVariant
                     )
@@ -871,7 +916,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
 
                     // 이것이 의미하는 것
                     InsightSection(
-                            title = "🤔 이게 무슨 뜻이에요?",
+                            title = "이게 무슨 뜻이에요?",
                             content = insight.whatItMeans,
                             backgroundColor = AppColors.InfoLight
                     )
@@ -880,7 +925,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
 
                     // 왜 중요한지
                     InsightSection(
-                            title = "❓ 왜 중요한가요?",
+                            title = "왜 중요한가요?",
                             content = insight.whyItMatters,
                             backgroundColor = AppColors.WarningLight
                     )
@@ -889,7 +934,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
 
                     // 실행 가능한 조언
                     InsightSection(
-                            title = "💡 투자자 팁",
+                            title = "투자자 팁",
                             content = insight.actionableAdvice,
                             backgroundColor = AppColors.SuccessLight
                     )
@@ -910,7 +955,11 @@ private fun InsightSection(title: String, content: String, backgroundColor: Colo
                     color = AppColors.OnSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = content, style = AppTypography.Body2, color = AppColors.OnSurface)
+            Text(
+                    text = sanitizeUiText(content).trim(),
+                    style = AppTypography.Body2,
+                    color = AppColors.OnSurface
+            )
         }
     }
 }
@@ -992,7 +1041,7 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
                     ) {
                         Column(modifier = Modifier.padding(AppDimens.PaddingSmall)) {
                             Text(
-                                    text = "🎯 쉬운 비유",
+                                    text = "쉬운 비유",
                                     style = AppTypography.Caption,
                                     fontWeight = FontWeight.Bold,
                                     color = AppColors.OnSurface
@@ -1016,7 +1065,7 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
                     ) {
                         Column(modifier = Modifier.padding(AppDimens.PaddingSmall)) {
                             Text(
-                                    text = "📋 실제 예시",
+                                    text = "실제 예시",
                                     style = AppTypography.Caption,
                                     fontWeight = FontWeight.Bold,
                                     color = AppColors.OnSurface
@@ -2589,7 +2638,7 @@ fun KeyFinancialMetricsDashboard(
         // 손익계산서 핵심 지표
         if (revenueMetrics.isNotEmpty()) {
             FinancialStatementCard(
-                title = "📊 Income Statement Highlights",
+                title = "Income Statement Highlights",
                 subtitle = "손익계산서 핵심 지표",
                 metrics = revenueMetrics,
                 accentColor = AppColors.Revenue
@@ -2600,7 +2649,7 @@ fun KeyFinancialMetricsDashboard(
         // 재무상태표 핵심 지표
         if (balanceMetrics.isNotEmpty()) {
             FinancialStatementCard(
-                title = "🏦 Balance Sheet Highlights",
+                title = "Balance Sheet Highlights",
                 subtitle = "재무상태표 핵심 지표",
                 metrics = balanceMetrics,
                 accentColor = AppColors.Primary
@@ -2611,7 +2660,7 @@ fun KeyFinancialMetricsDashboard(
         // 현금흐름표 핵심 지표
         if (cashFlowMetrics.isNotEmpty()) {
             FinancialStatementCard(
-                title = "💵 Cash Flow Highlights",
+                title = "Cash Flow Highlights",
                 subtitle = "현금흐름표 핵심 지표",
                 metrics = cashFlowMetrics,
                 accentColor = AppColors.Success
@@ -2832,7 +2881,7 @@ private fun MetricDisplayCard(
             if (metric.confidence < 0.9) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "⚠ ${String.format("%.0f", metric.confidence * 100)}% confidence",
+                    text = "Confidence: ${String.format("%.0f", metric.confidence * 100)}%",
                     style = AppTypography.Caption,
                     color = AppColors.Warning,
                     fontSize = 10.sp
@@ -2919,7 +2968,7 @@ fun QuickFinancialSummaryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "📊 Quick Financial Summary",
+                    text = "Quick Financial Summary",
                     style = AppTypography.Subtitle1,
                     fontWeight = FontWeight.Bold,
                     color = AppColors.OnSurface

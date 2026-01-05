@@ -38,7 +38,7 @@ fun DragDropPanel(
                 shape = AppShapes.Large
             )
             .border(
-                width = 2.dp,
+                width = 1.dp,
                 color = borderColor,
                 shape = AppShapes.Large
             )

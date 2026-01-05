@@ -532,7 +532,7 @@ private fun FileFormatSelector(
                                                         shape = AppShapes.Small
                                                 )
                                                 .border(
-                                                        width = if (isSelected) 2.dp else 1.dp,
+                                                        width = 1.dp,
                                                         color = borderColor,
                                                         shape = AppShapes.Small
                                                 )
