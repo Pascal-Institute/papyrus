@@ -90,6 +90,34 @@ abstract class BaseSecReportParser<T : SecReportParseResult>(
         return content.substring(startIndex, end.coerceAtMost(content.length)).trim()
     }
 
+    /**
+     * Build a section map from header match positions.
+     *
+     * Keeps behavior consistent across parsers: each header spans until the next header.
+     */
+    protected fun extractSectionsFromHeaderMatches(
+            content: String,
+            headerMatches: List<Pair<Int, String>>,
+            keyForHeader: (index: Int, headerText: String) -> String?
+    ): Map<String, String> {
+        val sections = mutableMapOf<String, String>()
+
+        for (i in headerMatches.indices) {
+            val (startIndex, headerText) = headerMatches[i]
+            val endIndex =
+                    if (i < headerMatches.size - 1) {
+                        headerMatches[i + 1].first
+                    } else {
+                        null
+                    }
+
+            val key = keyForHeader(i, headerText) ?: continue
+            sections[key] = extractSection(content, startIndex, endIndex)
+        }
+
+        return sections
+    }
+
     /** 기본 리스크 요인 추출 (하위 클래스에서 오버라이드 가능) */
     override fun extractRiskFactors(content: String): List<RiskFactor> {
         val riskFactors = mutableListOf<RiskFactor>()

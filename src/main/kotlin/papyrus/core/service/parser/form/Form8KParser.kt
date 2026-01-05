@@ -48,8 +48,6 @@ class Form8KParser : BaseSecReportParser<Form8KParseResult>(SecReportType.FORM_8
     }
 
     override fun extractSections(content: String): Map<String, String> {
-        val sections = mutableMapOf<String, String>()
-
         // 8-K Item 패턴들 (Item 1.01, Item 2.02 등)
         val itemPatterns =
                 Form8KItem.values().map { item ->
@@ -61,25 +59,11 @@ class Form8KParser : BaseSecReportParser<Form8KParseResult>(SecReportType.FORM_8
 
         val headerMatches = findSectionHeader(content, itemPatterns)
 
-        // 각 섹션 추출
-        for (i in headerMatches.indices) {
-            val (startIndex, headerText) = headerMatches[i]
-            val endIndex =
-                    if (i < headerMatches.size - 1) {
-                        headerMatches[i + 1].first
-                    } else {
-                        null
-                    }
-
-            // Item 번호 추출 (1.01, 2.02 등)
+        return extractSectionsFromHeaderMatches(content, headerMatches) { _, headerText ->
             val itemMatch = Regex("(?i)item\\s+(\\d+\\.\\d+)").find(headerText)
-            val itemNumber = itemMatch?.groupValues?.get(1) ?: continue
-
-            val sectionContent = extractSection(content, startIndex, endIndex)
-            sections["Item $itemNumber"] = sectionContent
+            val itemNumber = itemMatch?.groupValues?.get(1) ?: return@extractSectionsFromHeaderMatches null
+            "Item $itemNumber"
         }
-
-        return sections
     }
 
     private fun extractEventItems(content: String): Map<String, String> {

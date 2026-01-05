@@ -47,8 +47,6 @@ class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM
     }
 
     override fun extractSections(content: String): Map<String, String> {
-        val sections = mutableMapOf<String, String>()
-
         // 10-K Item 패턴들
         val itemPatterns =
                 Form10KItem.values().map { item ->
@@ -61,23 +59,12 @@ class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM
 
         val headerMatches = findSectionHeader(content, itemPatterns)
 
-        // 각 섹션 추출
-        for (i in headerMatches.indices) {
-            val (startIndex, headerText) = headerMatches[i]
-            val endIndex =
-                    if (i < headerMatches.size - 1) {
-                        headerMatches[i + 1].first
-                    } else {
-                        null
-                    }
-
-            // Item 번호 추출
-            val itemMatch = Regex("(?i)item\\s+(\\d+[a-z]?)").find(headerText)
-            val itemNumber = itemMatch?.groupValues?.get(1)?.uppercase() ?: continue
-
-            val sectionContent = extractSection(content, startIndex, endIndex)
-            sections["Item $itemNumber"] = sectionContent
-        }
+        val sections =
+                extractSectionsFromHeaderMatches(content, headerMatches) { _, headerText ->
+                    val itemMatch = Regex("(?i)item\\s+(\\d+[a-z]?)").find(headerText)
+                    val itemNumber = itemMatch?.groupValues?.get(1)?.uppercase() ?: return@extractSectionsFromHeaderMatches null
+                    "Item $itemNumber"
+                }.toMutableMap()
 
         // Part 기반 섹션도 추출
         extractPartSections(content, sections)

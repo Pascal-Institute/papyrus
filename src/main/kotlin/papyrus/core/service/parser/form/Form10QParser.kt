@@ -45,8 +45,6 @@ class Form10QParser : BaseSecReportParser<Form10QParseResult>(SecReportType.FORM
     }
 
     override fun extractSections(content: String): Map<String, String> {
-        val sections = mutableMapOf<String, String>()
-
         // 10-Q Part + Item 패턴들
         val itemPatterns =
                 listOf(
@@ -89,30 +87,15 @@ class Form10QParser : BaseSecReportParser<Form10QParseResult>(SecReportType.FORM
 
         val headerMatches = findSectionHeader(content, itemPatterns)
 
-        // 각 섹션 추출
-        for (i in headerMatches.indices) {
-            val (startIndex, headerText) = headerMatches[i]
-            val endIndex =
-                    if (i < headerMatches.size - 1) {
-                        headerMatches[i + 1].first
-                    } else {
-                        null
-                    }
+                return extractSectionsFromHeaderMatches(content, headerMatches) { _, headerText ->
+                        val partMatch = Regex("(?i)part\\s+(i+)").find(headerText)
+                        val itemMatch = Regex("(?i)item\\s+(\\d+[a-z]?)").find(headerText)
 
-            // Part 와 Item 추출
-            val partMatch = Regex("(?i)part\\s+(i+)").find(headerText)
-            val itemMatch = Regex("(?i)item\\s+(\\d+[a-z]?)").find(headerText)
-
-            if (partMatch != null && itemMatch != null) {
-                val partNumber = partMatch.groupValues[1].uppercase()
-                val itemNumber = itemMatch.groupValues[1].uppercase()
-
-                val sectionContent = extractSection(content, startIndex, endIndex)
-                sections["Part $partNumber - Item $itemNumber"] = sectionContent
-            }
-        }
-
-        return sections
+                        if (partMatch == null || itemMatch == null) return@extractSectionsFromHeaderMatches null
+                        val partNumber = partMatch.groupValues[1].uppercase()
+                        val itemNumber = itemMatch.groupValues[1].uppercase()
+                        "Part $partNumber - Item $itemNumber"
+                }
     }
 
     private fun extractMdAndA(content: String): ManagementDiscussion? {
