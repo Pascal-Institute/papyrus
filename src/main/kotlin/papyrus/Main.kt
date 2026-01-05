@@ -28,7 +28,6 @@ import papyrus.core.model.FinancialAnalysis
 import papyrus.core.model.TickerEntry
 import papyrus.core.network.NewsApi
 import papyrus.core.network.SecApi
-import papyrus.core.service.analyzer.AiAnalysisService
 import papyrus.core.service.analyzer.FinancialAnalyzer
 import papyrus.ui.*
 import papyrus.util.BookmarkManager
@@ -37,12 +36,10 @@ import papyrus.util.FileUtils
 /** Main Application Entry Point */
 fun main() = application {
         Window(
-                onCloseRequest = ::exitApplication, 
+                onCloseRequest = ::exitApplication,
                 title = "Papyrus - SEC Financial Analyzer",
                 icon = painterResource("papyrus_icon.png")
-        ) {
-                PapyrusApp()
-        }
+        ) { PapyrusApp() }
 }
 
 /** Main Application Composable */
@@ -235,16 +232,17 @@ fun PapyrusApp() {
                                                                 analysisState = AnalysisState.Idle
                                                         )
                                         },
-                                        onQuickAnalyze = { filing ->
+                                        onQuickAnalyze = { filing, fileFormat ->
                                                 scope.launch {
                                                         val cik =
                                                                 appState.selectedTicker?.cik
                                                                         .toString()
                                                         val url =
-                                                                SecApi.getDocumentUrl(
+                                                                SecApi.getDocumentUrlWithFormat(
                                                                         cik,
                                                                         filing.accessionNumber,
-                                                                        filing.primaryDocument
+                                                                        filing.primaryDocument,
+                                                                        fileFormat.extension
                                                                 )
 
                                                         appState =
@@ -252,7 +250,7 @@ fun PapyrusApp() {
                                                                         analysisState =
                                                                                 AnalysisState
                                                                                         .Loading(
-                                                                                                "SEC 문서를 분석하고 있습니다..."
+                                                                                                "${fileFormat.displayName} 문서를 분석하고 있습니다..."
                                                                                         ),
                                                                         currentAnalyzingFiling =
                                                                                 filing.accessionNumber
@@ -264,7 +262,8 @@ fun PapyrusApp() {
                                                                                 url
                                                                         )
 
-                                                                // Check for existing analysis results
+                                                                // Check for existing analysis
+                                                                // results
                                                                 val existingAnalysis =
                                                                         (appState.analysisState as?
                                                                                         AnalysisState.FinancialAnalysisResult)
@@ -283,17 +282,20 @@ fun PapyrusApp() {
                                                                                         ?.investmentAdvice !=
                                                                                         null
 
-                                                                // Decide whether to skip AI analysis
-                                                                // Quick Analyze always skips AI - use AI tab for AI analysis
+                                                                // Decide whether to skip AI
+                                                                // analysis
+                                                                // Quick Analyze always skips AI -
+                                                                // use AI tab for AI analysis
                                                                 val skipAi = true
 
-                                                                // Perform financial analysis without AI
+                                                                // Perform financial analysis
+                                                                // without AI
                                                                 appState =
                                                                         appState.copy(
                                                                                 analysisState =
                                                                                         AnalysisState
                                                                                                 .Loading(
-                                                                                                        "SEC 문서를 분석하고 있습니다..."
+                                                                                                        "${fileFormat.displayName} 문서를 분석하고 있습니다..."
                                                                                                 )
                                                                         )
 
@@ -306,7 +308,7 @@ fun PapyrusApp() {
                                                                         ) {
                                                                                 FinancialAnalyzer
                                                                                         .analyzeWithAI(
-                                                                                                filing.primaryDocument,
+                                                                                                "${filing.form} (${fileFormat.displayName})",
                                                                                                 rawHtml,
                                                                                                 skipAiAnalysis =
                                                                                                         skipAi
@@ -366,75 +368,77 @@ fun PapyrusApp() {
                                         appState = appState,
                                         onFileDropped = { file ->
                                                 scope.launch {
-                                        // Immediately show loading state
-                                        appState =
-                                                appState.copy(
-                                                        analysisState =
-                                                                AnalysisState
-                                                                        .Loading(
-                                                                                "파일을 읽는 중... ${file.name}"
-                                                                        )
-                                                )
-
-                                        try {
-                                                if (!FileUtils.isSupportedFile(file)
-                                                ) {
+                                                        // Immediately show loading state
                                                         appState =
                                                                 appState.copy(
                                                                         analysisState =
                                                                                 AnalysisState
-                                                                                        .Error(
-                                                                                                message =
-                                                                                                        "Unsupported file type: ${file.extension}\nSupported: PDF, HTML, HTM, TXT",
-                                                                                                retryAction =
-                                                                                                        null
+                                                                                        .Loading(
+                                                                                                "파일을 읽는 중... ${file.name}"
                                                                                         )
                                                                 )
-                                                        return@launch
-                                                }
-                                                
-                                                // Update loading message for content extraction
-                                                appState =
-                                                        appState.copy(
-                                                                analysisState =
-                                                                        AnalysisState
-                                                                                .Loading(
-                                                                                        "문서 내용을 추출하는 중..."
-                                                                                )
-                                                        )
-                                                
-                                                val content =
-                                                        FileUtils
-                                                                .extractTextFromFile(
-                                                                        file
-                                                                )
-                                                
-                                                // Update loading message for analysis
-                                                appState =
-                                                        appState.copy(
-                                                                analysisState =
-                                                                        AnalysisState
-                                                                                .Loading(
-                                                                                        "재무 데이터를 분석하는 중..."
-                                                                                )
-                                                        )
-                                                
-                                                // Use beginner-friendly analysis
-                                                val analysis =
-                                                        FinancialAnalyzer
-                                                                .analyzeForBeginners(
-                                                                        file.name,
-                                                                        content
-                                                                )
 
-                                                appState =
-                                                        appState.copy(
-                                                                analysisState =
-                                                                        AnalysisState
-                                                                                .FinancialAnalysisResult(
-                                                                                        analysis
+                                                        try {
+                                                                if (!FileUtils.isSupportedFile(file)
+                                                                ) {
+                                                                        appState =
+                                                                                appState.copy(
+                                                                                        analysisState =
+                                                                                                AnalysisState
+                                                                                                        .Error(
+                                                                                                                message =
+                                                                                                                        "Unsupported file type: ${file.extension}\nSupported: PDF, HTML, HTM, TXT",
+                                                                                                                retryAction =
+                                                                                                                        null
+                                                                                                        )
                                                                                 )
-                                                        )
+                                                                        return@launch
+                                                                }
+
+                                                                // Update loading message for
+                                                                // content extraction
+                                                                appState =
+                                                                        appState.copy(
+                                                                                analysisState =
+                                                                                        AnalysisState
+                                                                                                .Loading(
+                                                                                                        "문서 내용을 추출하는 중..."
+                                                                                                )
+                                                                        )
+
+                                                                val content =
+                                                                        FileUtils
+                                                                                .extractTextFromFile(
+                                                                                        file
+                                                                                )
+
+                                                                // Update loading message for
+                                                                // analysis
+                                                                appState =
+                                                                        appState.copy(
+                                                                                analysisState =
+                                                                                        AnalysisState
+                                                                                                .Loading(
+                                                                                                        "재무 데이터를 분석하는 중..."
+                                                                                                )
+                                                                        )
+
+                                                                // Use beginner-friendly analysis
+                                                                val analysis =
+                                                                        FinancialAnalyzer
+                                                                                .analyzeForBeginners(
+                                                                                        file.name,
+                                                                                        content
+                                                                                )
+
+                                                                appState =
+                                                                        appState.copy(
+                                                                                analysisState =
+                                                                                        AnalysisState
+                                                                                                .FinancialAnalysisResult(
+                                                                                                        analysis
+                                                                                                )
+                                                                        )
                                                         } catch (e: Exception) {
                                                                 appState =
                                                                         appState.copy(
@@ -534,7 +538,7 @@ private fun LeftPanel(
         onBookmarkedTickerClick: (Int) -> Unit,
         onRemoveBookmark: (Int) -> Unit,
         onBackToSearch: () -> Unit,
-        onQuickAnalyze: (FilingItem) -> Unit,
+        onQuickAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
         onOpenInBrowser: (FilingItem) -> Unit,
         onSettingsClick: () -> Unit
 ) {
@@ -658,7 +662,7 @@ private fun CompanyFilingsPanel(
         isLoadingNews: Boolean,
         onBackClick: () -> Unit,
         onBookmarkClick: () -> Unit,
-        onQuickAnalyze: (FilingItem) -> Unit,
+        onQuickAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
         onOpenInBrowser: (FilingItem) -> Unit,
         onOpenNewsInBrowser: (String) -> Unit
 ) {
@@ -731,7 +735,12 @@ private fun CompanyFilingsPanel(
                                                                         onOpenInBrowser(filing)
                                                                 },
                                                                 onQuickAnalyze = {
-                                                                        onQuickAnalyze(filing)
+                                                                        filingItem,
+                                                                        format ->
+                                                                        onQuickAnalyze(
+                                                                                filingItem,
+                                                                                format
+                                                                        )
                                                                 },
                                                                 isAnalyzing =
                                                                         currentAnalyzingFiling ==

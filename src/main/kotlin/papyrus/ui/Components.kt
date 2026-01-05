@@ -354,7 +354,7 @@ fun FilingCard(
         filing: FilingItem,
         cik: String,
         onOpenBrowser: (String) -> Unit,
-        onQuickAnalyze: (String) -> Unit,
+        onQuickAnalyze: (FilingItem, FileFormatType) -> Unit,
         isAnalyzing: Boolean = false,
         modifier: Modifier = Modifier
 ) {
@@ -438,7 +438,7 @@ fun FilingCard(
                         ) {
                                 // Quick Analyze Button (Primary Action)
                                 Button(
-                                        onClick = { onQuickAnalyze(filing.accessionNumber) },
+                                        onClick = { onQuickAnalyze(filing, selectedFileFormat) },
                                         enabled = !isAnalyzing,
                                         colors =
                                                 ButtonDefaults.buttonColors(

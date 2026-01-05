@@ -98,6 +98,44 @@ object SecApi {
         return "https://www.sec.gov/Archives/edgar/data/$cikInt/$acc/$primaryDocument"
     }
 
+    /**
+     * Get document URL with specific file format SEC filings are typically available in multiple
+     * formats:
+     * - HTML: primary document (e.g., 0001628280-23-019764-index.htm)
+     * - TXT: Complete submission text file (e.g., 0001628280-23-019764.txt)
+     * - PDF: Not always available directly, but can be rendered
+     */
+    fun getDocumentUrlWithFormat(
+            cik: String,
+            accessionNumber: String,
+            primaryDocument: String,
+            fileExtension: String
+    ): String {
+        val acc = accessionNumber.replace("-", "")
+        val cikInt = cik.trimStart('0')
+        val baseUrl = "https://www.sec.gov/Archives/edgar/data/$cikInt/$acc"
+
+        return when (fileExtension.lowercase()) {
+            "txt" -> {
+                // The complete submission text file uses the accession number
+                "$baseUrl/$accessionNumber.txt"
+            }
+            "pdf" -> {
+                // PDF rendering service (may not always work)
+                // Alternative: Use SEC's rendering service
+                "https://www.sec.gov/cgi-bin/viewer?action=view&cik=$cikInt&accession_number=$accessionNumber&xbrl_type=v"
+            }
+            "html", "htm" -> {
+                // Use the primary document (usually HTML)
+                "$baseUrl/$primaryDocument"
+            }
+            else -> {
+                // Default to primary document
+                "$baseUrl/$primaryDocument"
+            }
+        }
+    }
+
     // Helper to transform parallel lists into objects
     fun transformFilings(recent: RecentFilings): List<FilingItem> {
         val list = mutableListOf<FilingItem>()
