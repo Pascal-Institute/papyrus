@@ -78,8 +78,7 @@ class PdfParser : DocumentParser {
 
         /** Decode HTML entities */
         private fun decodeHtmlEntities(text: String): String {
-                return SecTextNormalization.decodeBasicEntities(text)
-                        .replace("&apos;", "'")
+                return SecTextNormalization.decodeBasicEntities(text).replace("&apos;", "'")
         }
 }
 

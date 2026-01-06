@@ -1,19 +1,28 @@
 package papyrus.core.service.parser
 
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.FinancialMetric
 
 /**
- * HTML Document Parser
+ * HTML Document Parser (Enhanced with Jsoup)
  *
- * Specialized parser for HTML and HTM formatted SEC filings. Handles HTML tags, table structures,
- * and XBRL data.
+ * Specialized parser for HTML and HTM formatted SEC filings. Uses Jsoup for robust HTML parsing,
+ * table structure preservation, and XBRL data handling.
  */
 class HtmlParser : DocumentParser {
 
         override fun parse(content: String, documentName: String): ParseResult {
-                // Clean HTML tags first
-                val cleanedContent = cleanHtml(content)
+                // Parse HTML with Jsoup
+                val document = Jsoup.parse(content)
+
+                // Extract financial tables for better parsing
+                val financialTables = extractFinancialTables(document)
+
+                // Clean HTML content
+                val cleanedContent = cleanHtml(document, financialTables)
 
                 // Extract financial metrics from cleaned content using existing parser
                 val extendedMetrics = EnhancedFinancialParser.parsePdfTextTable(cleanedContent)
@@ -24,14 +33,16 @@ class HtmlParser : DocumentParser {
                 return ParseResult(
                         metrics = metrics,
                         documentName = documentName,
-                        parserType = "HTML",
+                        parserType = "HTML (Jsoup)",
                         rawContent = content,
                         cleanedContent = cleanedContent,
                         metadata =
                                 mapOf(
-                                        "hasXbrl" to detectXbrl(content).toString(),
-                                        "hasTables" to detectTables(content).toString(),
-                                        "encoding" to detectEncoding(content)
+                                        "hasXbrl" to detectXbrl(document).toString(),
+                                        "tableCount" to financialTables.size.toString(),
+                                        "encoding" to detectEncoding(document),
+                                        "hasFinancialTables" to
+                                                (financialTables.isNotEmpty()).toString()
                                 )
                 )
         }
@@ -44,84 +55,120 @@ class HtmlParser : DocumentParser {
 
         override fun getSupportedExtension(): String = "html"
 
-        /** Clean HTML content by removing tags and extracting text */
-        private fun cleanHtml(html: String): String {
-                var cleaned = html
+        /**
+         * Extract financial tables from document Looks for tables with financial keywords in
+         * headers or content
+         */
+        private fun extractFinancialTables(doc: Document): List<Element> {
+                val tables = doc.select("table")
 
-                // Remove common SEC filing metadata
-                cleaned =
-                        cleaned.replace(
-                                Regex(
-                                        "<(SCRIPT|script)[^>]*>.*?</(SCRIPT|script)>",
-                                        RegexOption.DOT_MATCHES_ALL
-                                ),
-                                ""
-                        )
-                cleaned =
-                        cleaned.replace(
-                                Regex(
-                                        "<(STYLE|style)[^>]*>.*?</(STYLE|style)>",
-                                        RegexOption.DOT_MATCHES_ALL
-                                ),
-                                ""
-                        )
-                cleaned =
-                        cleaned.replace(
-                                Regex(
-                                        "<(HEAD|head)[^>]*>.*?</(HEAD|head)>",
-                                        RegexOption.DOT_MATCHES_ALL
-                                ),
-                                ""
+                // Financial keywords to identify relevant tables
+                val financialKeywords =
+                        listOf(
+                                "revenue",
+                                "income",
+                                "expense",
+                                "asset",
+                                "liability",
+                                "equity",
+                                "cash",
+                                "operating",
+                                "investing",
+                                "financing",
+                                "balance",
+                                "consolidated",
+                                "statement",
+                                "fiscal",
+                                "quarter",
+                                "earnings"
                         )
 
-                // Remove XBRL-specific tags but keep content
-                cleaned = cleaned.replace(Regex("</?[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+[^>]*>"), " ")
-
-                // Remove all remaining HTML tags
-                cleaned = cleaned.replace(Regex("<[^>]+>"), " ")
-
-                // Decode HTML entities
-                cleaned = decodeHtmlEntities(cleaned)
-
-                // Normalize whitespace
-                return SecTextNormalization.normalizeWhitespace(cleaned)
+                return tables.filter { table ->
+                        val tableText = table.text().lowercase()
+                        financialKeywords.any { keyword -> tableText.contains(keyword) }
+                }
         }
 
-        /** Detect if document contains XBRL data */
-        private fun detectXbrl(content: String): Boolean {
-                return content.contains("xbrl", ignoreCase = true) ||
-                        content.contains("xmlns:", ignoreCase = true)
-        }
+        /**
+         * Clean HTML content using Jsoup Removes unnecessary elements while preserving financial
+         * data structure
+         */
+        private fun cleanHtml(doc: Document, financialTables: List<Element>): String {
+                // Clone document to avoid modifying original
+                val cleaned = doc.clone()
 
-        /** Detect if document contains HTML tables */
-        private fun detectTables(content: String): Boolean {
-                return content.contains("<table", ignoreCase = true)
-        }
+                // Remove irrelevant elements
+                cleaned.select("script, style, noscript, iframe").remove()
+                cleaned.select("header, footer, nav").remove()
 
-        /** Detect document encoding */
-        private fun detectEncoding(content: String): String {
-                val charsetMatch =
-                        Regex("charset=[\"']?([a-zA-Z0-9-]+)", RegexOption.IGNORE_CASE)
-                                .find(content)
-                return charsetMatch?.groupValues?.get(1) ?: "UTF-8"
-        }
+                // Remove XBRL hidden elements (often have display:none)
+                cleaned.select("[style*=display:none], [style*=visibility:hidden]").remove()
 
-        /** Decode common HTML entities */
-        private fun decodeHtmlEntities(text: String): String {
-                val basicDecoded = SecTextNormalization.decodeBasicEntities(text)
+                // Remove common SEC metadata tags
+                cleaned.select("SEC-HEADER, IMS-HEADER").remove()
 
-                return basicDecoded
-                        .replace("&apos;", "'")
-                        .replace("&#39;", "'")
-                        .replace("&#160;", " ")
-                        .replace(Regex("&#(\\d+);")) { matchResult ->
-                                val code = matchResult.groupValues[1].toIntOrNull()
-                                if (code != null && code in 32..126) {
-                                        code.toChar().toString()
-                                } else {
-                                        " "
+                // Keep XBRL tags but remove the namespace prefix for cleaner text
+                cleaned.select("*").forEach { element ->
+                        if (element.tagName().contains(":")) {
+                                element.tagName("span") // Convert XBRL tags to span
+                        }
+                }
+
+                // Extract text with better table formatting
+                val textBuilder = StringBuilder()
+
+                // Add financial tables with preserved structure
+                financialTables.forEach { table ->
+                        textBuilder.append("\n=== FINANCIAL TABLE ===\n")
+                        table.select("tr").forEach { row ->
+                                val cells = row.select("td, th")
+                                val rowText = cells.joinToString(" | ") { it.text().trim() }
+                                if (rowText.isNotBlank()) {
+                                        textBuilder.append(rowText).append("\n")
                                 }
                         }
+                        textBuilder.append("=== END TABLE ===\n\n")
+                }
+
+                // Add remaining text content
+                textBuilder.append(cleaned.text())
+
+                // Normalize whitespace
+                return SecTextNormalization.normalizeWhitespace(textBuilder.toString())
+        }
+
+        /** Detect if document contains XBRL data using Jsoup */
+        private fun detectXbrl(doc: Document): Boolean {
+                // Check for XBRL namespace declarations
+                val hasXmlns = doc.select("[xmlns*=xbrl]").isNotEmpty()
+
+                // Check for XBRL-specific tags (they contain colons)
+                val hasXbrlTags = doc.select("*").any { it.tagName().contains(":") }
+
+                // Check for XBRL context or unit references
+                val hasXbrlAttributes = doc.select("[contextRef], [unitRef]").isNotEmpty()
+
+                return hasXmlns || hasXbrlTags || hasXbrlAttributes
+        }
+
+        /** Detect document encoding from meta tags */
+        private fun detectEncoding(doc: Document): String {
+                // Check meta charset tag
+                val charset = doc.select("meta[charset]").attr("charset")
+                if (charset.isNotBlank()) return charset
+
+                // Check meta http-equiv content-type
+                val contentType = doc.select("meta[http-equiv=Content-Type]").attr("content")
+                if (contentType.isNotBlank()) {
+                        val charsetMatch =
+                                Regex("charset=([a-zA-Z0-9-]+)", RegexOption.IGNORE_CASE)
+                                        .find(contentType)
+                        charsetMatch?.groupValues?.get(1)?.let {
+                                return it
+                        }
+                }
+
+                return "UTF-8"
         }
 }
 

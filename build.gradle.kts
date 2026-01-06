@@ -24,6 +24,9 @@ dependencies {
     // PDF Support
     implementation("org.apache.pdfbox:pdfbox:2.0.30")
     
+    // HTML Parsing
+    implementation("org.jsoup:jsoup:1.17.2")
+    
     // Logging
     implementation("org.slf4j:slf4j-simple:2.0.9")
 }
