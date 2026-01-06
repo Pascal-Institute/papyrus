@@ -511,6 +511,7 @@ fun FinancialAnalysisPanel(
         modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
+    var showGlossaryDialog by remember { mutableStateOf(false) }
 
     // Check if AI analysis tab should be included
     val hasAiAnalysis =
@@ -526,7 +527,6 @@ fun FinancialAnalysisPanel(
             add("Health Score")
             add("AI Analysis")
             add("Insights")
-            add("Glossary")
             add("Ratios")
             if (hasXbrlTab) add("XBRL")
             add("Raw Data")
@@ -541,7 +541,11 @@ fun FinancialAnalysisPanel(
 
     Column(modifier = modifier.fillMaxSize()) {
         // Header
-        FinancialAnalysisHeader(analysis = analysis, onClose = onClose)
+        FinancialAnalysisHeader(
+            analysis = analysis,
+            onGlossaryClick = { showGlossaryDialog = true },
+            onClose = onClose
+        )
 
         Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
@@ -556,12 +560,15 @@ fun FinancialAnalysisPanel(
             "Overview" -> FinancialOverviewTab(analysis)
             "AI Analysis" -> AiAnalysisTab(analysis, onReanalyzeWithAI)
             "Insights" -> BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
-            "Glossary" -> TermGlossaryTab(analysis.termExplanations)
             "Ratios" -> FinancialRatiosTab(analysis.ratios, analysis.metrics)
             "Metrics" -> FinancialMetricsTab(analysis.metrics)
             "XBRL" -> XbrlTab(analysis)
             "Raw Data" -> FinancialRawDataTab(analysis.rawContent, analysis)
             else -> FinancialRawDataTab(analysis.rawContent, analysis)
+        }
+
+        if (showGlossaryDialog) {
+            GlossaryDialog(terms = analysis.termExplanations, onDismiss = { showGlossaryDialog = false })
         }
     }
 }
@@ -1134,16 +1141,66 @@ private fun InsightSection(title: String, content: String, backgroundColor: Colo
 
 /** 용어 사전 탭 */
 @Composable
-private fun TermGlossaryTab(terms: List<FinancialTermExplanation>) {
+private fun TermGlossaryTab(terms: List<FinancialTermExplanation>, modifier: Modifier = Modifier) {
     if (terms.isEmpty()) {
-        EmptyState(
-                icon = Icons.Outlined.Book,
-                title = "용어 사전",
-                description = "재무 용어 설명이 로드되지 않았습니다."
-        )
-    } else {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)) {
-            items(terms) { term -> TermExplanationCard(term) }
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            EmptyState(
+                    icon = Icons.Outlined.Book,
+                    title = "용어 사전",
+                    description = "재무 용어 설명이 로드되지 않았습니다."
+            )
+        }
+        return
+    }
+
+    LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
+    ) {
+        items(terms) { term -> TermExplanationCard(term) }
+    }
+}
+
+@Composable
+private fun GlossaryDialog(terms: List<FinancialTermExplanation>, onDismiss: () -> Unit) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(
+                modifier = Modifier.width(700.dp).heightIn(max = 700.dp),
+                shape = AppShapes.Medium,
+                color = AppColors.Surface,
+                elevation = AppDimens.CardElevation
+        ) {
+            Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                                imageVector = Icons.Outlined.Book,
+                                contentDescription = null,
+                                tint = AppColors.Primary,
+                                modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                                text = "Glossary",
+                                style = AppTypography.Subtitle1,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Primary
+                        )
+                    }
+
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = null)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+
+                TermGlossaryTab(terms = terms, modifier = Modifier.fillMaxWidth().weight(1f))
+            }
         }
     }
 }
@@ -1661,7 +1718,11 @@ private fun MetricCategoryCard(category: RatioCategory, metrics: List<FinancialR
 }
 
 @Composable
-private fun FinancialAnalysisHeader(analysis: FinancialAnalysis, onClose: () -> Unit) {
+private fun FinancialAnalysisHeader(
+    analysis: FinancialAnalysis,
+    onGlossaryClick: () -> Unit,
+    onClose: () -> Unit
+) {
     Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1724,17 +1785,32 @@ private fun FinancialAnalysisHeader(analysis: FinancialAnalysis, onClose: () -> 
             }
         }
 
-        OutlinedButton(
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedButton(
+                onClick = onGlossaryClick,
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = AppColors.OnSurfaceSecondary
+                    ),
+                shape = AppShapes.Small
+            ) {
+            Icon(Icons.Outlined.Book, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("Glossary")
+            }
+
+            OutlinedButton(
                 onClick = onClose,
                 colors =
-                        ButtonDefaults.outlinedButtonColors(
-                                contentColor = AppColors.OnSurfaceSecondary
-                        ),
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = AppColors.OnSurfaceSecondary
+                    ),
                 shape = AppShapes.Small
-        ) {
+            ) {
             Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
             Text("Close")
+            }
         }
     }
 }
