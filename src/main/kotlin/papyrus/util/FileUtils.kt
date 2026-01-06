@@ -3,6 +3,11 @@ package papyrus.util
 import java.io.File
 
 object FileUtils {
+    
+    // Centralized file extension constants to avoid duplication
+    private val SUPPORTED_EXTENSIONS = setOf("pdf", "html", "htm", "txt")
+    private val HTML_EXTENSIONS = setOf("html", "htm")
+    
     data class ExtractedDocument(
         val rawContent: String,
         val extractedText: String,
@@ -16,8 +21,9 @@ object FileUtils {
      * - For PDF we keep rawContent empty and use Tika-extracted text.
      */
     fun extractDocument(file: File): ExtractedDocument {
-        return when (file.extension.lowercase()) {
-            "html", "htm", "txt" -> {
+        val ext = file.extension.lowercase()
+        return when {
+            ext in HTML_EXTENSIONS || ext == "txt" -> {
                 val raw = file.readText(Charsets.UTF_8)
                 val tika = runCatching { TikaExtractor.extract(file) }.getOrNull()
                 ExtractedDocument(
@@ -27,7 +33,7 @@ object FileUtils {
                     metadata = tika?.metadata ?: emptyMap(),
                 )
             }
-            "pdf" -> {
+            ext == "pdf" -> {
                 val tika = TikaExtractor.extract(file)
                 ExtractedDocument(
                     rawContent = "",
@@ -57,16 +63,16 @@ object FileUtils {
 
     /** Check if file type is supported */
     fun isSupportedFile(file: File): Boolean {
-        val extension = file.extension.lowercase()
-        return extension in listOf("pdf", "html", "htm", "txt")
+        return file.extension.lowercase() in SUPPORTED_EXTENSIONS
     }
 
     /** Get a user-friendly description of the file type */
     fun getFileTypeDescription(file: File): String {
-        return when (file.extension.lowercase()) {
-            "pdf" -> "PDF Document"
-            "html", "htm" -> "HTML Document"
-            "txt" -> "Text File"
+        val ext = file.extension.lowercase()
+        return when {
+            ext == "pdf" -> "PDF Document"
+            ext in HTML_EXTENSIONS -> "HTML Document"
+            ext == "txt" -> "Text File"
             else -> "Unknown File Type"
         }
     }

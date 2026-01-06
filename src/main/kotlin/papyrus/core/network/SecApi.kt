@@ -39,6 +39,16 @@ object SecApi {
     private const val USER_AGENT = "PapyrusApp/1.0"
     private const val CONTACT_EMAIL = "admin@example.com" // Replace with your actual email
 
+    /**
+     * Configure a request with common SEC API headers.
+     * Centralizes header setup to reduce duplication and ensure consistency.
+     */
+    private fun HttpRequestBuilder.applySecHeaders(host: String = "data.sec.gov") {
+        header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
+        header("Accept", "*/*")
+        header("Host", host)
+    }
+
     suspend fun loadTickers() {
         if (tickers.isNotEmpty()) return
 
@@ -53,9 +63,7 @@ object SecApi {
                 val response: Map<String, TickerEntry> =
                         client
                                 .get("https://www.sec.gov/files/company_tickers.json") {
-                                    header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
-                                    header("Accept", "*/*")
-                                    header("Host", "www.sec.gov")
+                                    applySecHeaders("www.sec.gov")
                                 }
                                 .body()
                 tickers = response.values.toList()
@@ -87,9 +95,7 @@ object SecApi {
             kotlinx.coroutines.delay(100) // Respect rate limits
             client
                     .get(url) {
-                        header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
-                        header("Accept", "*/*")
-                        header("Host", "data.sec.gov")
+                        applySecHeaders()
                     }
                     .body()
         } catch (e: Exception) {
@@ -111,9 +117,7 @@ object SecApi {
             val jsonText: String =
                     client
                             .get(url) {
-                                header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
-                                header("Accept", "*/*")
-                                header("Host", "data.sec.gov")
+                                applySecHeaders()
                             }
                             .bodyAsText()
 
@@ -193,8 +197,7 @@ object SecApi {
             kotlinx.coroutines.delay(100) // Respect rate limits
             client
                     .get(url) {
-                        header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
-                        header("Accept", "*/*")
+                        applySecHeaders()
                     }
                     .body()
         } catch (e: Exception) {

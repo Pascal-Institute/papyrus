@@ -60,13 +60,3 @@ class PdfParser : DocumentParser {
                 return SecTextNormalization.decodeBasicEntities(text).replace("&apos;", "'")
         }
 }
-
-/** Extension function to convert ExtendedFinancialMetric to FinancialMetric */
-private fun ExtendedFinancialMetric.toFinancialMetric(): FinancialMetric {
-        return FinancialMetric(
-                name = this.name,
-                value = this.value,
-                rawValue = this.rawValue,
-                context = this.context
-        )
-}
