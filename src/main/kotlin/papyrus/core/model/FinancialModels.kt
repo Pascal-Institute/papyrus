@@ -89,6 +89,7 @@ data class FinancialAnalysis(
         val companyName: String?,
         val reportType: String?,
         val periodEnding: String?,
+        val cik: Int? = null,
         val metrics: List<FinancialMetric>,
         val rawContent: String,
         val summary: String,
@@ -108,7 +109,10 @@ data class FinancialAnalysis(
         val aiAnalysis: AiAnalysisResult? = null,
         val aiSummary: String? = null,
         val industryComparison: String? = null,
-        val investmentAdvice: String? = null
+        val investmentAdvice: String? = null,
+
+        // XBRL / iXBRL extracted metrics
+        val xbrlMetrics: List<ExtendedFinancialMetric> = emptyList()
 )
 // Correction: In FinancialData.kt line 97: val aiAnalysis: AiAnalysisResult? = null
 // I need to find where AiAnalysisResult is defined.

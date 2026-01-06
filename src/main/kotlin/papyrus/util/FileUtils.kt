@@ -3,27 +3,56 @@ package papyrus.util
 import java.io.File
 
 object FileUtils {
-    /** Extract text content from a file based on its extension */
-    fun extractTextFromFile(file: File): String {
+    data class ExtractedDocument(
+        val rawContent: String,
+        val extractedText: String,
+        val mimeType: String? = null,
+        val metadata: Map<String, String> = emptyMap(),
+    )
+
+    /**
+     * Extract both raw content and extracted text.
+     * - For HTML/HTM/TXT we keep raw for parsers that need markup (e.g., XBRL).
+     * - For PDF we keep rawContent empty and use Tika-extracted text.
+     */
+    fun extractDocument(file: File): ExtractedDocument {
         return when (file.extension.lowercase()) {
+            "html", "htm", "txt" -> {
+                val raw = file.readText(Charsets.UTF_8)
+                val tika = runCatching { TikaExtractor.extract(file) }.getOrNull()
+                ExtractedDocument(
+                    rawContent = raw,
+                    extractedText = tika?.extractedText ?: raw,
+                    mimeType = tika?.mimeType,
+                    metadata = tika?.metadata ?: emptyMap(),
+                )
+            }
             "pdf" -> {
-                println("Extracting text from PDF: ${file.name}")
-                PdfParser.extractText(file) // PdfParser is in the same package now
-            }
-            "html", "htm" -> {
-                println("Reading HTML file: ${file.name}")
-                file.readText(Charsets.UTF_8)
-            }
-            "txt" -> {
-                println("Reading text file: ${file.name}")
-                file.readText(Charsets.UTF_8)
+                val tika = TikaExtractor.extract(file)
+                ExtractedDocument(
+                    rawContent = "",
+                    extractedText = tika.extractedText,
+                    mimeType = tika.mimeType,
+                    metadata = tika.metadata,
+                )
             }
             else -> {
-                // Try to read as text, might work for some formats
-                println("Attempting to read file as text: ${file.name}")
-                file.readText(Charsets.UTF_8)
+                val raw = runCatching { file.readText(Charsets.UTF_8) }.getOrElse { "" }
+                val tika = runCatching { TikaExtractor.extract(file) }.getOrNull()
+                ExtractedDocument(
+                    rawContent = raw,
+                    extractedText = tika?.extractedText ?: raw,
+                    mimeType = tika?.mimeType,
+                    metadata = tika?.metadata ?: emptyMap(),
+                )
             }
         }
+    }
+
+    /** Extract text content from a file based on its extension */
+    fun extractTextFromFile(file: File): String {
+        val extracted = extractDocument(file)
+        return extracted.extractedText
     }
 
     /** Check if file type is supported */

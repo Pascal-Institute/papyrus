@@ -32,6 +32,9 @@ import papyrus.core.model.FinancialTermExplanation
 import papyrus.core.model.HealthStatus
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
+import papyrus.core.model.XbrlCompanyFact
+import papyrus.core.network.SecApi
+import papyrus.core.service.parser.XbrlCompanyFactsExtractor
 import papyrus.core.service.analyzer.AiAnalysisService
 
 private val uiEmojiMarkers = listOf(
@@ -516,19 +519,22 @@ fun FinancialAnalysisPanel(
                     analysis.industryComparison != null ||
                     analysis.investmentAdvice != null
 
-    // Clean tab names (emoji removed)
+    val hasXbrlTab = analysis.xbrlMetrics.isNotEmpty() || analysis.cik != null
+
     val tabs = buildList {
         if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
             add("Health Score")
-            add("AI Analysis") // Always show AI Analysis tab
+            add("AI Analysis")
             add("Insights")
             add("Glossary")
             add("Ratios")
+            if (hasXbrlTab) add("XBRL")
             add("Raw Data")
         } else {
             add("Overview")
-            add("AI Analysis") // Always show AI Analysis tab
+            add("AI Analysis")
             add("Metrics")
+            if (hasXbrlTab) add("XBRL")
             add("Raw Data")
         }
     }
@@ -545,22 +551,184 @@ fun FinancialAnalysisPanel(
         Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
         // Content based on selected tab
-        if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
-            when (selectedTab) {
-                0 -> HealthScoreTab(analysis)
-                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI) // Always show AI tab
-                2 -> BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
-                3 -> TermGlossaryTab(analysis.termExplanations)
-                4 -> FinancialRatiosTab(analysis.ratios, analysis.metrics)
-                5 -> FinancialRawDataTab(analysis.rawContent, analysis)
+        when (tabs.getOrNull(selectedTab)) {
+            "Health Score" -> HealthScoreTab(analysis)
+            "Overview" -> FinancialOverviewTab(analysis)
+            "AI Analysis" -> AiAnalysisTab(analysis, onReanalyzeWithAI)
+            "Insights" -> BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
+            "Glossary" -> TermGlossaryTab(analysis.termExplanations)
+            "Ratios" -> FinancialRatiosTab(analysis.ratios, analysis.metrics)
+            "Metrics" -> FinancialMetricsTab(analysis.metrics)
+            "XBRL" -> XbrlTab(analysis)
+            "Raw Data" -> FinancialRawDataTab(analysis.rawContent, analysis)
+            else -> FinancialRawDataTab(analysis.rawContent, analysis)
+        }
+    }
+}
+
+@Composable
+private fun XbrlTab(analysis: FinancialAnalysis) {
+    val scrollState = rememberScrollState()
+    val cik = analysis.cik
+
+    var isLoadingFacts by remember { mutableStateOf(false) }
+    var factsError by remember { mutableStateOf<String?>(null) }
+    var companyFacts by remember { mutableStateOf<List<XbrlCompanyFact>>(emptyList()) }
+
+    LaunchedEffect(cik) {
+        companyFacts = emptyList()
+        factsError = null
+
+        if (cik == null) return@LaunchedEffect
+
+        isLoadingFacts = true
+        try {
+            val json = SecApi.getCompanyFacts(cik)
+            companyFacts = if (json != null) {
+                XbrlCompanyFactsExtractor.extractKeyFacts(json)
+            } else {
+                emptyList()
             }
-        } else {
-            when (selectedTab) {
-                0 -> FinancialOverviewTab(analysis)
-                1 -> AiAnalysisTab(analysis, onReanalyzeWithAI) // Always show AI tab
-                2 -> FinancialMetricsTab(analysis.metrics)
-                3 -> FinancialRawDataTab(analysis.rawContent, analysis)
+        } catch (e: Exception) {
+            factsError = e.message ?: "Failed to load company facts"
+        } finally {
+            isLoadingFacts = false
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+        if (analysis.xbrlMetrics.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = AppDimens.CardElevationHigh,
+                shape = AppShapes.Large,
+            ) {
+                Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
+                    Text(
+                        text = "Inline XBRL (from document)",
+                        style = AppTypography.Headline3,
+                        color = AppColors.OnSurface,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+
+                    analysis.xbrlMetrics.take(50).forEach { metric ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(
+                                text = metric.name,
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = metric.value,
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurface,
+                                textAlign = TextAlign.End
+                            )
+                        }
+
+                        if (!metric.period.isNullOrBlank() || metric.source.isNotBlank()) {
+                            Text(
+                                text = buildString {
+                                    if (!metric.period.isNullOrBlank()) append("Period: ${metric.period}")
+                                    if (!metric.period.isNullOrBlank() && metric.source.isNotBlank()) append(" · ")
+                                    if (metric.source.isNotBlank()) append(metric.source)
+                                },
+                                style = AppTypography.Caption,
+                                color = AppColors.OnSurfaceSecondary
+                            )
+                        }
+
+                        Divider(color = AppColors.Divider, modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+        }
+
+        if (cik != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = AppDimens.CardElevationHigh,
+                shape = AppShapes.Large,
+            ) {
+                Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
+                    Text(
+                        text = "SEC Company Facts (XBRL)",
+                        style = AppTypography.Headline3,
+                        color = AppColors.OnSurface,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+
+                    if (isLoadingFacts) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = AppColors.Primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Loading company facts...",
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurfaceSecondary
+                            )
+                        }
+                    } else if (factsError != null) {
+                        Text(
+                            text = factsError ?: "Failed to load company facts",
+                            style = AppTypography.Body2,
+                            color = AppColors.Error
+                        )
+                    } else if (companyFacts.isEmpty()) {
+                        Text(
+                            text = "No company facts available.",
+                            style = AppTypography.Body2,
+                            color = AppColors.OnSurfaceSecondary
+                        )
+                    } else {
+                        companyFacts.forEach { fact ->
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    text = fact.label,
+                                    style = AppTypography.Body2,
+                                    color = AppColors.OnSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = fact.value?.toString() ?: "—",
+                                    style = AppTypography.Body2,
+                                    color = AppColors.OnSurface,
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                            Text(
+                                text = buildString {
+                                    if (!fact.periodEnd.isNullOrBlank()) append("End: ${fact.periodEnd}")
+                                    if (!fact.periodEnd.isNullOrBlank() && !fact.unit.isNullOrBlank()) append(" · ")
+                                    if (!fact.unit.isNullOrBlank()) append("Unit: ${fact.unit}")
+                                    if ((fact.periodEnd != null || fact.unit != null)) append(" · ")
+                                    append(fact.concept)
+                                },
+                                style = AppTypography.Caption,
+                                color = AppColors.OnSurfaceSecondary
+                            )
+                            Divider(color = AppColors.Divider, modifier = Modifier.padding(vertical = 8.dp))
+                        }
+                    }
+                }
+            }
+        } else if (analysis.xbrlMetrics.isEmpty()) {
+            EmptyState(
+                icon = Icons.Outlined.DataObject,
+                title = "No XBRL data",
+                description = "This analysis does not include XBRL facts."
+            )
         }
     }
 }

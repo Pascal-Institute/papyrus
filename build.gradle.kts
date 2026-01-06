@@ -24,6 +24,10 @@ dependencies {
     
     // PDF Support
     implementation("org.apache.pdfbox:pdfbox:2.0.32")
+
+    // Unified content extraction (PDF/HTML/TXT)
+    implementation("org.apache.tika:tika-core:1.28.5")
+    implementation("org.apache.tika:tika-parsers:1.28.5")
     
     // HTML Parsing
     implementation("org.jsoup:jsoup:1.18.3")

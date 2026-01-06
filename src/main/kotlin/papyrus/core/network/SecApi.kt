@@ -9,6 +9,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import papyrus.core.model.*
 
 object SecApi {
@@ -87,6 +88,28 @@ object SecApi {
         } catch (e: Exception) {
             System.err.println("Failed to fetch submissions: ${e.message}")
             e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Fetch SEC XBRL company facts (companyfacts JSON).
+     * Docs: https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json
+     */
+    suspend fun getCompanyFacts(cik: Int): JsonObject? {
+        val cikStr = cik.toString().padStart(10, '0')
+        val url = "https://data.sec.gov/api/xbrl/companyfacts/CIK$cikStr.json"
+        return try {
+            kotlinx.coroutines.delay(100) // Respect rate limits
+            client
+                .get(url) {
+                    header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
+                    header("Accept", "*/*")
+                    header("Host", "data.sec.gov")
+                }
+                .body()
+        } catch (e: Exception) {
+            System.err.println("Failed to fetch company facts: ${e.message}")
             null
         }
     }

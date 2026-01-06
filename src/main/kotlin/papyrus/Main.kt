@@ -315,13 +315,21 @@ fun PapyrusApp() {
                                                                                         )
                                                                         }
 
+                                                                val analysisWithCik =
+                                                                        analysis.copy(
+                                                                                cik =
+                                                                                        appState
+                                                                                                .selectedTicker
+                                                                                                ?.cik
+                                                                        )
+
                                                                 appState =
                                                                         appState.copy(
                                                                                 analysisState =
                                                                                         AnalysisState
-                                                                                                .FinancialAnalysisResult(
-                                                                                                        analysis
-                                                                                                ),
+                                                                                                        .FinancialAnalysisResult(
+                                                                                                                analysisWithCik
+                                                                                                        ),
                                                                                 currentAnalyzingFiling =
                                                                                         null
                                                                         )
@@ -406,11 +414,16 @@ fun PapyrusApp() {
                                                                                                 )
                                                                         )
 
+                                                                val extracted =
+                                                                        FileUtils.extractDocument(
+                                                                                file
+                                                                        )
+
                                                                 val content =
-                                                                        FileUtils
-                                                                                .extractTextFromFile(
-                                                                                        file
-                                                                                )
+                                                                        when (file.extension.lowercase()) {
+                                                                            "html", "htm" -> extracted.rawContent
+                                                                            else -> extracted.extractedText
+                                                                        }
 
                                                                 // Update loading message for
                                                                 // analysis
@@ -425,11 +438,10 @@ fun PapyrusApp() {
 
                                                                 // Use beginner-friendly analysis
                                                                 val analysis =
-                                                                        FinancialAnalyzer
-                                                                                .analyzeForBeginners(
-                                                                                        file.name,
-                                                                                        content
-                                                                                )
+                                                                        FinancialAnalyzer.analyzeForBeginners(
+                                                                                file.name,
+                                                                                content
+                                                                        )
 
                                                                 appState =
                                                                         appState.copy(

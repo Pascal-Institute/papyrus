@@ -1,7 +1,9 @@
 package papyrus.core.service.analyzer
 
+import org.jsoup.Jsoup
 import papyrus.core.model.*
 import papyrus.core.service.parser.EnhancedFinancialParser
+import papyrus.core.service.parser.InlineXbrlExtractor
 import papyrus.core.service.parser.SecTableParser
 import papyrus.util.AnalysisCache
 
@@ -59,6 +61,9 @@ object FinancialAnalyzer {
         val companyName = extractCompanyName(cleanText)
         val reportType = extractReportType(cleanText)
         val period = extractPeriod(cleanText)
+
+        // iXBRL/XBRL facts (when HTML content is available)
+        val xbrlMetrics = extractInlineXbrlMetricsIfHtml(content)
         
         // 1단계: 테이블 기반 파싱 (가장 정확함)
         val tableMetrics = mutableListOf<ExtendedFinancialMetric>()
@@ -70,6 +75,12 @@ object FinancialAnalyzer {
             println("📊 Table parsing: Found ${tableMetrics.size} metrics from $tablesFound tables")
         } catch (e: Exception) {
             println("⚠ Table parsing error: ${e.message}")
+        }
+
+        // Inline XBRL has the most structured numeric facts; add with high confidence.
+        if (xbrlMetrics.isNotEmpty()) {
+            tableMetrics.addAll(xbrlMetrics)
+            println("🧾 iXBRL parsing: Added ${xbrlMetrics.size} metrics")
         }
         
         // 2단계: 텍스트 패턴 파싱 (보완)
@@ -139,8 +150,22 @@ object FinancialAnalyzer {
                 metrics = allBasicMetrics.distinctBy { it.name.lowercase() },
                 rawContent = cleanText.take(50000),
                 summary = summary,
-                extendedMetrics = allExtendedMetrics
+                extendedMetrics = allExtendedMetrics,
+                xbrlMetrics = xbrlMetrics
         )
+    }
+
+    private fun extractInlineXbrlMetricsIfHtml(content: String): List<ExtendedFinancialMetric> {
+        val trimmed = content.trimStart()
+        val looksLikeHtml = trimmed.startsWith("<") || content.contains("<html", ignoreCase = true)
+        if (!looksLikeHtml) return emptyList()
+
+        return try {
+            val doc = Jsoup.parse(content)
+            InlineXbrlExtractor.extractMetrics(doc)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     private fun extractCompanyName(text: String): String? {
