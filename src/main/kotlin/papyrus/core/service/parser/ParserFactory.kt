@@ -89,6 +89,11 @@ object ParserFactory {
     /** Check if extension is supported */
     fun isExtensionSupported(extension: String): Boolean {
         val normalized = extension.lowercase().trim().removePrefix(".")
-        return getSupportedExtensions().contains(normalized)
+        return try {
+            getParserByExtension(normalized)
+            true
+        } catch (e: IllegalArgumentException) {
+            false
+        }
     }
 }
