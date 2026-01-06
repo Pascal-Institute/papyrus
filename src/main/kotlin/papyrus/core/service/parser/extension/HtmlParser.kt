@@ -15,20 +15,46 @@ import papyrus.core.model.FinancialMetric
 class HtmlParser : DocumentParser {
 
         override fun parse(content: String, documentName: String): ParseResult {
+                val startTime = System.currentTimeMillis()
+                println("🔍 [Jsoup HtmlParser] Starting parse: $documentName")
+
                 // Parse HTML with Jsoup
+                println("  ⚙️  Parsing HTML with Jsoup...")
                 val document = Jsoup.parse(content)
+                val parseTime = System.currentTimeMillis() - startTime
+                println("  ✓ HTML parsed in ${parseTime}ms")
 
                 // Extract financial tables for better parsing
+                println("  🔍 Searching for financial tables...")
                 val financialTables = extractFinancialTables(document)
+                println("  ✓ Found ${financialTables.size} financial tables")
+
+                // Detect XBRL
+                val hasXbrl = detectXbrl(document)
+                if (hasXbrl) {
+                        println("  📊 XBRL data detected")
+                }
 
                 // Clean HTML content
+                println("  🧹 Cleaning HTML content...")
+                val cleanStart = System.currentTimeMillis()
                 val cleanedContent = cleanHtml(document, financialTables)
+                val cleanTime = System.currentTimeMillis() - cleanStart
+                println("  ✓ Cleaned in ${cleanTime}ms (${cleanedContent.length} chars)")
 
                 // Extract financial metrics from cleaned content using existing parser
+                println("  💰 Extracting financial metrics...")
+                val metricStart = System.currentTimeMillis()
                 val extendedMetrics = EnhancedFinancialParser.parsePdfTextTable(cleanedContent)
+                val metricTime = System.currentTimeMillis() - metricStart
+                println("  ✓ Extracted ${extendedMetrics.size} metrics in ${metricTime}ms")
 
                 // Convert ExtendedFinancialMetric to FinancialMetric
                 val metrics = extendedMetrics.map { it.toFinancialMetric() }
+
+                val totalTime = System.currentTimeMillis() - startTime
+                println("  ✅ Parsing complete in ${totalTime}ms")
+                println()
 
                 return ParseResult(
                         metrics = metrics,
@@ -38,11 +64,15 @@ class HtmlParser : DocumentParser {
                         cleanedContent = cleanedContent,
                         metadata =
                                 mapOf(
-                                        "hasXbrl" to detectXbrl(document).toString(),
+                                        "hasXbrl" to hasXbrl.toString(),
                                         "tableCount" to financialTables.size.toString(),
                                         "encoding" to detectEncoding(document),
                                         "hasFinancialTables" to
-                                                (financialTables.isNotEmpty()).toString()
+                                                (financialTables.isNotEmpty()).toString(),
+                                        "originalSize" to "${content.length} chars",
+                                        "cleanedSize" to "${cleanedContent.length} chars",
+                                        "compressionRatio" to
+                                                "${String.format("%.1f", (1 - cleanedContent.length.toDouble() / content.length) * 100)}%"
                                 )
                 )
         }

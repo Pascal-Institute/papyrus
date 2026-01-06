@@ -53,6 +53,8 @@ Every line of code in an agent should make its intent obvious to anyone reading 
 
 - Model Development based on Samples: Use these samples to determine the most relevant financial metrics and narrative elements to target, ensuring the agent extracts high-value information that reflects real-world reporting.
 
+#### 6. Please write your comments in English.
+
 ---
 
 ### Implementation Example (Kotlin)
