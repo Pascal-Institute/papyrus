@@ -31,6 +31,12 @@ dependencies {
     
     // HTML Parsing
     implementation("org.jsoup:jsoup:1.18.3")
+
+    // XPath/XSLT for XBRL extraction
+    implementation("net.sf.saxon:Saxon-HE:12.4")
+
+    // JSON mapping (companyfacts, submissions)
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     
     // Logging
     implementation("org.slf4j:slf4j-simple:2.0.16")

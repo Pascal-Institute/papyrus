@@ -1,12 +1,18 @@
 package papyrus.core.service.parser
 
+import net.sf.saxon.s9api.Processor
+import net.sf.saxon.s9api.XPathExecutable
+import net.sf.saxon.s9api.Axis
+import net.sf.saxon.s9api.XdmNode
+import net.sf.saxon.s9api.XdmValue
+import org.jsoup.helper.W3CDom
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.MetricUnit
 import java.math.BigDecimal
 import java.math.RoundingMode
+import javax.xml.transform.dom.DOMSource
 
 /**
  * Extract inline XBRL (iXBRL) facts from SEC HTML filings.
@@ -15,6 +21,18 @@ import java.math.RoundingMode
  * Keep it conservative: only map a small set of widely-used GAAP concepts.
  */
 object InlineXbrlExtractor {
+
+    private val processor = Processor(false)
+    private val xpath = processor.newXPathCompiler()
+    private val contextExpr = xpath.compile("//*[local-name()='context']")
+    private val factExpr =
+        xpath.compile("//*[local-name()='nonFraction' or local-name()='nonNumeric' or @contextRef or @contextref or @unitRef or @unitref]")
+
+    private fun XPathExecutable.eval(root: XdmNode): XdmValue {
+        val selector = this.load()
+        selector.contextItem = root
+        return selector.evaluate()
+    }
 
     data class XbrlContext(
         val id: String,
@@ -34,15 +52,21 @@ object InlineXbrlExtractor {
     )
 
     fun extractMetrics(doc: Document): List<ExtendedFinancialMetric> {
-        val contexts = parseContexts(doc)
-        val facts = extractFacts(doc)
+        val w3c = W3CDom().fromJsoup(doc)
+        val root = processor.newDocumentBuilder().build(DOMSource(w3c))
+
+        val contexts = mergeContexts(
+            primary = parseContexts(root),
+            fallback = parseContextsFallback(doc)
+        )
+        val facts = extractFacts(root).ifEmpty { extractFactsFallback(doc) }
 
         return facts.mapNotNull { fact ->
             val mapping = mapConceptToMetric(fact.concept) ?: return@mapNotNull null
             val (name, category) = mapping
 
             val unit = inferUnit(fact)
-            val period = fact.contextRef?.let { contexts[it] }?.let { ctx ->
+            val period = fact.contextRef?.let { contexts[normalizeId(it)] }?.let { ctx ->
                 ctx.instant ?: ctx.endDate ?: ctx.startDate
             }
 
@@ -65,32 +89,74 @@ object InlineXbrlExtractor {
         }
     }
 
-    private fun parseContexts(doc: Document): Map<String, XbrlContext> {
+    private fun parseContexts(root: XdmNode): Map<String, XbrlContext> {
         val contexts = mutableMapOf<String, XbrlContext>()
 
-        // XBRL contexts are typically <xbrli:context id="..."> ... <xbrli:period> ...
-        // Jsoup preserves tag names with ':' unless caller rewrites tags.
-        doc.select("context, xbrli\\:context").forEach { ctxEl ->
-            val id = ctxEl.attr("id").ifBlank { return@forEach }
-            val instant = ctxEl.selectFirst("instant, xbrli\\:instant")?.text()?.trim()?.ifBlank { null }
-            val startDate = ctxEl.selectFirst("startDate, xbrli\\:startDate")?.text()?.trim()?.ifBlank { null }
-            val endDate = ctxEl.selectFirst("endDate, xbrli\\:endDate")?.text()?.trim()?.ifBlank { null }
+        for (ctx in contextExpr.eval(root).nodes()) {
+            val id = ctx.attrAny("id") ?: continue
+            val key = normalizeId(id)
+            val instant = stringChild(ctx, "instant")
+            val startDate = stringChild(ctx, "startDate")
+            val endDate = stringChild(ctx, "endDate")
 
-            contexts[id] = XbrlContext(id = id, instant = instant, startDate = startDate, endDate = endDate)
+            contexts[key] = XbrlContext(id = id, instant = instant, startDate = startDate, endDate = endDate)
         }
 
         return contexts
     }
 
-    private fun extractFacts(doc: Document): List<XbrlFact> {
+    private fun parseContextsFallback(doc: Document): Map<String, XbrlContext> {
+        val contexts = mutableMapOf<String, XbrlContext>()
+
+        doc.select("context, xbrli\\:context").forEach { ctxEl ->
+            val id = ctxEl.attr("id").ifBlank { return@forEach }
+            val key = normalizeId(id)
+            val instant = ctxEl.selectFirst("instant, xbrli\\:instant")?.text()?.trim()?.ifBlank { null }
+            val startDate = ctxEl.selectFirst("startDate, xbrli\\:startDate")?.text()?.trim()?.ifBlank { null }
+            val endDate = ctxEl.selectFirst("endDate, xbrli\\:endDate")?.text()?.trim()?.ifBlank { null }
+
+            contexts[key] = XbrlContext(id = id, instant = instant, startDate = startDate, endDate = endDate)
+        }
+
+        return contexts
+    }
+
+    private fun extractFacts(root: XdmNode): List<XbrlFact> {
         val facts = mutableListOf<XbrlFact>()
 
-        // Inline XBRL facts: ix:nonFraction, ix:nonNumeric, etc. Some filings also embed
-        // us-gaap:* tags with contextRef/unitRef.
+        for (node in factExpr.eval(root).nodes()) {
+            val (concept, rawText) = extractConceptAndText(node) ?: continue
+            val contextRef = node.attrAny("contextRef", "contextref")
+            val unitRef = node.attrAny("unitRef", "unitref")
+            val decimals = node.attrAny("decimals")
+            val scale = node.attrAny("scale")?.toIntOrNull()
+            val sign = node.attrAny("sign")
+
+            val parsed = parseNumericFact(rawText, scale = scale, sign = sign) ?: continue
+
+            facts.add(
+                XbrlFact(
+                    concept = concept,
+                    value = parsed,
+                    unitRef = unitRef,
+                    contextRef = contextRef,
+                    decimals = decimals,
+                    scale = scale,
+                    source = describeSource(node, concept, contextRef, unitRef),
+                )
+            )
+        }
+
+        return facts
+    }
+
+    private fun extractFactsFallback(doc: Document): List<XbrlFact> {
+        val facts = mutableListOf<XbrlFact>()
+
         val candidates = doc.select("*[contextref], *[contextRef], *[unitref], *[unitRef], ix\\:nonFraction, ix\\:nonNumeric")
 
         for (el in candidates) {
-            val (concept, rawText) = extractConceptAndText(el) ?: continue
+            val (concept, rawText) = extractConceptAndTextFallback(el) ?: continue
             val contextRef = el.attrAnyCase("contextRef")
             val unitRef = el.attrAnyCase("unitRef")
             val decimals = el.attrAnyCase("decimals")
@@ -107,7 +173,7 @@ object InlineXbrlExtractor {
                     contextRef = contextRef,
                     decimals = decimals,
                     scale = scale,
-                    source = describeSource(el),
+                    source = describeSourceFallback(el),
                 )
             )
         }
@@ -115,7 +181,22 @@ object InlineXbrlExtractor {
         return facts
     }
 
-    private fun extractConceptAndText(el: Element): Pair<String, String>? {
+    private fun extractConceptAndText(node: XdmNode): Pair<String, String>? {
+        val concept =
+            node.attrAny("name")?.takeIf { it.isNotBlank() }
+                ?: node.nodeName?.localName?.takeIf { !it.isNullOrBlank() }
+                ?: return null
+
+        val text = node.stringValue.trim()
+        if (text.isBlank()) return null
+
+        // Filter out obvious non-metrics (very long text blocks)
+        if (text.length > 200) return null
+
+        return concept to text
+    }
+
+    private fun extractConceptAndTextFallback(el: org.jsoup.nodes.Element): Pair<String, String>? {
         val concept =
             el.attrAnyCase("name")?.takeIf { it.isNotBlank() }
                 ?: el.tagName().takeIf { it.isNotBlank() }
@@ -123,7 +204,6 @@ object InlineXbrlExtractor {
         val text = el.text().trim()
         if (text.isBlank()) return null
 
-        // Filter out obvious non-metrics (very long text blocks)
         if (text.length > 200) return null
 
         return concept to text
@@ -219,7 +299,16 @@ object InlineXbrlExtractor {
         }
     }
 
-    private fun describeSource(el: Element): String {
+    private fun describeSource(node: XdmNode, concept: String, contextRef: String?, unitRef: String?): String {
+        return buildString {
+            append("iXBRL:")
+            append(concept)
+            if (!contextRef.isNullOrBlank()) append(" contextRef=$contextRef")
+            if (!unitRef.isNullOrBlank()) append(" unitRef=$unitRef")
+        }
+    }
+
+    private fun describeSourceFallback(el: org.jsoup.nodes.Element): String {
         val concept = el.attrAnyCase("name") ?: el.tagName()
         val ctx = el.attrAnyCase("contextRef")
         val unit = el.attrAnyCase("unitRef")
@@ -231,16 +320,63 @@ object InlineXbrlExtractor {
         }
     }
 
-    private fun Element.attrAnyCase(name: String): String? {
-        // Jsoup stores attribute keys lowercase in most cases; be defensive.
+    private fun org.jsoup.nodes.Element.attrAnyCase(name: String): String? {
         val direct = attr(name)
         if (direct.isNotBlank()) return direct
         val lower = attr(name.lowercase())
         if (lower.isNotBlank()) return lower
 
-        // Last resort: scan attributes.
         val found = attributes().asList().firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
         return found?.takeIf { it.isNotBlank() }
+    }
+
+    private fun XdmNode.attrAny(vararg names: String): String? {
+        val attrs = this.axisIterator(Axis.ATTRIBUTE)
+        while (attrs.hasNext()) {
+            val attr = attrs.next() as XdmNode
+            val local = attr.nodeName?.localName ?: attr.nodeName?.toString()
+            if (local != null && names.any { it.equals(local, ignoreCase = true) }) {
+                val value = attr.stringValue.trim()
+                if (value.isNotEmpty()) return value
+            }
+        }
+        return null
+    }
+
+    private fun stringChild(node: XdmNode, localName: String): String? {
+        return xpath
+            .evaluate("./*[local-name()='$localName']/text()", node)
+            .firstText()
+    }
+
+    private fun XdmValue.firstText(): String? {
+        val first = this.asIterable().firstOrNull() ?: return null
+        val text = first.stringValue.trim()
+        return text.ifBlank { null }
+    }
+
+    private fun XdmValue.nodes(): Sequence<XdmNode> = this.asIterable().asSequence().mapNotNull { it as? XdmNode }
+
+    private fun normalizeId(id: String): String = id.trim().lowercase()
+
+    private fun mergeContexts(
+            primary: Map<String, XbrlContext>,
+            fallback: Map<String, XbrlContext>
+    ): Map<String, XbrlContext> {
+        if (primary.isEmpty()) return fallback
+        if (fallback.isEmpty()) return primary
+
+        val merged = mutableMapOf<String, XbrlContext>()
+        (primary.keys + fallback.keys).forEach { key ->
+            val p = primary[key]
+            val f = fallback[key]
+            merged[key] = when {
+                p == null -> f!!
+                p.instant != null || p.startDate != null || p.endDate != null -> p
+                else -> f ?: p
+            }
+        }
+        return merged
     }
 
     private fun BigDecimal.toDoubleOrNullSafe(): Double? {

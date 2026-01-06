@@ -590,9 +590,9 @@ private fun XbrlTab(analysis: FinancialAnalysis) {
 
         isLoadingFacts = true
         try {
-            val json = SecApi.getCompanyFacts(cik)
-            companyFacts = if (json != null) {
-                XbrlCompanyFactsExtractor.extractKeyFacts(json)
+            val facts = SecApi.getCompanyFacts(cik)
+            companyFacts = if (facts != null) {
+                XbrlCompanyFactsExtractor.extractKeyFacts(facts)
             } else {
                 emptyList()
             }

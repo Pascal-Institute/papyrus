@@ -1,15 +1,18 @@
 package papyrus.core.network
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import papyrus.core.model.*
 
 object SecApi {
@@ -24,6 +27,10 @@ object SecApi {
                     )
                 }
             }
+
+    private val mapper =
+            jacksonObjectMapper()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     private var tickers: List<TickerEntry> = emptyList()
     private val mutex = Mutex()
@@ -96,18 +103,21 @@ object SecApi {
      * Fetch SEC XBRL company facts (companyfacts JSON).
      * Docs: https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json
      */
-    suspend fun getCompanyFacts(cik: Int): JsonObject? {
+    suspend fun getCompanyFacts(cik: Int): CompanyFacts? {
         val cikStr = cik.toString().padStart(10, '0')
         val url = "https://data.sec.gov/api/xbrl/companyfacts/CIK$cikStr.json"
         return try {
             kotlinx.coroutines.delay(100) // Respect rate limits
-            client
-                .get(url) {
-                    header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
-                    header("Accept", "*/*")
-                    header("Host", "data.sec.gov")
-                }
-                .body()
+            val jsonText: String =
+                    client
+                            .get(url) {
+                                header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
+                                header("Accept", "*/*")
+                                header("Host", "data.sec.gov")
+                            }
+                            .bodyAsText()
+
+            mapper.readValue<CompanyFacts>(jsonText)
         } catch (e: Exception) {
             System.err.println("Failed to fetch company facts: ${e.message}")
             null
