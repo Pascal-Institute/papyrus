@@ -1,5 +1,6 @@
 package papyrus.core.service.parser
 
+import org.jsoup.Jsoup
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.FinancialMetric
 
@@ -46,34 +47,12 @@ class PdfParser : DocumentParser {
 
         /** Clean HTML content from SEC PDF viewer SEC's PDF viewer returns HTML representation */
         private fun cleanHtmlFromSecViewer(html: String): String {
-                var cleaned = html
+                val doc = Jsoup.parse(html)
+                doc.select("script, style").remove()
 
-                // Remove scripts and styles
-                cleaned =
-                        cleaned.replace(
-                                Regex(
-                                        "<(SCRIPT|script)[^>]*>.*?</(SCRIPT|script)>",
-                                        RegexOption.DOT_MATCHES_ALL
-                                ),
-                                ""
-                        )
-                cleaned =
-                        cleaned.replace(
-                                Regex(
-                                        "<(STYLE|style)[^>]*>.*?</(STYLE|style)>",
-                                        RegexOption.DOT_MATCHES_ALL
-                                ),
-                                ""
-                        )
-
-                // Remove all HTML tags
-                cleaned = cleaned.replace(Regex("<[^>]+>"), " ")
-
-                // Decode entities
-                cleaned = decodeHtmlEntities(cleaned)
-
-                // Normalize whitespace
-                return SecTextNormalization.normalizeWhitespace(cleaned)
+                // Extract text content
+                val text = decodeHtmlEntities(doc.text())
+                return SecTextNormalization.normalizeWhitespace(text)
         }
 
         /** Decode HTML entities */

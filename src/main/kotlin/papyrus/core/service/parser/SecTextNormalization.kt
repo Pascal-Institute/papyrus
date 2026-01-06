@@ -1,5 +1,7 @@
 package papyrus.core.service.parser
 
+import org.jsoup.Jsoup
+
 /**
  * Common text normalization utilities used across SEC parsers.
  *
@@ -8,34 +10,22 @@ package papyrus.core.service.parser
 object SecTextNormalization {
 
     fun cleanHtmlToText(html: String): String {
-        var cleaned = html
+        val doc = Jsoup.parse(html)
 
-        cleaned =
-            cleaned.replace(
-                Regex(
-                    "<(SCRIPT|script)[^>]*>.*?</(SCRIPT|script)>",
-                    RegexOption.DOT_MATCHES_ALL
-                ),
-                ""
-            )
-        cleaned =
-            cleaned.replace(
-                Regex(
-                    "<(STYLE|style)[^>]*>.*?</(STYLE|style)>",
-                    RegexOption.DOT_MATCHES_ALL
-                ),
-                ""
-            )
+        // Remove scripts/styles early to avoid polluting extracted text.
+        doc.select("script, style").remove()
 
-        // Remove XBRL tags but keep content
-        cleaned = cleaned.replace(Regex("</?ix:[^>]+>"), "")
-        cleaned = cleaned.replace(Regex("</?xbrli:[^>]+>"), "")
+        // Convert namespaced tags (XBRL / iXBRL) to a neutral tag while preserving content.
+        doc.select("*").forEach { element ->
+            if (element.tagName().contains(":")) {
+                element.tagName("span")
+            }
+        }
 
-        // Remove HTML tags
-        cleaned = cleaned.replace(Regex("<[^>]+>"), " ")
-
-        cleaned = decodeBasicEntities(cleaned)
-        return normalizeWhitespace(cleaned)
+        // Jsoup already strips tags when calling text(). We keep basic entity decoding for
+        // consistency with previous behavior.
+        val text = decodeBasicEntities(doc.text())
+        return normalizeWhitespace(text)
     }
 
     fun decodeBasicEntities(text: String): String {

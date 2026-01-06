@@ -42,15 +42,23 @@ class HtmlParser : DocumentParser {
                 val cleanTime = System.currentTimeMillis() - cleanStart
                 println("  ✓ Cleaned in ${cleanTime}ms (${cleanedContent.length} chars)")
 
+                // Extract inline XBRL facts (high confidence, structured)
+                println("  🧾 Extracting iXBRL/XBRL facts...")
+                val xbrlStart = System.currentTimeMillis()
+                val xbrlMetrics = InlineXbrlExtractor.extractMetrics(document)
+                val xbrlTime = System.currentTimeMillis() - xbrlStart
+                println("  ✓ Extracted ${xbrlMetrics.size} iXBRL metrics in ${xbrlTime}ms")
+
                 // Extract financial metrics from cleaned content using existing parser
                 println("  💰 Extracting financial metrics...")
                 val metricStart = System.currentTimeMillis()
-                val extendedMetrics = EnhancedFinancialParser.parsePdfTextTable(cleanedContent)
+                val parsedMetrics = EnhancedFinancialParser.parsePdfTextTable(cleanedContent)
                 val metricTime = System.currentTimeMillis() - metricStart
-                println("  ✓ Extracted ${extendedMetrics.size} metrics in ${metricTime}ms")
+                println("  ✓ Extracted ${parsedMetrics.size} metrics in ${metricTime}ms")
 
-                // Convert ExtendedFinancialMetric to FinancialMetric
-                val metrics = extendedMetrics.map { it.toFinancialMetric() }
+                // Merge: prefer iXBRL for the same metric name (more precise than regex/text)
+                val mergedExtended = mergeByNamePreferFirst(xbrlMetrics, parsedMetrics)
+                val metrics = mergedExtended.map { it.toFinancialMetric() }
 
                 val totalTime = System.currentTimeMillis() - startTime
                 println("  ✅ Parsing complete in ${totalTime}ms")
@@ -66,6 +74,7 @@ class HtmlParser : DocumentParser {
                                 mapOf(
                                         "hasXbrl" to hasXbrl.toString(),
                                         "tableCount" to financialTables.size.toString(),
+                                        "xbrlMetricCount" to xbrlMetrics.size.toString(),
                                         "encoding" to detectEncoding(document),
                                         "hasFinancialTables" to
                                                 (financialTables.isNotEmpty()).toString(),
@@ -200,6 +209,28 @@ class HtmlParser : DocumentParser {
 
                 return "UTF-8"
         }
+}
+
+private fun mergeByNamePreferFirst(
+        primary: List<ExtendedFinancialMetric>,
+        secondary: List<ExtendedFinancialMetric>
+): List<ExtendedFinancialMetric> {
+        val byName = LinkedHashMap<String, ExtendedFinancialMetric>()
+
+        fun keyFor(m: ExtendedFinancialMetric): String = m.name.trim().lowercase()
+
+        for (m in primary) {
+                val k = keyFor(m)
+                if (k.isNotBlank()) byName[k] = m
+        }
+
+        for (m in secondary) {
+                val k = keyFor(m)
+                if (k.isBlank()) continue
+                byName.putIfAbsent(k, m)
+        }
+
+        return byName.values.toList()
 }
 
 /** Extension function to convert ExtendedFinancialMetric to FinancialMetric */

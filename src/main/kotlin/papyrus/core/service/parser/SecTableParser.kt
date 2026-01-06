@@ -1,6 +1,7 @@
 package papyrus.core.service.parser
 
 import papyrus.core.model.*
+import org.jsoup.Jsoup
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -443,21 +444,16 @@ object SecTableParser {
         expectedColumns: Int
     ): List<TableRow> {
         val rows = mutableListOf<TableRow>()
-        
-        // HTML 테이블 행 추출
-        val tableRowPattern = Regex("""<tr[^>]*>(.*?)</tr>""", RegexOption.DOT_MATCHES_ALL)
-        val tableRows = tableRowPattern.findAll(section)
-        
-        for (trMatch in tableRows) {
-            val rowHtml = trMatch.groupValues[1]
-            
-            // 셀 추출 (td 또는 th)
-            val cellPattern = Regex("""<t[dh][^>]*>(.*?)</t[dh]>""", RegexOption.DOT_MATCHES_ALL)
-            val cells = cellPattern.findAll(rowHtml).map { cleanCellContent(it.groupValues[1]) }.toList()
-            
+
+        // Prefer DOM-based parsing for HTML tables (more robust than regex)
+        val doc = Jsoup.parseBodyFragment(section)
+        val tableRows = doc.select("tr")
+
+        for (tr in tableRows) {
+            val cells = tr.select("th, td")
             if (cells.isEmpty()) continue
-            
-            val label = cells.firstOrNull()?.trim() ?: continue
+
+            val label = cells.first()?.text()?.trim() ?: continue
             
             // 레이블이 비어있거나 너무 짧으면 스킵
             if (label.length < 3) continue
@@ -466,7 +462,7 @@ object SecTableParser {
             if (label.all { it.isDigit() || it == ',' || it == '.' || it.isWhitespace() }) continue
             
             // 나머지 셀에서 숫자 추출
-            val values = cells.drop(1).map { parseTableValue(it) }
+            val values = cells.drop(1).map { parseTableValue(it.text()) }
             
             // 값이 하나도 없으면 스킵
             if (values.all { it == null }) continue
@@ -481,7 +477,7 @@ object SecTableParser {
             val isSubtotal = label.lowercase().contains("subtotal")
             
             // 들여쓰기 레벨 추정
-            val indentLevel = estimateIndentLevel(label, rowHtml)
+            val indentLevel = estimateIndentLevel(label, tr.outerHtml())
             
             rows.add(TableRow(
                 label = label,
