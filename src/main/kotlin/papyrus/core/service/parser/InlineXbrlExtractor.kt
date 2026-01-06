@@ -28,6 +28,100 @@ object InlineXbrlExtractor {
     private val factExpr =
         xpath.compile("//*[local-name()='nonFraction' or local-name()='nonNumeric' or @contextRef or @contextref or @unitRef or @unitref]")
 
+    private data class ConceptRule(
+        val name: String,
+        val category: MetricCategory,
+        val matchers: List<(String) -> Boolean>
+    )
+
+    private val conceptRules: List<ConceptRule> = listOf(
+        ConceptRule(
+            name = "Revenue",
+            category = MetricCategory.REVENUE,
+            matchers = matchers(
+                contains("us-gaap:revenues"),
+                contains("us-gaap:salesrevenuenet"),
+                endsWith(":revenues")
+            )
+        ),
+        ConceptRule(
+            name = "Net Income",
+            category = MetricCategory.NET_INCOME,
+            matchers = matchers(
+                contains("us-gaap:netincomeloss"),
+                endsWith(":netincomeloss")
+            )
+        ),
+        ConceptRule(
+            name = "Gross Profit",
+            category = MetricCategory.GROSS_PROFIT,
+            matchers = matchers(
+                contains("us-gaap:grossprofit"),
+                endsWith(":grossprofit")
+            )
+        ),
+        ConceptRule(
+            name = "Operating Income",
+            category = MetricCategory.OPERATING_INCOME,
+            matchers = matchers(
+                contains("us-gaap:operatingincomeloss"),
+                endsWith(":operatingincomeloss")
+            )
+        ),
+        ConceptRule(
+            name = "Total Assets",
+            category = MetricCategory.TOTAL_ASSETS,
+            matchers = matchers(
+                contains("us-gaap:assets"),
+                endsWith(":assets")
+            )
+        ),
+        ConceptRule(
+            name = "Total Liabilities",
+            category = MetricCategory.TOTAL_LIABILITIES,
+            matchers = matchers(
+                contains("us-gaap:liabilities"),
+                endsWith(":liabilities")
+            )
+        ),
+        ConceptRule(
+            name = "Total Equity",
+            category = MetricCategory.TOTAL_EQUITY,
+            matchers = matchers(
+                contains("us-gaap:stockholdersequity"),
+                contains("us-gaap:stockholdersequityincludingportionattributabletononcontrollinginterest")
+            )
+        ),
+        ConceptRule(
+            name = "Cash and Cash Equivalents",
+            category = MetricCategory.CASH_AND_EQUIVALENTS,
+            matchers = matchers(
+                contains("us-gaap:cashandcashequivalentsatcarryingvalue")
+            )
+        ),
+        ConceptRule(
+            name = "Operating Cash Flow",
+            category = MetricCategory.OPERATING_CASH_FLOW,
+            matchers = matchers(
+                contains("us-gaap:netcashprovidedbyusedinoperatingactivities")
+            )
+        ),
+        ConceptRule(
+            name = "EPS (Basic)",
+            category = MetricCategory.EPS_BASIC,
+            matchers = matchers(
+                contains("us-gaap:earningspersharebasic")
+            )
+        ),
+        ConceptRule(
+            name = "EPS (Diluted)",
+            category = MetricCategory.EPS_DILUTED,
+            matchers = matchers(
+                contains("us-gaap:earningspersharediluted")
+            )
+        ),
+    )
+
     private fun XPathExecutable.eval(root: XdmNode): XdmValue {
         val selector = this.load()
         selector.contextItem = root
@@ -246,43 +340,8 @@ object InlineXbrlExtractor {
     private fun mapConceptToMetric(conceptRaw: String): Pair<String, MetricCategory>? {
         val concept = conceptRaw.lowercase()
 
-        // Prefer exact-ish GAAP concepts.
-        return when {
-            concept.contains("us-gaap:revenues") || concept.contains("us-gaap:salesrevenuenet") || concept.endsWith(":revenues") ->
-                "Revenue" to MetricCategory.REVENUE
-
-            concept.contains("us-gaap:netincomeloss") || concept.endsWith(":netincomeloss") ->
-                "Net Income" to MetricCategory.NET_INCOME
-
-            concept.contains("us-gaap:grossprofit") || concept.endsWith(":grossprofit") ->
-                "Gross Profit" to MetricCategory.GROSS_PROFIT
-
-            concept.contains("us-gaap:operatingincomeloss") || concept.endsWith(":operatingincomeloss") ->
-                "Operating Income" to MetricCategory.OPERATING_INCOME
-
-            concept.contains("us-gaap:assets") || concept.endsWith(":assets") ->
-                "Total Assets" to MetricCategory.TOTAL_ASSETS
-
-            concept.contains("us-gaap:liabilities") || concept.endsWith(":liabilities") ->
-                "Total Liabilities" to MetricCategory.TOTAL_LIABILITIES
-
-            concept.contains("us-gaap:stockholdersequity") || concept.contains("us-gaap:stockholdersequityincludingportionattributabletononcontrollinginterest") ->
-                "Total Equity" to MetricCategory.TOTAL_EQUITY
-
-            concept.contains("us-gaap:cashandcashequivalentsatcarryingvalue") ->
-                "Cash and Cash Equivalents" to MetricCategory.CASH_AND_EQUIVALENTS
-
-            concept.contains("us-gaap:netcashprovidedbyusedinoperatingactivities") ->
-                "Operating Cash Flow" to MetricCategory.OPERATING_CASH_FLOW
-
-            concept.contains("us-gaap:earningspersharebasic") ->
-                "EPS (Basic)" to MetricCategory.EPS_BASIC
-
-            concept.contains("us-gaap:earningspersharediluted") ->
-                "EPS (Diluted)" to MetricCategory.EPS_DILUTED
-
-            else -> null
-        }
+        val rule = conceptRules.firstOrNull { r -> r.matchers.any { it(concept) } } ?: return null
+        return rule.name to rule.category
     }
 
     private fun inferUnit(fact: XbrlFact): MetricUnit {
@@ -378,6 +437,12 @@ object InlineXbrlExtractor {
         }
         return merged
     }
+
+    private fun matchers(vararg predicates: (String) -> Boolean): List<(String) -> Boolean> = predicates.toList()
+
+    private fun contains(token: String): (String) -> Boolean = { value -> value.contains(token) }
+
+    private fun endsWith(token: String): (String) -> Boolean = { value -> value.endsWith(token) }
 
     private fun BigDecimal.toDoubleOrNullSafe(): Double? {
         return try {
