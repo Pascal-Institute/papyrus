@@ -76,6 +76,8 @@ local.properties
 # Logs
 *.log
 logs/
+build_log.txt
+run_log.txt
 
 # Temporary files
 *.tmp
@@ -83,5 +85,5 @@ logs/
 *.swp
 *~.nib
 
-# User-specific files
-run_log.txt
+# Kotlin Compiler
+.kotlin/
