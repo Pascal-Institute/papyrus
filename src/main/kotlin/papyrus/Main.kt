@@ -13,7 +13,7 @@ import java.net.URI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import papyrus.core.model.TickerEntry
+import papyrus.core.resource.AppStrings
 import papyrus.core.state.AnalysisState
 import papyrus.core.viewmodel.AnalysisViewModel
 import papyrus.core.viewmodel.MainViewModel
@@ -27,7 +27,7 @@ import papyrus.util.file.FileUtils
 fun main() = application {
         Window(
                 onCloseRequest = ::exitApplication,
-                title = "Papyrus - SEC Financial Analyzer",
+                title = AppStrings.WINDOW_TITLE,
                 icon = painterResource("papyrus_icon.png")
         ) { PapyrusApp() }
 }
@@ -45,7 +45,6 @@ fun PapyrusApp() {
         val appState = mainViewModel.appState
         val bookmarks = mainViewModel.bookmarks
         val analysisState = analysisViewModel.analysisState
-        val currentAnalyzingFiling = analysisViewModel.currentAnalyzingFiling
 
         PapyrusTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = AppColors.Background) {
@@ -85,8 +84,7 @@ fun PapyrusApp() {
                                                                 Desktop.getDesktop().browse(URI(url))
                                                         }
                                                 }
-                                        },
-
+                                        }
                                 )
 
                                 // Divider
@@ -103,84 +101,56 @@ fun PapyrusApp() {
                                                         // Immediately show loading state
                                                         analysisViewModel.analysisState =
                                                                 AnalysisState.Loading(
-                                                                        "Reading file... ${file.name}"
+                                                                        AppStrings.FileProcessing.readingFile(file.name)
                                                                 )
 
                                                         try {
-                                                                if (!FileUtils.isSupportedFile(file)
-                                                                ) {
-                                                                        analysisViewModel
-                                                                                .analysisState =
-                                                                                        AnalysisState
-                                                                                                .Error(
-                                                                                                        message =
-                                                                                                                "Unsupported file type: ${file.extension}\nSupported: PDF, HTML, HTM, TXT",
-                                                                                                        retryAction =
-                                                                                                                null
-                                                                                                )
+                                                                if (!FileUtils.isSupportedFile(file)) {
+                                                                        analysisViewModel.analysisState =
+                                                                                AnalysisState.Error(
+                                                                                        message = AppStrings.FileProcessing.unsupportedFileType(file.extension),
+                                                                                        retryAction = null
+                                                                                )
                                                                         return@launch
                                                                 }
 
-                                                                // Update loading message for
-                                                                // content extraction
+                                                                // Update loading message for content extraction
                                                                 analysisViewModel.analysisState =
                                                                         AnalysisState.Loading(
-                                                                                "문서 내용을 추출하는 중.."
+                                                                                AppStrings.FileProcessing.EXTRACTING_CONTENT
                                                                         )
 
-                                                                val extracted =
-                                                                        FileUtils.extractDocument(
-                                                                                file
-                                                                        )
+                                                                val extracted = FileUtils.extractDocument(file)
 
                                                                 val content =
-                                                                        when (file.extension
-                                                                                        .lowercase()
-                                                                        ) {
-                                                                                "html", "htm" ->
-                                                                                        extracted
-                                                                                                .rawContent
-                                                                                else ->
-                                                                                        extracted
-                                                                                                .extractedText
+                                                                        when (file.extension.lowercase()) {
+                                                                                "html", "htm" -> extracted.rawContent
+                                                                                else -> extracted.extractedText
                                                                         }
 
-                                                                // Update loading message for
-                                                                // analysis
+                                                                // Update loading message for analysis
                                                                 analysisViewModel.analysisState =
                                                                         AnalysisState.Loading(
-                                                                                "재무 데이터를 분석하는 중.."
+                                                                                AppStrings.FileProcessing.ANALYZING_DATA
                                                                         )
 
                                                                 // Use beginner-friendly analysis
                                                                 val analysis =
-                                                                        kotlinx.coroutines
-                                                                                .withContext(
-                                                                                        kotlinx
-                                                                                                .coroutines
-                                                                                                .Dispatchers
-                                                                                                .IO
-                                                                                ) {
-                                                                                        papyrus.core
-                                                                                                .service
-                                                                                                .analyzer
-                                                                                                .FinancialAnalyzer
-                                                                                                .analyzeForBeginners(
-                                                                                                        file.name,
-                                                                                                        content
-                                                                                                )
-                                                                                }
+                                                                        withContext(Dispatchers.IO) {
+                                                                                papyrus.core.service.analyzer
+                                                                                        .FinancialAnalyzer
+                                                                                        .analyzeForBeginners(
+                                                                                                file.name,
+                                                                                                content
+                                                                                        )
+                                                                        }
 
                                                                 analysisViewModel.analysisState =
-                                                                        AnalysisState
-                                                                                .FinancialAnalysisResult(
-                                                                                        analysis
-                                                                                )
+                                                                        AnalysisState.FinancialAnalysisResult(analysis)
                                                         } catch (e: Exception) {
                                                                 analysisViewModel.analysisState =
                                                                         AnalysisState.Error(
-                                                                                message =
-                                                                                        "Error reading file: ${e.message}",
+                                                                                message = AppStrings.FileProcessing.errorReadingFile(e.message),
                                                                                 retryAction = null
                                                                         )
                                                         }
@@ -195,35 +165,32 @@ fun PapyrusApp() {
                                         }
                                 )
                         }
-
-                        // Settings dialog
-
                 }
         }
 }
 
 /** Build analysis summary from document content */
 private fun buildAnalysisSummary(rawHtml: String, cleanText: String): String {
-        val hasRevenue = cleanText.contains("Revenue", ignoreCase = true)
-        val hasRisk = cleanText.contains("Risk", ignoreCase = true)
-        val hasNetIncome = cleanText.contains("Net Income", ignoreCase = true)
-        val hasAssets = cleanText.contains("Total Assets", ignoreCase = true)
-        val hasLiabilities = cleanText.contains("Liabilities", ignoreCase = true)
+        val hasRevenue = cleanText.contains(AppStrings.Analysis.TERM_REVENUE, ignoreCase = true)
+        val hasRisk = cleanText.contains(AppStrings.Analysis.TERM_RISK_FACTORS, ignoreCase = true)
+        val hasNetIncome = cleanText.contains(AppStrings.Analysis.TERM_NET_INCOME, ignoreCase = true)
+        val hasAssets = cleanText.contains(AppStrings.Analysis.TERM_TOTAL_ASSETS, ignoreCase = true)
+        val hasLiabilities = cleanText.contains(AppStrings.Analysis.TERM_LIABILITIES, ignoreCase = true)
 
         return buildString {
-                appendLine("Quick Analysis Summary")
-                appendLine("------------------------")
+                appendLine(AppStrings.Analysis.SUMMARY_TITLE)
+                appendLine(AppStrings.Analysis.SUMMARY_SEPARATOR)
                 appendLine()
-                appendLine("Document Size: ${rawHtml.length.formatWithCommas()} characters")
+                appendLine(AppStrings.Analysis.documentSize(rawHtml.length.formatWithCommas()))
                 appendLine()
-                appendLine("Key Financial Terms Found:")
-                appendLine("  ${if (hasRevenue) "[O]" else "[ ]"} Revenue")
-                appendLine("  ${if (hasNetIncome) "[O]" else "[ ]"} Net Income")
-                appendLine("  ${if (hasAssets) "[O]" else "[ ]"} Total Assets")
-                appendLine("  ${if (hasLiabilities) "[O]" else "[ ]"} Liabilities")
-                appendLine("  ${if (hasRisk) "[O]" else "[ ]"} Risk Factors")
+                appendLine(AppStrings.Analysis.KEY_TERMS_HEADER)
+                appendLine("  ${if (hasRevenue) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_REVENUE}")
+                appendLine("  ${if (hasNetIncome) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_NET_INCOME}")
+                appendLine("  ${if (hasAssets) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_TOTAL_ASSETS}")
+                appendLine("  ${if (hasLiabilities) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_LIABILITIES}")
+                appendLine("  ${if (hasRisk) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_RISK_FACTORS}")
                 appendLine()
-                appendLine("Tip: For detailed analysis, use the Full Content tab")
+                appendLine(AppStrings.Analysis.SUMMARY_TIP)
         }
 }
 

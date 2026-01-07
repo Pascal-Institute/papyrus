@@ -2,6 +2,7 @@ package papyrus.core.service.analyzer
 
 import org.jsoup.Jsoup
 import papyrus.core.model.*
+import papyrus.core.resource.AppStrings
 import papyrus.core.service.parser.EnhancedFinancialParser
 import papyrus.core.service.parser.InlineXbrlExtractor
 import papyrus.core.service.parser.SecTableParser
@@ -1138,7 +1139,7 @@ object FinancialAnalyzer {
                                 HealthStatus.NEUTRAL -> "보통"
                                 HealthStatus.CAUTION -> "주의 필요"
                                 HealthStatus.WARNING -> "심각"
-                                null -> "분석 불가"
+                                null -> AppStrings.Analysis.ANALYSIS_NOT_AVAILABLE
                         }
 
                 val ratioDetails = buildString {
@@ -1253,7 +1254,7 @@ object FinancialAnalyzer {
                                         fcfValue > 0 -> "건강함"
                                 cashFlowValue != null && cashFlowValue > 0 -> "양호"
                                 cashFlowValue != null && cashFlowValue < 0 -> "주의 필요"
-                                else -> "분석 필요"
+                                else -> AppStrings.Analysis.ANALYSIS_NEEDED
                         }
 
                 return BeginnerInsight(
@@ -1408,7 +1409,7 @@ object FinancialAnalyzer {
                                 HealthStatus.NEUTRAL -> "보통"
                                 HealthStatus.CAUTION -> "비효율적"
                                 HealthStatus.WARNING -> "매우 비효율적"
-                                null -> "분석 불가"
+                                null -> AppStrings.Analysis.ANALYSIS_NOT_AVAILABLE
                         }
 
                 return BeginnerInsight(

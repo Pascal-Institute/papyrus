@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import papyrus.core.model.BookmarkedTicker
 import papyrus.core.model.FilingItem
 import papyrus.core.model.TickerEntry
+import papyrus.core.resource.AppStrings
 import papyrus.core.state.AppState
 import papyrus.ui.*
 import papyrus.util.data.BookmarkManager
@@ -46,8 +47,8 @@ fun LeftPanel(
         ) {
                 // App Header
                 AppHeader(
-                        title = "Papyrus",
-                        subtitle = "SEC Financial Analyzer"
+                        title = AppStrings.APP_TITLE,
+                        subtitle = AppStrings.APP_SUBTITLE
                 )
 
                 // Search Box
@@ -60,7 +61,7 @@ fun LeftPanel(
                         SearchBox(
                                 value = appState.searchText,
                                 onValueChange = onSearchTextChange,
-                                placeholder = "Search company or ticker...",
+                                placeholder = AppStrings.SEARCH_PLACEHOLDER,
                                 isLoading = appState.isLoading && appState.selectedTicker == null
                         )
                 }

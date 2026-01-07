@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import papyrus.core.model.FilingItem
 import papyrus.ui.FileFormatType
 import papyrus.core.network.SecApi
+import papyrus.core.resource.AppStrings
 import papyrus.core.service.analyzer.FinancialAnalyzer
 import papyrus.core.state.AnalysisState
 
@@ -51,7 +52,7 @@ class AnalysisViewModel(private val scope: CoroutineScope) {
                     )
 
             analysisState =
-                    AnalysisState.Loading("${fileFormat.displayName} 문서를 분석하고 있습니다...")
+                    AnalysisState.Loading(AppStrings.Analysis.analyzingDocument(fileFormat.displayName))
             currentAnalyzingFiling = filing.accessionNumber
 
             try {
@@ -73,7 +74,7 @@ class AnalysisViewModel(private val scope: CoroutineScope) {
             } catch (e: Exception) {
                 analysisState =
                         AnalysisState.Error(
-                                message = "Document analysis failed: ${e.message}",
+                                message = AppStrings.Analysis.analysisFailed(e.message),
                                 retryAction = { analyzeFiling(filing, cik, fileFormat) }
                         )
                 currentAnalyzingFiling = null

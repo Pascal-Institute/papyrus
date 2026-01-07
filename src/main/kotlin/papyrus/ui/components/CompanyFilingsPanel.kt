@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import papyrus.core.model.FilingItem
 import papyrus.core.model.TickerEntry
+import papyrus.core.resource.AppStrings
 import papyrus.ui.*
 
 /**
@@ -74,8 +75,8 @@ fun CompanyFilingsPanel(
                 if (filings.isEmpty()) {
                         EmptyState(
                                 icon = Icons.Outlined.FolderOff,
-                                title = "No filings found",
-                                description = "This company has no recent SEC filings"
+                                title = AppStrings.NO_FILINGS_TITLE,
+                                description = AppStrings.NO_FILINGS_DESCRIPTION
                         )
                 } else {
                         Column(modifier = Modifier.fillMaxSize()) {
@@ -93,8 +94,8 @@ fun CompanyFilingsPanel(
                                 if (filteredFilings.isEmpty()) {
                                         EmptyState(
                                                 icon = Icons.Outlined.FilterAlt,
-                                                title = "필터 결과 없음",
-                                                description = "선택한 보고서 유형에 해당하는 파일이 없습니다"
+                                                title = AppStrings.FILTER_NO_RESULTS_TITLE,
+                                                description = AppStrings.FILTER_NO_RESULTS_DESCRIPTION
                                         )
                                 } else {
                                         LazyColumn(

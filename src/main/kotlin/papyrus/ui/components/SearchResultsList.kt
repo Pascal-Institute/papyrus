@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import papyrus.core.model.TickerEntry
+import papyrus.core.resource.AppStrings
 import papyrus.ui.AppDimens
 import papyrus.ui.EmptyState
 import papyrus.ui.TickerCard
@@ -30,8 +31,8 @@ fun SearchResultsList(
                 if (showEmptyState) {
                         EmptyState(
                                 icon = Icons.Outlined.Search,
-                                title = "Search for companies",
-                                description = "Enter a ticker symbol or company name"
+                                title = AppStrings.SEARCH_EMPTY_TITLE,
+                                description = AppStrings.SEARCH_EMPTY_DESCRIPTION
                         )
                 }
         } else {
