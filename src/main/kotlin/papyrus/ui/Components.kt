@@ -2,6 +2,7 @@ package papyrus.ui
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,8 +13,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
@@ -318,7 +322,7 @@ fun CompanyInfoCard(
                                 shape = AppShapes.Small
                         ) {
                                 Icon(
-                                        Icons.Default.ArrowBack,
+                                        Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                 )
@@ -362,8 +366,8 @@ fun FilingCard(
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
 
-        // File format selection state (default: PDF)
-        var selectedFileFormat by remember { mutableStateOf(FileFormatType.PDF) }
+        // File format selection state (default: HTML - best compatibility)
+        var selectedFileFormat by remember { mutableStateOf(FileFormatType.HTML) }
 
         Card(
                 modifier = modifier.fillMaxWidth(),
@@ -486,7 +490,7 @@ fun FilingCard(
                                         modifier = Modifier.height(AppDimens.ButtonHeight)
                                 ) {
                                         Icon(
-                                                Icons.Default.OpenInNew,
+                                                Icons.AutoMirrored.Filled.OpenInNew,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(18.dp)
                                         )
@@ -501,14 +505,16 @@ enum class FileFormatType(
         val displayName: String,
         val extension: String,
         val icon: ImageVector,
-        val color: Color
+        val color: Color,
+        val description: String = ""
 ) {
-        PDF("PDF", "pdf", Icons.Outlined.PictureAsPdf, Color(0xFFE53935)),
-        HTML("HTML", "html", Icons.Outlined.Code, Color(0xFF1E88E5)),
-        HTM("HTM", "htm", Icons.Outlined.Code, Color(0xFF1E88E5)),
-        TXT("TXT", "txt", Icons.Outlined.Description, Color(0xFF43A047))
+        HTML("HTML", "html", Icons.Outlined.Code, Color(0xFF1E88E5), "Recommended - Best compatibility"),
+        HTM("HTM", "htm", Icons.Outlined.Code, Color(0xFF1E88E5), "Same as HTML"),
+        TXT("TXT", "txt", Icons.Outlined.Description, Color(0xFF43A047), "Plain text format"),
+        PDF("PDF", "pdf", Icons.Outlined.PictureAsPdf, Color(0xFFE53935), "Not available - use HTML instead")
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FileFormatSelector(
         selectedFormat: FileFormatType,
@@ -520,35 +526,77 @@ private fun FileFormatSelector(
         ) {
                 FileFormatType.values().forEach { format ->
                         val isSelected = format == selectedFormat
+                        val isPdfDisabled = format == FileFormatType.PDF
                         val backgroundColor =
-                                if (isSelected) format.color.copy(alpha = 0.15f)
-                                else Color.Transparent
-                        val borderColor = if (isSelected) format.color else AppColors.Divider
+                                when {
+                                        isPdfDisabled -> AppColors.Error.copy(alpha = 0.05f)
+                                        isSelected -> format.color.copy(alpha = 0.15f)
+                                        else -> Color.Transparent
+                                }
+                        val borderColor = when {
+                                isPdfDisabled -> AppColors.Error.copy(alpha = 0.3f)
+                                isSelected -> format.color
+                                else -> AppColors.Divider
+                        }
 
-                        Box(
-                                modifier =
-                                        Modifier.size(36.dp)
-                                                .background(
-                                                        backgroundColor,
-                                                        shape = AppShapes.Small
-                                                )
-                                                .border(
-                                                        width = 1.dp,
-                                                        color = borderColor,
-                                                        shape = AppShapes.Small
-                                                )
-                                                .clickable { onFormatSelected(format) }
-                                                .padding(6.dp),
-                                contentAlignment = Alignment.Center
+                        TooltipArea(
+                                tooltip = {
+                                        Surface(
+                                                color = AppColors.Surface,
+                                                shape = AppShapes.Small,
+                                                elevation = 4.dp
+                                        ) {
+                                                Column(modifier = Modifier.padding(8.dp)) {
+                                                        Text(
+                                                                text = format.displayName,
+                                                                style = AppTypography.Caption,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = if (isPdfDisabled) AppColors.Error else AppColors.OnSurface
+                                                        )
+                                                        if (format.description.isNotEmpty()) {
+                                                                Text(
+                                                                        text = format.description,
+                                                                        style = AppTypography.Caption,
+                                                                        color = if (isPdfDisabled) AppColors.Error else AppColors.OnSurfaceSecondary,
+                                                                        fontSize = 10.sp
+                                                                )
+                                                        }
+                                                }
+                                        }
+                                }
                         ) {
-                                Icon(
-                                        format.icon,
-                                        contentDescription = format.displayName,
-                                        tint =
-                                                if (isSelected) format.color
-                                                else AppColors.OnSurfaceSecondary,
-                                        modifier = Modifier.size(20.dp)
-                                )
+                                Box(
+                                        modifier =
+                                                Modifier.size(36.dp)
+                                                        .background(
+                                                                backgroundColor,
+                                                                shape = AppShapes.Small
+                                                        )
+                                                        .border(
+                                                                width = 1.dp,
+                                                                color = borderColor,
+                                                                shape = AppShapes.Small
+                                                        )
+                                                        .then(
+                                                                if (!isPdfDisabled) {
+                                                                        Modifier.clickable { onFormatSelected(format) }
+                                                                } else Modifier
+                                                        )
+                                                        .padding(6.dp),
+                                        contentAlignment = Alignment.Center
+                                ) {
+                                        Icon(
+                                                format.icon,
+                                                contentDescription = format.displayName,
+                                                tint =
+                                                        when {
+                                                                isPdfDisabled -> AppColors.Error.copy(alpha = 0.5f)
+                                                                isSelected -> format.color
+                                                                else -> AppColors.OnSurfaceSecondary
+                                                        },
+                                                modifier = Modifier.size(20.dp)
+                                        )
+                                }
                         }
                 }
         }
@@ -1155,7 +1203,7 @@ fun NewsArticleCard(
 
                                 // External link icon
                                 Icon(
-                                        Icons.Outlined.OpenInNew,
+                                        Icons.AutoMirrored.Outlined.OpenInNew,
                                         contentDescription = "Open in browser",
                                         tint = AppColors.Primary,
                                         modifier = Modifier.size(18.dp)

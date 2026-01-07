@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
@@ -263,7 +265,7 @@ private fun QuickAnalyzeHeader(
                         shape = AppShapes.Small
                 ) {
                     Icon(
-                            Icons.Default.OpenInNew,
+                            Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                     )
@@ -341,7 +343,7 @@ private fun AnalysisStatsRow(summary: String) {
         StatCard(
                 title = "Net Income",
                 isFound = hasNetIncome,
-                icon = Icons.Outlined.TrendingUp,
+                icon = Icons.AutoMirrored.Outlined.TrendingUp,
                 color = AppColors.Income,
                 modifier = Modifier.weight(1f)
         )
@@ -426,7 +428,7 @@ private fun QuickAnalyzeContentTab(content: String) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
             SectionHeader(
                     title = "Document Content Preview",
-                    icon = Icons.Outlined.Article,
+                    icon = Icons.AutoMirrored.Outlined.Article,
                     action = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -1332,7 +1334,7 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { showVisualization = !showVisualization }) {
                     Icon(
-                            if (showVisualization) Icons.Default.ViewList
+                            if (showVisualization) Icons.AutoMirrored.Filled.ViewList
                             else Icons.Default.BarChart,
                             contentDescription = "Toggle View",
                             tint = AppColors.Primary
@@ -1744,7 +1746,7 @@ private fun FinancialAnalysisHeader(
                     verticalAlignment = Alignment.CenterVertically
             ) {
                 InfoChip(
-                        icon = Icons.Outlined.InsertDriveFile,
+                        icon = Icons.AutoMirrored.Outlined.InsertDriveFile,
                         label = analysis.fileName,
                         color = AppColors.Primary
                 )
@@ -1878,7 +1880,7 @@ private fun MetricsSummaryGrid(metrics: List<FinancialMetric>) {
     val categories =
             listOf(
                     Triple("Revenue", Icons.Outlined.AttachMoney, AppColors.Revenue),
-                    Triple("Income", Icons.Outlined.TrendingUp, AppColors.Income),
+                    Triple("Income", Icons.AutoMirrored.Outlined.TrendingUp, AppColors.Income),
                     Triple("Assets", Icons.Outlined.AccountBalance, AppColors.Assets),
                     Triple("Liabilities", Icons.Outlined.Receipt, AppColors.Liabilities),
                     Triple("Equity", Icons.Outlined.Diamond, AppColors.Equity)
@@ -2681,7 +2683,7 @@ private fun AiDetailedAnalysisCard(aiAnalysis: AiAnalysisResult) {
                     ) {
                         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
                             Icon(
-                                    imageVector = Icons.Filled.TrendingUp,
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = null,
                                     tint = AppColors.Success,
                                     modifier = Modifier.size(20.dp).padding(top = 2.dp)
@@ -2806,7 +2808,7 @@ private fun AiIndustryComparisonCard(comparison: String) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                        imageVector = Icons.Filled.CompareArrows,
+                        imageVector = Icons.AutoMirrored.Filled.CompareArrows,
                         contentDescription = "Industry Comparison",
                         tint = AppColors.Secondary,
                         modifier = Modifier.size(28.dp)
@@ -3102,7 +3104,7 @@ private fun MetricDisplayCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 val yoyColor = if (yoy >= 0) AppColors.Success else AppColors.Error
                 val yoySign = if (yoy >= 0) "+" else ""
-                val yoyIcon = if (yoy >= 0) Icons.Default.TrendingUp else Icons.Default.TrendingDown
+                val yoyIcon = if (yoy >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -3262,7 +3264,7 @@ fun QuickFinancialSummaryCard(
                 QuickMetricItem(
                     label = "Net Income",
                     value = netIncome?.value ?: "N/A",
-                    icon = Icons.Outlined.TrendingUp,
+                    icon = Icons.AutoMirrored.Outlined.TrendingUp,
                     color = AppColors.Income
                 )
                 

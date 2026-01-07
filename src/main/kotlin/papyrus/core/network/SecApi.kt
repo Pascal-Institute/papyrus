@@ -43,10 +43,12 @@ object SecApi {
      * Configure a request with common SEC API headers.
      * Centralizes header setup to reduce duplication and ensure consistency.
      */
-    private fun HttpRequestBuilder.applySecHeaders(host: String = "data.sec.gov") {
+    private fun HttpRequestBuilder.applySecHeaders(hostOverride: String? = null) {
         header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
         header("Accept", "*/*")
-        header("Host", host)
+        // Only set Host header if explicitly provided
+        // Ktor will set it automatically from URL otherwise
+        hostOverride?.let { header("Host", it) }
     }
 
     suspend fun loadTickers() {
@@ -63,7 +65,7 @@ object SecApi {
                 val response: Map<String, TickerEntry> =
                         client
                                 .get("https://www.sec.gov/files/company_tickers.json") {
-                                    applySecHeaders("www.sec.gov")
+                                    applySecHeaders()
                                 }
                                 .body()
                 tickers = response.values.toList()
@@ -158,9 +160,11 @@ object SecApi {
                 "$baseUrl/$accessionNumber.txt"
             }
             "pdf" -> {
-                // PDF rendering service (may not always work)
-                // Alternative: Use SEC's rendering service
-                "https://www.sec.gov/cgi-bin/viewer?action=view&cik=$cikInt&accession_number=$accessionNumber&xbrl_type=v"
+                // SEC no longer provides direct PDF rendering via cgi-bin/viewer
+                // Instead, use the HTML primary document which is the most reliable
+                // Users can save/print as PDF from their browser if needed
+                println("Note: SEC does not provide direct PDF access. Using HTML primary document instead.")
+                "$baseUrl/$primaryDocument"
             }
             "html", "htm" -> {
                 // Use the primary document (usually HTML)
@@ -194,14 +198,34 @@ object SecApi {
 
     suspend fun fetchDocumentContent(url: String): String {
         return try {
+            // Validate URL
+            if (url.isBlank()) {
+                return "Error: Invalid URL (empty)"
+            }
+            
+            // Check if URL contains problematic patterns
+            if (url.contains("cgi-bin/viewer")) {
+                return "Error: SEC's cgi-bin/viewer service is no longer available. Please use HTML or TXT format instead."
+            }
+            
+            println("Fetching document from: $url")
             kotlinx.coroutines.delay(100) // Respect rate limits
-            client
-                    .get(url) {
-                        applySecHeaders()
-                    }
-                    .body()
+            val response = client.get(url) {
+                applySecHeaders()
+            }
+            
+            // Check response status
+            if (response.status.value in 200..299) {
+                response.body()
+            } else {
+                val errorMsg = "HTTP ${response.status.value}: ${response.status.description}"
+                System.err.println("Failed to fetch document: $errorMsg")
+                "Error loading content: $errorMsg\n\nURL: $url\n\nPlease try a different format (HTML or TXT)."
+            }
         } catch (e: Exception) {
-            "Error loading content: ${e.message}"
+            System.err.println("Exception fetching document: ${e.message}")
+            e.printStackTrace()
+            "Error loading content: ${e.message}\n\nURL: $url\n\nThis may be due to:\n- Invalid document URL\n- Network connectivity issues\n- SEC server temporarily unavailable"
         }
     }
 }

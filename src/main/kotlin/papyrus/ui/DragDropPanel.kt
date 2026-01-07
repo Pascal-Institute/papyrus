@@ -7,6 +7,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
@@ -62,7 +63,7 @@ fun DragDropPanel(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    if (isDragging) Icons.Default.CloudUpload else Icons.Outlined.InsertDriveFile,
+                    if (isDragging) Icons.Default.CloudUpload else Icons.AutoMirrored.Outlined.InsertDriveFile,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
                     tint = if (isDragging) AppColors.Primary else AppColors.OnSurfaceSecondary
