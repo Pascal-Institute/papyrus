@@ -204,7 +204,7 @@ fun PapyrusApp() {
                                                                 analysisState = AnalysisState.Idle
                                                         )
                                         },
-                                        onQuickAnalyze = { filing, fileFormat ->
+                                        onAnalyze = { filing, fileFormat ->
                                                 scope.launch {
                                                         val cik =
                                                                 appState.selectedTicker?.cik
@@ -439,7 +439,7 @@ private fun LeftPanel(
         onBookmarkedTickerClick: (Int) -> Unit,
         onRemoveBookmark: (Int) -> Unit,
         onBackToSearch: () -> Unit,
-        onQuickAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
+        onAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
         onOpenInBrowser: (FilingItem) -> Unit,
 
 ) {
@@ -512,7 +512,7 @@ private fun LeftPanel(
                                         BookmarkManager.isBookmarked(appState.selectedTicker.cik),
                                 onBackClick = onBackToSearch,
                                 onBookmarkClick = { onBookmarkClick(appState.selectedTicker) },
-                                onQuickAnalyze = onQuickAnalyze,
+                                onAnalyze = onAnalyze,
                                 onOpenInBrowser = onOpenInBrowser
                         )
                 }
@@ -554,7 +554,7 @@ private fun CompanyFilingsPanel(
         isBookmarked: Boolean,
         onBackClick: () -> Unit,
         onBookmarkClick: () -> Unit,
-        onQuickAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
+        onAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
         onOpenInBrowser: (FilingItem) -> Unit
 ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -639,10 +639,10 @@ private fun CompanyFilingsPanel(
                                                                 onOpenBrowser = {
                                                                         onOpenInBrowser(filing)
                                                                 },
-                                                                onQuickAnalyze = {
+                                                                onAnalyze = {
                                                                         filingItem,
                                                                         format ->
-                                                                        onQuickAnalyze(
+                                                                        onAnalyze(
                                                                                 filingItem,
                                                                                 format
                                                                         )
@@ -689,8 +689,8 @@ private fun RightPanel(
                                 is AnalysisState.Loading -> {
                                         AnalysisLoadingView(message = state.message)
                                 }
-                                is AnalysisState.QuickAnalyzeResult -> {
-                                        QuickAnalyzeResultView(
+                                is AnalysisState.AnalyzeResult -> {
+                                        AnalyzeResultView(
                                                 documentTitle = state.documentTitle,
                                                 documentUrl = state.documentUrl,
                                                 analysisContent = state.content,
@@ -767,7 +767,7 @@ sealed class AnalysisState {
 
         data class Loading(val message: String = "Loading...") : AnalysisState()
 
-        data class QuickAnalyzeResult(
+        data class AnalyzeResult(
                 val documentTitle: String,
                 val documentUrl: String?,
                 val content: String,

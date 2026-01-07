@@ -34,12 +34,16 @@ class InlineXbrlExtractorTest {
         val revenue = metrics.firstOrNull { it.name.equals("Revenue", ignoreCase = true) }
         assertNotNull(revenue)
         // 383,285 with scale=6 => 383,285,000,000
-        assertEquals(383_285_000_000.0, revenue!!.rawValue)
+        val expectedRevenue = java.math.BigDecimal("383285000000")
+        assertEquals(0, expectedRevenue.compareTo(revenue!!.getRawValueBigDecimal()),
+            "Expected $expectedRevenue but got ${revenue.getRawValueBigDecimal()}")
         assertTrue(revenue.context.contains("period=2024-12-31"))
 
         val netIncome = metrics.firstOrNull { it.name.equals("Net Income", ignoreCase = true) }
         assertNotNull(netIncome)
-        assertEquals(96_995.0, netIncome!!.rawValue)
+        val expectedNetIncome = java.math.BigDecimal("96995")
+        assertEquals(0, expectedNetIncome.compareTo(netIncome!!.getRawValueBigDecimal()),
+            "Expected $expectedNetIncome but got ${netIncome.getRawValueBigDecimal()}")
     }
 
     @Test

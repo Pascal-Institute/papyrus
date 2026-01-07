@@ -344,7 +344,7 @@ fun InfoChip(icon: ImageVector, label: String, color: Color, modifier: Modifier 
 fun FilingCard(
         filing: FilingItem,
         onOpenBrowser: (String) -> Unit,
-        onQuickAnalyze: (FilingItem, FileFormatType) -> Unit,
+        onAnalyze: (FilingItem, FileFormatType) -> Unit,
         isAnalyzing: Boolean = false,
         modifier: Modifier = Modifier
 ) {
@@ -426,9 +426,9 @@ fun FilingCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                                // Quick Analyze Button (Primary Action)
+                                // Analyze Button (Primary Action)
                                 Button(
-                                        onClick = { onQuickAnalyze(filing, selectedFileFormat) },
+                                        onClick = { onAnalyze(filing, selectedFileFormat) },
                                         enabled = !isAnalyzing,
                                         colors =
                                                 ButtonDefaults.buttonColors(

@@ -325,9 +325,9 @@ private fun getBenchmarkInfo(ratioName: String): BenchmarkInfo? {
         }
 }
 
-/** Enhanced Quick Analyze Result View Shows analysis results in a structured, modern UI */
+/** Enhanced Analyze Result View Shows analysis results in a structured, modern UI */
 @Composable
-fun QuickAnalyzeResultView(
+fun AnalyzeResultView(
         documentTitle: String,
         documentUrl: String? = null,
         analysisContent: String,
@@ -341,7 +341,7 @@ fun QuickAnalyzeResultView(
 
         Column(modifier = modifier.fillMaxSize()) {
                 // Header
-                QuickAnalyzeHeader(
+                AnalyzeHeader(
                         title = "Document Analysis",
                         documentTitle = documentTitle,
                         onClose = onClose,
@@ -361,14 +361,14 @@ fun QuickAnalyzeResultView(
 
                 // Content based on selected tab
                 when (selectedTab) {
-                        0 -> QuickAnalyzeSummaryTab(analysisSummary)
-                        1 -> QuickAnalyzeContentTab(analysisContent)
+                        0 -> AnalyzeSummaryTab(analysisSummary)
+                        1 -> AnalyzeContentTab(analysisContent)
                 }
         }
 }
 
 @Composable
-private fun QuickAnalyzeHeader(
+private fun AnalyzeHeader(
         title: String,
         documentTitle: String,
         onClose: () -> Unit,
@@ -448,7 +448,7 @@ private fun QuickAnalyzeHeader(
 }
 
 @Composable
-private fun QuickAnalyzeSummaryTab(summary: String) {
+private fun AnalyzeSummaryTab(summary: String) {
         val scrollState = rememberScrollState()
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
@@ -576,7 +576,7 @@ private fun StatCard(
 }
 
 @Composable
-private fun QuickAnalyzeContentTab(content: String) {
+private fun AnalyzeContentTab(content: String) {
         val scrollState = rememberScrollState()
         var copySuccess by remember { mutableStateOf(false) }
 
@@ -2363,9 +2363,9 @@ private fun FinancialOverviewTab(analysis: FinancialAnalysis) {
         val scrollState = rememberScrollState()
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
-                // Quick financial summary card (new component)
+                // Financial summary card (new component)
                 if (analysis.extendedMetrics.isNotEmpty()) {
-                        QuickFinancialSummaryCard(analysis)
+                        FinancialSummaryCard(analysis)
                         Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
                 }
 
@@ -3305,7 +3305,7 @@ private fun NoMetricsFoundCard() {
 
 /** 빠른 재무 요약 카드 (단일 카드로 핵심 정보 표시) */
 @Composable
-fun QuickFinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = Modifier) {
+fun FinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = Modifier) {
         val metrics = analysis.extendedMetrics
 
         // Extract key metrics
@@ -3380,28 +3380,28 @@ fun QuickFinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = 
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                                QuickMetricItem(
+                                MetricItem(
                                         label = "Revenue",
                                         value = revenue?.value ?: "N/A",
                                         icon = Icons.Outlined.AttachMoney,
                                         color = AppColors.Revenue
                                 )
 
-                                QuickMetricItem(
+                                MetricItem(
                                         label = "Net Income",
                                         value = netIncome?.value ?: "N/A",
                                         icon = Icons.AutoMirrored.Outlined.TrendingUp,
                                         color = AppColors.Income
                                 )
 
-                                QuickMetricItem(
+                                MetricItem(
                                         label = "Total Assets",
                                         value = totalAssets?.value ?: "N/A",
                                         icon = Icons.Outlined.AccountBalance,
                                         color = AppColors.Primary
                                 )
 
-                                QuickMetricItem(
+                                MetricItem(
                                         label = "EPS",
                                         value = eps?.value ?: "N/A",
                                         icon = Icons.Outlined.BarChart,
@@ -3413,7 +3413,7 @@ fun QuickFinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = 
 }
 
 @Composable
-private fun QuickMetricItem(label: String, value: String, icon: ImageVector, color: Color) {
+private fun MetricItem(label: String, value: String, icon: ImageVector, color: Color) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                         imageVector = icon,
