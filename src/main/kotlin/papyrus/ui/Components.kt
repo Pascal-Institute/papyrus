@@ -3,6 +3,7 @@ package papyrus.ui
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,10 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.TooltipArea
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -31,9 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import papyrus.core.model.BookmarkedTicker
-import papyrus.core.model.CompanyNews
 import papyrus.core.model.FilingItem
-import papyrus.core.model.NewsArticle
 import papyrus.core.model.TickerEntry
 
 /** Enhanced App Header with gradient background */
@@ -357,7 +353,6 @@ fun InfoChip(icon: ImageVector, label: String, color: Color, modifier: Modifier 
 @Composable
 fun FilingCard(
         filing: FilingItem,
-        cik: String,
         onOpenBrowser: (String) -> Unit,
         onQuickAnalyze: (FilingItem, FileFormatType) -> Unit,
         isAnalyzing: Boolean = false,
@@ -508,7 +503,13 @@ enum class FileFormatType(
         val color: Color,
         val description: String = ""
 ) {
-        HTML("HTML", "html", Icons.Outlined.Code, Color(0xFF1E88E5), "Recommended - Best compatibility"),
+        HTML(
+                "HTML",
+                "html",
+                Icons.Outlined.Code,
+                Color(0xFF1E88E5),
+                "Recommended - Best compatibility"
+        ),
         HTM("HTM", "htm", Icons.Outlined.Code, Color(0xFF1E88E5), "Same as HTML"),
         TXT("TXT", "txt", Icons.Outlined.Description, Color(0xFF43A047), "Plain text format")
 }
@@ -547,8 +548,12 @@ private fun FileFormatSelector(
                                                         if (format.description.isNotEmpty()) {
                                                                 Text(
                                                                         text = format.description,
-                                                                        style = AppTypography.Caption,
-                                                                        color = AppColors.OnSurfaceSecondary,
+                                                                        style =
+                                                                                AppTypography
+                                                                                        .Caption,
+                                                                        color =
+                                                                                AppColors
+                                                                                        .OnSurfaceSecondary,
                                                                         fontSize = 10.sp
                                                                 )
                                                         }
@@ -1056,311 +1061,136 @@ fun RecentlyViewedSection(
         }
 }
 
-// ===== News Components =====
-
-/** 뉴스 섹션 헤더 */
-@Composable
-fun NewsSectionHeader(companyName: String, articleCount: Int, modifier: Modifier = Modifier) {
-        Row(
-                modifier =
-                        modifier.fillMaxWidth()
-                                .padding(
-                                        horizontal = AppDimens.PaddingMedium,
-                                        vertical = AppDimens.PaddingSmall
-                                ),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-        ) {
-                Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                ) {
-                        Icon(
-                                Icons.Outlined.Newspaper,
-                                contentDescription = null,
-                                tint = AppColors.Primary,
-                                modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                                text = "$companyName 관련 뉴스",
-                                style = AppTypography.Headline3,
-                                color = AppColors.OnSurface,
-                                fontWeight = FontWeight.Bold
-                        )
-                }
-
-                Text(
-                        text = "$articleCount articles",
-                        style = AppTypography.Caption,
-                        color = AppColors.OnSurfaceSecondary
-                )
-        }
-}
-
-/** Individual news article card */
-@Composable
-fun NewsArticleCard(
-        article: NewsArticle,
-        onOpenInBrowser: (String) -> Unit,
-        modifier: Modifier = Modifier
-) {
-        Card(
-                modifier = modifier.fillMaxWidth().clickable { onOpenInBrowser(article.url) },
-                elevation = 2.dp,
-                shape = AppShapes.Medium,
-                backgroundColor = AppColors.Surface
-        ) {
-                Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-                        // Title
-                        Text(
-                                text = article.title,
-                                style = AppTypography.Headline3,
-                                color = AppColors.OnSurface,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 2,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Description
-                        if (!article.description.isNullOrEmpty()) {
-                                Text(
-                                        text = article.description,
-                                        style = AppTypography.Body2,
-                                        color = AppColors.OnSurfaceSecondary,
-                                        maxLines = 3,
-                                        overflow =
-                                                androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        // Meta information
-                        Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                        ) {
-                                Row(
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                        // Source
-                                        Row(
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                                Icon(
-                                                        Icons.Outlined.Source,
-                                                        contentDescription = null,
-                                                        tint = AppColors.Primary,
-                                                        modifier = Modifier.size(14.dp)
-                                                )
-                                                Text(
-                                                        text = article.source,
-                                                        style = AppTypography.Caption,
-                                                        color = AppColors.Primary,
-                                                        fontWeight = FontWeight.SemiBold
-                                                )
-                                        }
-
-                                        // Date
-                                        Row(
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                                Icon(
-                                                        Icons.Outlined.Schedule,
-                                                        contentDescription = null,
-                                                        tint = AppColors.OnSurfaceSecondary,
-                                                        modifier = Modifier.size(14.dp)
-                                                )
-                                                Text(
-                                                        text = article.publishedAt,
-                                                        style = AppTypography.Caption,
-                                                        color = AppColors.OnSurfaceSecondary
-                                                )
-                                        }
-                                }
-
-                                // External link icon
-                                Icon(
-                                        Icons.AutoMirrored.Outlined.OpenInNew,
-                                        contentDescription = "Open in browser",
-                                        tint = AppColors.Primary,
-                                        modifier = Modifier.size(18.dp)
-                                )
-                        }
-                }
-        }
-}
-
-/** News article list (scrollable) */
-@Composable
-fun NewsArticleList(
-        news: CompanyNews,
-        onOpenInBrowser: (String) -> Unit,
-        modifier: Modifier = Modifier
-) {
-        Column(modifier = modifier.fillMaxSize()) {
-                NewsSectionHeader(companyName = news.companyName, articleCount = news.articles.size)
-
-                if (news.articles.isEmpty()) {
-                        EmptyState(
-                                icon = Icons.Outlined.Newspaper,
-                                title = "뉴스가 없습니다",
-                                description = "현재 이 기업에 대한 최신 뉴스가 없습니다"
-                        )
-                } else {
-                        LazyColumn(
-                                modifier =
-                                        Modifier.fillMaxSize()
-                                                .padding(horizontal = AppDimens.PaddingMedium),
-                                verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingMedium)
-                        ) {
-                                items(news.articles) { article ->
-                                        NewsArticleCard(
-                                                article = article,
-                                                onOpenInBrowser = onOpenInBrowser
-                                        )
-                                }
-
-                                // Last update time
-                                item {
-                                        Text(
-                                                text = "Last updated: ${news.lastUpdated}",
-                                                style = AppTypography.Caption,
-                                                color = AppColors.OnSurfaceSecondary,
-                                                modifier =
-                                                        Modifier.fillMaxWidth()
-                                                                .padding(
-                                                                        vertical =
-                                                                                AppDimens
-                                                                                        .PaddingMedium
-                                                                ),
-                                                textAlign =
-                                                        androidx.compose.ui.text.style.TextAlign
-                                                                .Center
-                                        )
-                                }
-                        }
-                }
-        }
-}
 /** \ubcf4\uace0\uc11c \ud0c0\uc785 \ud544\ud130 */
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ReportTypeFilter(
-    availableTypes: List<String>,
-    selectedTypes: Set<String>,
-    onTypesChanged: (Set<String>) -> Unit,
-    modifier: Modifier = Modifier
+        availableTypes: List<String>,
+        selectedTypes: Set<String>,
+        onTypesChanged: (Set<String>) -> Unit,
+        modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(AppColors.Surface)
-            .padding(AppDimens.PaddingMedium)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+                modifier =
+                        modifier.fillMaxWidth()
+                                .background(AppColors.Surface)
+                                .padding(AppDimens.PaddingMedium)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.FilterAlt,
-                    contentDescription = null,
-                    tint = AppColors.Primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "\ubcf4\uace0\uc11c \ud0c0\uc785 \ud544\ud130",
-                    style = AppTypography.Subtitle1,
-                    color = AppColors.OnSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            // \uc804\uccb4 \uc120\ud0dd/\ud574\uc81c \ubc84\ud2bc
-            if (selectedTypes.isNotEmpty()) {
-                TextButton(
-                    onClick = { onTypesChanged(emptySet()) }
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "\ubaa8\ub450 \ud574\uc81c",
-                        style = AppTypography.Caption,
-                        color = AppColors.Primary
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // \ubcf4\uace0\uc11c \ud0c0\uc785 \uce69\ub4e4
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            availableTypes.forEach { type ->
-                val isSelected = selectedTypes.contains(type)
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        val newTypes = if (isSelected) {
-                            selectedTypes - type
-                        } else {
-                            selectedTypes + type
-                        }
-                        onTypesChanged(newTypes)
-                    },
-                    content = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            if (isSelected) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    Icons.Filled.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                        Icons.Outlined.FilterAlt,
+                                        contentDescription = null,
+                                        tint = AppColors.Primary,
+                                        modifier = Modifier.size(20.dp)
                                 )
-                            }
-                            Text(
-                                text = type,
-                                style = AppTypography.Caption,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                        text = "\ubcf4\uace0\uc11c \ud0c0\uc785 \ud544\ud130",
+                                        style = AppTypography.Subtitle1,
+                                        color = AppColors.OnSurface,
+                                        fontWeight = FontWeight.Bold
+                                )
                         }
-                    },
-                    colors = ChipDefaults.filterChipColors(
-                        backgroundColor = if (isSelected) AppColors.Primary.copy(alpha = 0.1f) else AppColors.Surface,
-                        contentColor = if (isSelected) AppColors.Primary else AppColors.OnSurface,
-                        selectedBackgroundColor = AppColors.Primary.copy(alpha = 0.15f),
-                        selectedContentColor = AppColors.Primary
-                    ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = if (isSelected) AppColors.Primary else AppColors.Divider
-                    )
-                )
-            }
+
+                        // \uc804\uccb4 \uc120\ud0dd/\ud574\uc81c \ubc84\ud2bc
+                        if (selectedTypes.isNotEmpty()) {
+                                TextButton(onClick = { onTypesChanged(emptySet()) }) {
+                                        Text(
+                                                text = "\ubaa8\ub450 \ud574\uc81c",
+                                                style = AppTypography.Caption,
+                                                color = AppColors.Primary
+                                        )
+                                }
+                        }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // \ubcf4\uace0\uc11c \ud0c0\uc785 \uce69\ub4e4
+                Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                        availableTypes.forEach { type ->
+                                val isSelected = selectedTypes.contains(type)
+                                FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                                val newTypes =
+                                                        if (isSelected) {
+                                                                selectedTypes - type
+                                                        } else {
+                                                                selectedTypes + type
+                                                        }
+                                                onTypesChanged(newTypes)
+                                        },
+                                        content = {
+                                                Row(
+                                                        verticalAlignment =
+                                                                Alignment.CenterVertically,
+                                                        horizontalArrangement =
+                                                                Arrangement.spacedBy(4.dp)
+                                                ) {
+                                                        if (isSelected) {
+                                                                Icon(
+                                                                        Icons.Filled.Check,
+                                                                        contentDescription = null,
+                                                                        modifier =
+                                                                                Modifier.size(16.dp)
+                                                                )
+                                                        }
+                                                        Text(
+                                                                text = type,
+                                                                style = AppTypography.Caption,
+                                                                fontWeight =
+                                                                        if (isSelected)
+                                                                                FontWeight.Bold
+                                                                        else FontWeight.Normal
+                                                        )
+                                                }
+                                        },
+                                        colors =
+                                                ChipDefaults.filterChipColors(
+                                                        backgroundColor =
+                                                                if (isSelected)
+                                                                        AppColors.Primary.copy(
+                                                                                alpha = 0.1f
+                                                                        )
+                                                                else AppColors.Surface,
+                                                        contentColor =
+                                                                if (isSelected) AppColors.Primary
+                                                                else AppColors.OnSurface,
+                                                        selectedBackgroundColor =
+                                                                AppColors.Primary.copy(
+                                                                        alpha = 0.15f
+                                                                ),
+                                                        selectedContentColor = AppColors.Primary
+                                                ),
+                                        border =
+                                                BorderStroke(
+                                                        width = 1.dp,
+                                                        color =
+                                                                if (isSelected) AppColors.Primary
+                                                                else AppColors.Divider
+                                                )
+                                )
+                        }
+                }
+
+                // \uc120\ud0dd\ub41c \ud544\ud130 \ud45c\uc2dc
+                if (selectedTypes.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                                text =
+                                        "${selectedTypes.size}\uac1c \ud0c0\uc785 \uc120\ud0dd\ub428",
+                                style = AppTypography.Caption,
+                                color = AppColors.OnSurfaceSecondary
+                        )
+                }
         }
-        
-        // \uc120\ud0dd\ub41c \ud544\ud130 \ud45c\uc2dc
-        if (selectedTypes.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "${selectedTypes.size}\uac1c \ud0c0\uc785 \uc120\ud0dd\ub428",
-                style = AppTypography.Caption,
-                color = AppColors.OnSurfaceSecondary
-            )
-        }
-    }
 }

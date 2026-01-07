@@ -1,4 +1,4 @@
-package papyrus
+﻿package papyrus
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -22,11 +21,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import papyrus.core.model.BookmarkedTicker
-import papyrus.core.model.CompanyNews
 import papyrus.core.model.FilingItem
 import papyrus.core.model.FinancialAnalysis
 import papyrus.core.model.TickerEntry
-import papyrus.core.network.NewsApi
 import papyrus.core.network.SecApi
 import papyrus.core.service.analyzer.FinancialAnalyzer
 import papyrus.ui.*
@@ -94,10 +91,8 @@ fun PapyrusApp() {
                                                                         searchText = "",
                                                                         searchResults = emptyList(),
                                                                         isLoading = true,
-                                                                        isLoadingNews = true,
                                                                         analysisState =
-                                                                                AnalysisState.Idle,
-                                                                        companyNews = null
+                                                                                AnalysisState.Idle
                                                                 )
 
                                                         // Fetch submissions and news in parallel
@@ -112,22 +107,12 @@ fun PapyrusApp() {
                                                                         ?: emptyList()
                                                         }
 
-                                                        val newsDeferred = async {
-                                                                NewsApi.getCompanyNews(
-                                                                        ticker.ticker,
-                                                                        ticker.title
-                                                                )
-                                                        }
-
                                                         val filings = submissionsDeferred.await()
-                                                        val news = newsDeferred.await()
 
                                                         appState =
                                                                 appState.copy(
                                                                         submissions = filings,
-                                                                        companyNews = news,
-                                                                        isLoading = false,
-                                                                        isLoadingNews = false
+                                                                        isLoading = false
                                                                 )
                                                 }
                                         },
@@ -175,15 +160,13 @@ fun PapyrusApp() {
                                                                                 searchResults =
                                                                                         emptyList(),
                                                                                 isLoading = true,
-                                                                                isLoadingNews =
-                                                                                        true,
                                                                                 analysisState =
                                                                                         AnalysisState
-                                                                                                .Idle,
-                                                                                companyNews = null
+                                                                                                .Idle
                                                                         )
 
-                                                                // Fetch submissions and news in parallel
+                                                                // Fetch submissions and news in
+                                                                // parallel
                                                                 val submissionsDeferred = async {
                                                                         val sub =
                                                                                 SecApi.getSubmissions(
@@ -197,25 +180,14 @@ fun PapyrusApp() {
                                                                                 ?: emptyList()
                                                                 }
 
-                                                                val newsDeferred = async {
-                                                                        NewsApi.getCompanyNews(
-                                                                                ticker.ticker,
-                                                                                ticker.title
-                                                                        )
-                                                                }
-
                                                                 val filings =
                                                                         submissionsDeferred.await()
-                                                                val news = newsDeferred.await()
 
                                                                 appState =
                                                                         appState.copy(
                                                                                 submissions =
                                                                                         filings,
-                                                                                companyNews = news,
-                                                                                isLoading = false,
-                                                                                isLoadingNews =
-                                                                                        false
+                                                                                isLoading = false
                                                                         )
                                                         }
                                                 }
@@ -250,7 +222,7 @@ fun PapyrusApp() {
                                                                         analysisState =
                                                                                 AnalysisState
                                                                                         .Loading(
-                                                                                                "${fileFormat.displayName} 문서를 분석하고 있습니다..."
+                                                                                                "${fileFormat.displayName} 臾몄꽌瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎..."
                                                                                         ),
                                                                         currentAnalyzingFiling =
                                                                                 filing.accessionNumber
@@ -295,7 +267,7 @@ fun PapyrusApp() {
                                                                                 analysisState =
                                                                                         AnalysisState
                                                                                                 .Loading(
-                                                                                                        "${fileFormat.displayName} 문서를 분석하고 있습니다..."
+                                                                                                        "${fileFormat.displayName} Analyzing document..."
                                                                                                 )
                                                                         )
 
@@ -318,8 +290,7 @@ fun PapyrusApp() {
                                                                 val analysisWithCik =
                                                                         analysis.copy(
                                                                                 cik =
-                                                                                        appState
-                                                                                                .selectedTicker
+                                                                                        appState.selectedTicker
                                                                                                 ?.cik
                                                                         )
 
@@ -327,9 +298,9 @@ fun PapyrusApp() {
                                                                         appState.copy(
                                                                                 analysisState =
                                                                                         AnalysisState
-                                                                                                        .FinancialAnalysisResult(
-                                                                                                                analysisWithCik
-                                                                                                        ),
+                                                                                                .FinancialAnalysisResult(
+                                                                                                        analysisWithCik
+                                                                                                ),
                                                                                 currentAnalyzingFiling =
                                                                                         null
                                                                         )
@@ -382,7 +353,7 @@ fun PapyrusApp() {
                                                                         analysisState =
                                                                                 AnalysisState
                                                                                         .Loading(
-                                                                                                "파일을 읽는 중... ${file.name}"
+                                                                                                "Reading file... ${file.name}"
                                                                                         )
                                                                 )
 
@@ -410,7 +381,7 @@ fun PapyrusApp() {
                                                                                 analysisState =
                                                                                         AnalysisState
                                                                                                 .Loading(
-                                                                                                        "문서 내용을 추출하는 중..."
+                                                                                                        "臾몄꽌 ?댁슜??異붿텧?섎뒗 以?.."
                                                                                                 )
                                                                         )
 
@@ -420,9 +391,15 @@ fun PapyrusApp() {
                                                                         )
 
                                                                 val content =
-                                                                        when (file.extension.lowercase()) {
-                                                                            "html", "htm" -> extracted.rawContent
-                                                                            else -> extracted.extractedText
+                                                                        when (file.extension
+                                                                                        .lowercase()
+                                                                        ) {
+                                                                                "html", "htm" ->
+                                                                                        extracted
+                                                                                                .rawContent
+                                                                                else ->
+                                                                                        extracted
+                                                                                                .extractedText
                                                                         }
 
                                                                 // Update loading message for
@@ -432,16 +409,17 @@ fun PapyrusApp() {
                                                                                 analysisState =
                                                                                         AnalysisState
                                                                                                 .Loading(
-                                                                                                        "재무 데이터를 분석하는 중..."
+                                                                                                        "?щТ ?곗씠?곕? 遺꾩꽍?섎뒗 以?.."
                                                                                                 )
                                                                         )
 
                                                                 // Use beginner-friendly analysis
                                                                 val analysis =
-                                                                        FinancialAnalyzer.analyzeForBeginners(
-                                                                                file.name,
-                                                                                content
-                                                                        )
+                                                                        FinancialAnalyzer
+                                                                                .analyzeForBeginners(
+                                                                                        file.name,
+                                                                                        content
+                                                                                )
 
                                                                 appState =
                                                                         appState.copy(
@@ -487,7 +465,7 @@ fun PapyrusApp() {
                                                                         analysisState =
                                                                                 AnalysisState
                                                                                         .Loading(
-                                                                                                "AI 재분석 중..."
+                                                                                                "AI ?щ텇??以?.."
                                                                                         )
                                                                 )
 
@@ -621,17 +599,10 @@ private fun LeftPanel(
                                 currentAnalyzingFiling = appState.currentAnalyzingFiling,
                                 isBookmarked =
                                         BookmarkManager.isBookmarked(appState.selectedTicker.cik),
-                                companyNews = appState.companyNews,
-                                isLoadingNews = appState.isLoadingNews,
                                 onBackClick = onBackToSearch,
                                 onBookmarkClick = { onBookmarkClick(appState.selectedTicker) },
                                 onQuickAnalyze = onQuickAnalyze,
-                                onOpenInBrowser = onOpenInBrowser,
-                                onOpenNewsInBrowser = { url ->
-                                        if (Desktop.isDesktopSupported()) {
-                                                Desktop.getDesktop().browse(URI(url))
-                                        }
-                                }
+                                onOpenInBrowser = onOpenInBrowser
                         )
                 }
         }
@@ -670,13 +641,10 @@ private fun CompanyFilingsPanel(
         filings: List<FilingItem>,
         currentAnalyzingFiling: String?,
         isBookmarked: Boolean,
-        companyNews: CompanyNews?,
-        isLoadingNews: Boolean,
         onBackClick: () -> Unit,
         onBookmarkClick: () -> Unit,
         onQuickAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
-        onOpenInBrowser: (FilingItem) -> Unit,
-        onOpenNewsInBrowser: (String) -> Unit
+        onOpenInBrowser: (FilingItem) -> Unit
 ) {
         Column(modifier = Modifier.fillMaxSize()) {
                 // Company Info Card
@@ -692,95 +660,71 @@ private fun CompanyFilingsPanel(
                 Divider(color = AppColors.Divider)
 
                 // Tab selection
-                var selectedTab by remember { mutableStateOf(0) }
-                
+
                 // Report type filter state
                 var selectedReportTypes by remember { mutableStateOf(setOf<String>()) }
-                
+
                 // Filtered filings list
-                val filteredFilings = remember(filings, selectedReportTypes) {
-                    if (selectedReportTypes.isEmpty()) {
-                        filings
-                    } else {
-                        filings.filter { filing ->
-                            selectedReportTypes.any { type ->
-                                filing.form.contains(type, ignoreCase = true)
-                            }
+                val filteredFilings =
+                        remember(filings, selectedReportTypes) {
+                                if (selectedReportTypes.isEmpty()) {
+                                        filings
+                                } else {
+                                        filings.filter { filing ->
+                                                selectedReportTypes.any { type ->
+                                                        filing.form.contains(
+                                                                type,
+                                                                ignoreCase = true
+                                                        )
+                                                }
+                                        }
+                                }
                         }
-                    }
-                }
-                
-                TabRow(
-                        selectedTabIndex = selectedTab,
-                        backgroundColor = AppColors.Surface,
-                        contentColor = AppColors.Primary
-                ) {
-                        Tab(
-                                selected = selectedTab == 0,
-                                onClick = { selectedTab = 0 },
-                                text = { 
-                                    val displayCount = if (selectedReportTypes.isEmpty()) filings.size else filteredFilings.size
-                                    Text("SEC Filings ($displayCount)")
-                                }
-                        )
-                        Tab(
-                                selected = selectedTab == 1,
-                                onClick = { selectedTab = 1 },
-                                text = {
-                                        Text(
-                                                "News${if (companyNews != null) " (${companyNews.articles.size})" else ""}"
-                                        )
-                                }
-                        )
-                }
 
                 Divider(color = AppColors.Divider)
 
                 // Tab content
-                when (selectedTab) {
-                        0 -> {
-                                // SEC Filings
-                                if (filings.isEmpty()) {
+                // SEC Filings
+                if (filings.isEmpty()) {
+                        EmptyState(
+                                icon = Icons.Outlined.FolderOff,
+                                title = "No filings found",
+                                description = "This company has no recent SEC filings"
+                        )
+                } else {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                                // Report type filter
+                                ReportTypeFilter(
+                                        availableTypes =
+                                                filings.map { it.form }.distinct().sorted(),
+                                        selectedTypes = selectedReportTypes,
+                                        onTypesChanged = { selectedReportTypes = it }
+                                )
+
+                                Divider(color = AppColors.Divider)
+
+                                // If no filtered results
+                                if (filteredFilings.isEmpty()) {
                                         EmptyState(
-                                                icon = Icons.Outlined.FolderOff,
-                                                title = "No filings found",
-                                                description =
-                                                        "This company has no recent SEC filings"
+                                                icon = Icons.Outlined.FilterAlt,
+                                                title = "?꾪꽣 寃곌낵 ?놁쓬",
+                                                description = "?좏깮??蹂닿퀬????낆뿉 ?대떦?섎뒗 ?뚯씪???놁뒿?덈떎"
                                         )
                                 } else {
-                                        Column(modifier = Modifier.fillMaxSize()) {
-                                                // Report type filter
-                                                ReportTypeFilter(
-                                                    availableTypes = filings.map { it.form }.distinct().sorted(),
-                                                    selectedTypes = selectedReportTypes,
-                                                    onTypesChanged = { selectedReportTypes = it }
-                                                )
-                                                
-                                                Divider(color = AppColors.Divider)
-                                                
-                                                // If no filtered results
-                                                if (filteredFilings.isEmpty()) {
-                                                    EmptyState(
-                                                        icon = Icons.Outlined.FilterAlt,
-                                                        title = "필터 결과 없음",
-                                                        description = "선택한 보고서 타입에 해당하는 파일이 없습니다"
-                                                    )
-                                                } else {
-                                                    LazyColumn(
-                                                        modifier =
-                                                                Modifier.fillMaxSize()
-                                                                        .padding(
-                                                                                horizontal =
-                                                                                        AppDimens
-                                                                                                .PaddingSmall
-                                                                        ),
-                                                        verticalArrangement =
-                                                                Arrangement.spacedBy(AppDimens.PaddingSmall)
-                                                    ) {
-                                                        items(filteredFilings) { filing ->
+                                        LazyColumn(
+                                                modifier =
+                                                        Modifier.fillMaxSize()
+                                                                .padding(
+                                                                        horizontal =
+                                                                                AppDimens
+                                                                                        .PaddingSmall
+                                                                ),
+                                                verticalArrangement =
+                                                        Arrangement.spacedBy(AppDimens.PaddingSmall)
+                                        ) {
+                                                items(filteredFilings) { filing ->
                                                         FilingCard(
                                                                 filing = filing,
-                                                                cik = ticker.cik.toString(),
                                                                 onOpenBrowser = {
                                                                         onOpenInBrowser(filing)
                                                                 },
@@ -796,46 +740,8 @@ private fun CompanyFilingsPanel(
                                                                         currentAnalyzingFiling ==
                                                                                 filing.accessionNumber
                                                         )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                }
-                        }
-                        1 -> {
-                                // News
-                                if (isLoadingNews) {
-                                        Box(
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center
-                                        ) {
-                                                Column(
-                                                        horizontalAlignment =
-                                                                Alignment.CenterHorizontally,
-                                                        verticalArrangement =
-                                                                Arrangement.spacedBy(16.dp)
-                                                ) {
-                                                        CircularProgressIndicator(
-                                                                color = AppColors.Primary
-                                                        )
-                                                        Text(
-                                                                text = "뉴스를 불러오는 중...",
-                                                                style = AppTypography.Body1,
-                                                                color = AppColors.OnSurfaceSecondary
-                                                        )
                                                 }
                                         }
-                                } else if (companyNews != null) {
-                                        NewsArticleList(
-                                                news = companyNews,
-                                                onOpenInBrowser = onOpenNewsInBrowser
-                                        )
-                                } else {
-                                        EmptyState(
-                                                icon = Icons.Outlined.Newspaper,
-                                                title = "뉴스를 불러올 수 없습니다",
-                                                description = "잠시 후 다시 시도해주세요"
-                                        )
                                 }
                         }
                 }
@@ -914,19 +820,19 @@ private fun buildAnalysisSummary(rawHtml: String, cleanText: String): String {
         val hasLiabilities = cleanText.contains("Liabilities", ignoreCase = true)
 
         return buildString {
-                appendLine("📊 Quick Analysis Summary")
-                appendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                appendLine("Quick Analysis Summary")
+                appendLine("------------------------")
                 appendLine()
-                appendLine("📄 Document Size: ${rawHtml.length.formatWithCommas()} characters")
+                appendLine("Document Size: ${rawHtml.length.formatWithCommas()} characters")
                 appendLine()
-                appendLine("🔍 Key Financial Terms Found:")
-                appendLine("  ${if (hasRevenue) "✅" else "❌"} Revenue")
-                appendLine("  ${if (hasNetIncome) "✅" else "❌"} Net Income")
-                appendLine("  ${if (hasAssets) "✅" else "❌"} Total Assets")
-                appendLine("  ${if (hasLiabilities) "✅" else "❌"} Liabilities")
-                appendLine("  ${if (hasRisk) "✅" else "❌"} Risk Factors")
+                appendLine("Key Financial Terms Found:")
+                appendLine("  ${if (hasRevenue) "[O]" else "[ ]"} Revenue")
+                appendLine("  ${if (hasNetIncome) "[O]" else "[ ]"} Net Income")
+                appendLine("  ${if (hasAssets) "[O]" else "[ ]"} Total Assets")
+                appendLine("  ${if (hasLiabilities) "[O]" else "[ ]"} Liabilities")
+                appendLine("  ${if (hasRisk) "[O]" else "[ ]"} Risk Factors")
                 appendLine()
-                appendLine("💡 Tip: For detailed analysis, use the Full Content tab")
+                appendLine("Tip: For detailed analysis, use the Full Content tab")
         }
 }
 
@@ -943,9 +849,7 @@ data class AppState(
         val isLoading: Boolean = false,
         val isDragging: Boolean = false,
         val analysisState: AnalysisState = AnalysisState.Idle,
-        val currentAnalyzingFiling: String? = null,
-        val companyNews: CompanyNews? = null,
-        val isLoadingNews: Boolean = false
+        val currentAnalyzingFiling: String? = null
 )
 
 /** Analysis State - sealed class for different states */
