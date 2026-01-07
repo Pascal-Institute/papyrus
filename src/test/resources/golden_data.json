@@ -1,0 +1,16 @@
+{
+    "samples": [
+        {
+            "filename": "apple-10q.html",
+            "expectedMetrics": {
+                "Revenue": 81797000000,
+                "NetIncome": 19881000000,
+                "EPS": 1.26
+            },
+            "expectedRatios": {
+                "NetMargin": 24.3,
+                "CurrentRatio": 0.94
+            }
+        }
+    ]
+}

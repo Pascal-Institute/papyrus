@@ -6,6 +6,7 @@ import papyrus.core.service.parser.EnhancedFinancialParser
 import papyrus.core.service.parser.InlineXbrlExtractor
 import papyrus.core.service.parser.SecTableParser
 import papyrus.util.data.AnalysisCache
+import papyrus.util.finance.*
 
 object FinancialAnalyzer {
         // Key financial terms to search for
@@ -153,6 +154,10 @@ object FinancialAnalyzer {
                                 allExtendedMetrics
                         )
 
+                // Calculate Ratios using RatioCalculator
+                val metricMap = allExtendedMetrics.associateBy { it.category }
+                val calculatedRatios = RatioCalculator.calculateRatios(metricMap)
+
                 // 처리 시간 기록
                 val processingTime = System.currentTimeMillis() - startTime
                 println(
@@ -177,6 +182,7 @@ object FinancialAnalyzer {
                         metrics = allBasicMetrics.distinctBy { it.name.lowercase() },
                         rawContent = cleanText.take(50000),
                         summary = summary,
+                        ratios = calculatedRatios,
                         extendedMetrics = allExtendedMetrics,
                         xbrlMetrics = xbrlMetrics
                 )
