@@ -1,5 +1,16 @@
 # AGENTS.md
 
+# AGENTS.md
+
+## Project Mission
+
+**The ultimate goal of this project is to derive investment insights from SEC Fillings reports.**
+
+Everything we build—from data extraction to UI display—must serve this purpose. We represent the investor's perspective.
+- **Accuracy is non-negotiable**: Insights based on wrong data are dangerous.
+- **Clarity is key**: Complex financial data must be distilled into actionable insights.
+- **Completeness**: Don't just show numbers; explain "Why" and "So What?".
+
 ## Development Principles for Agents
 
 ### Core Guideline
@@ -53,7 +64,7 @@ Every line of code in an agent should make its intent obvious to anyone reading 
 
 - Model Development based on Samples: Use these samples to determine the most relevant financial metrics and narrative elements to target, ensuring the agent extracts high-value information that reflects real-world reporting.
 
-#### 6. Please write your comments in English.
+#### 6. Please write your comments in English
 
 ---
 
