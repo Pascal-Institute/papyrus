@@ -2118,7 +2118,7 @@ object EnhancedFinancialParser {
 
                 return FinancialRatio(
                         name = "$koreanName ($englishName)",
-                        value = value,
+                        value = value.toString(),
                         formattedValue = formatted,
                         description = description,
                         interpretation = getInterpretation(koreanName, health),

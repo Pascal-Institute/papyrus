@@ -1,25 +1,36 @@
 package papyrus.core.model
 
 import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 
 @Serializable
 data class FinancialMetric(
         val name: String,
         val value: String,
-        val rawValue: Double? = null,
+        val rawValue: String? = null, // BigDecimal stored as String for precision
         val context: String = ""
-)
+) {
+    /** Get rawValue as BigDecimal for calculations */
+    fun getRawValueBigDecimal(): BigDecimal? = rawValue?.let { BigDecimal(it) }
+}
 
 @Serializable
 data class FinancialRatio(
         val name: String,
-        val value: Double,
+        val value: String, // BigDecimal stored as String for precision
         val formattedValue: String,
         val description: String,
         val interpretation: String,
         val healthStatus: HealthStatus,
         val category: RatioCategory
-)
+) {
+    /** Get value as BigDecimal for calculations */
+    fun getValueBigDecimal(): BigDecimal = BigDecimal(value)
+
+    /** Get value as Double for backward compatibility (use sparingly) */
+    @Deprecated("Use getValueBigDecimal() for precision")
+    fun getValueDouble(): Double = value.toDouble()
+}
 
 @Serializable
 enum class HealthStatus {

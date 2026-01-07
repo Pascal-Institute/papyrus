@@ -1,6 +1,8 @@
 package papyrus.util.finance
 
 import papyrus.core.model.*
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 object RatioCalculator {
 
@@ -9,8 +11,8 @@ object RatioCalculator {
     ): List<FinancialRatio> {
         val calculated = mutableListOf<FinancialRatio>()
 
-        // Helper to get double value
-        fun getVal(cat: MetricCategory): Double? = metrics[cat]?.getRawValueBigDecimal()?.toDouble()
+        // Helper to get BigDecimal value for precision
+        fun getVal(cat: MetricCategory): BigDecimal? = metrics[cat]?.getRawValueBigDecimal()
 
         val revenue = getVal(MetricCategory.REVENUE)
         val netIncome = getVal(MetricCategory.NET_INCOME)
@@ -21,52 +23,55 @@ object RatioCalculator {
         val operatingIncome = getVal(MetricCategory.OPERATING_INCOME)
 
         // 1. Net Margin
-        if (revenue != null && netIncome != null && revenue != 0.0) {
-            val value = (netIncome / revenue) * 100
+        if (revenue != null && netIncome != null && revenue != BigDecimal.ZERO) {
+            val value = (netIncome.divide(revenue, 6, RoundingMode.HALF_UP)).multiply(BigDecimal("100"))
+            val valueDouble = value.toDouble()
             calculated.add(
                     FinancialRatio(
                             name = "Net Margin",
-                            value = value,
-                            formattedValue = String.format("%.2f%%", value),
+                            value = value.toString(),
+                            formattedValue = String.format("%.2f%%", valueDouble),
                             description = "Net Income as % of Revenue",
-                            interpretation = evaluateMargin(value),
-                            healthStatus = getMarginHealth(value),
+                            interpretation = evaluateMargin(valueDouble),
+                            healthStatus = getMarginHealth(valueDouble),
                             category = RatioCategory.PROFITABILITY
                     )
             )
         }
 
         // 2. Current Ratio
-        if (currentAssets != null && currentLiabilities != null && currentLiabilities != 0.0) {
-            val value = currentAssets / currentLiabilities
+        if (currentAssets != null && currentLiabilities != null && currentLiabilities != BigDecimal.ZERO) {
+            val value = currentAssets.divide(currentLiabilities, 6, RoundingMode.HALF_UP)
+            val valueDouble = value.toDouble()
             calculated.add(
                     FinancialRatio(
                             name = "Current Ratio",
-                            value = value,
-                            formattedValue = String.format("%.2fx", value),
+                            value = value.toString(),
+                            formattedValue = String.format("%.2fx", valueDouble),
                             description = "Current Assets / Current Liabilities",
                             interpretation =
-                                    if (value > 1.5) "Healthy Liquidity"
+                                    if (valueDouble > 1.5) "Healthy Liquidity"
                                     else "Potential Liquidity Issue",
                             healthStatus =
-                                    if (value > 1.5) HealthStatus.GOOD else HealthStatus.WARNING,
+                                    if (valueDouble > 1.5) HealthStatus.GOOD else HealthStatus.WARNING,
                             category = RatioCategory.LIQUIDITY
                     )
             )
         }
 
         // 3. ROE
-        if (netIncome != null && totalEquity != null && totalEquity != 0.0) {
-            val value = (netIncome / totalEquity) * 100
+        if (netIncome != null && totalEquity != null && totalEquity != BigDecimal.ZERO) {
+            val value = (netIncome.divide(totalEquity, 6, RoundingMode.HALF_UP)).multiply(BigDecimal("100"))
+            val valueDouble = value.toDouble()
             calculated.add(
                     FinancialRatio(
                             name = "Return on Equity (ROE)",
-                            value = value,
-                            formattedValue = String.format("%.2f%%", value),
+                            value = value.toString(),
+                            formattedValue = String.format("%.2f%%", valueDouble),
                             description = "Net Income / Total Equity",
                             interpretation = "Return created for shareholders",
                             healthStatus =
-                                    if (value > 15) HealthStatus.EXCELLENT
+                                    if (valueDouble > 15) HealthStatus.EXCELLENT
                                     else HealthStatus.NEUTRAL,
                             category = RatioCategory.PROFITABILITY
                     )
@@ -74,13 +79,14 @@ object RatioCalculator {
         }
 
         // 4. Asset Turnover
-        if (revenue != null && totalAssets != null && totalAssets != 0.0) {
-            val value = revenue / totalAssets
+        if (revenue != null && totalAssets != null && totalAssets != BigDecimal.ZERO) {
+            val value = revenue.divide(totalAssets, 6, RoundingMode.HALF_UP)
+            val valueDouble = value.toDouble()
             calculated.add(
                     FinancialRatio(
                             name = "Asset Turnover",
-                            value = value,
-                            formattedValue = String.format("%.2fx", value),
+                            value = value.toString(),
+                            formattedValue = String.format("%.2fx", valueDouble),
                             description = "Revenue / Total Assets",
                             interpretation = "Efficiency of asset use",
                             healthStatus =
@@ -91,16 +97,17 @@ object RatioCalculator {
         }
 
         // 5. Operating Margin
-        if (revenue != null && operatingIncome != null && revenue != 0.0) {
-            val value = (operatingIncome / revenue) * 100
+        if (revenue != null && operatingIncome != null && revenue != BigDecimal.ZERO) {
+            val value = (operatingIncome.divide(revenue, 6, RoundingMode.HALF_UP)).multiply(BigDecimal("100"))
+            val valueDouble = value.toDouble()
             calculated.add(
                     FinancialRatio(
                             name = "Operating Margin",
-                            value = value,
-                            formattedValue = String.format("%.2f%%", value),
+                            value = value.toString(),
+                            formattedValue = String.format("%.2f%%", valueDouble),
                             description = "Operating Income as % of Revenue",
-                            interpretation = evaluateMargin(value),
-                            healthStatus = getMarginHealth(value),
+                            interpretation = evaluateMargin(valueDouble),
+                            healthStatus = getMarginHealth(valueDouble),
                             category = RatioCategory.PROFITABILITY
                     )
             )
@@ -108,18 +115,19 @@ object RatioCalculator {
 
         // 6. Debt-to-Equity
         val totalLiabilities = getVal(MetricCategory.TOTAL_LIABILITIES)
-        if (totalLiabilities != null && totalEquity != null && totalEquity != 0.0) {
-            val value = totalLiabilities / totalEquity
+        if (totalLiabilities != null && totalEquity != null && totalEquity != BigDecimal.ZERO) {
+            val value = totalLiabilities.divide(totalEquity, 6, RoundingMode.HALF_UP)
+            val valueDouble = value.toDouble()
             calculated.add(
                     FinancialRatio(
                             name = "Debt-to-Equity",
-                            value = value,
-                            formattedValue = String.format("%.2fx", value),
+                            value = value.toString(),
+                            formattedValue = String.format("%.2fx", valueDouble),
                             description = "Total Liabilities / Total Equity",
                             interpretation =
-                                    if (value > 2.0) "High Leverage" else "Healthy Leverage",
+                                    if (valueDouble > 2.0) "High Leverage" else "Healthy Leverage",
                             healthStatus =
-                                    if (value > 2.0) HealthStatus.WARNING else HealthStatus.GOOD,
+                                    if (valueDouble > 2.0) HealthStatus.WARNING else HealthStatus.GOOD,
                             category = RatioCategory.SOLVENCY
                     )
             )

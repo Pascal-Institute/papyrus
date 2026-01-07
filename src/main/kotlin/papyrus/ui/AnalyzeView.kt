@@ -78,30 +78,66 @@ private fun getIconForName(iconName: String): ImageVector {
         }
 }
 
-/** Helper function to format currency values */
-private fun formatCurrency(value: Double): String {
-        val absValue = kotlin.math.abs(value)
-        val sign = if (value < 0) "-" else ""
+/** Helper function to format currency values with BigDecimal precision */
+private fun formatCurrency(value: java.math.BigDecimal): String {
+        val absValue = value.abs()
+        val sign = if (value.signum() < 0) "-" else ""
+        val billion = java.math.BigDecimal("1000000000")
+        val million = java.math.BigDecimal("1000000")
+        val thousand = java.math.BigDecimal("1000")
 
         return when {
-                absValue >= 1_000_000_000 -> String.format("%s$%.2fB", sign, absValue / 1_000_000_000)
-                absValue >= 1_000_000 -> String.format("%s$%.2fM", sign, absValue / 1_000_000)
-                absValue >= 1_000 -> String.format("%s$%.2fK", sign, absValue / 1_000)
-                else -> String.format("%s$%.2f", sign, absValue)
+                absValue >= billion -> String.format("%s$%.2fB", sign, absValue.divide(billion, 2, java.math.RoundingMode.HALF_UP).toDouble())
+                absValue >= million -> String.format("%s$%.2fM", sign, absValue.divide(million, 2, java.math.RoundingMode.HALF_UP).toDouble())
+                absValue >= thousand -> String.format("%s$%.2fK", sign, absValue.divide(thousand, 2, java.math.RoundingMode.HALF_UP).toDouble())
+                else -> String.format("%s$%.2f", sign, absValue.setScale(2, java.math.RoundingMode.HALF_UP).toDouble())
         }
 }
 
-/** Helper function to format number values (for shares, quantities, etc.) */
-private fun formatNumber(value: Double): String {
-        val absValue = kotlin.math.abs(value)
-        val sign = if (value < 0) "-" else ""
+/** Overload for String input (BigDecimal as String) */
+private fun formatCurrency(value: String): String {
+        return try {
+                formatCurrency(java.math.BigDecimal(value))
+        } catch (e: NumberFormatException) {
+                value
+        }
+}
+
+/** Deprecated: Use BigDecimal version for precision */
+@Deprecated("Use formatCurrency(BigDecimal) or formatCurrency(String)")
+private fun formatCurrency(value: Double): String {
+        return formatCurrency(java.math.BigDecimal(value.toString()))
+}
+
+/** Helper function to format number values (for shares, quantities, etc.) with BigDecimal precision */
+private fun formatNumber(value: java.math.BigDecimal): String {
+        val absValue = value.abs()
+        val sign = if (value.signum() < 0) "-" else ""
+        val billion = java.math.BigDecimal("1000000000")
+        val million = java.math.BigDecimal("1000000")
+        val thousand = java.math.BigDecimal("1000")
 
         return when {
-                absValue >= 1_000_000_000 -> String.format("%s%.2fB", sign, absValue / 1_000_000_000)
-                absValue >= 1_000_000 -> String.format("%s%.2fM", sign, absValue / 1_000_000)
-                absValue >= 1_000 -> String.format("%s%.2fK", sign, absValue / 1_000)
-                else -> String.format("%s%.0f", sign, absValue)
+                absValue >= billion -> String.format("%s%.2fB", sign, absValue.divide(billion, 2, java.math.RoundingMode.HALF_UP).toDouble())
+                absValue >= million -> String.format("%s%.2fM", sign, absValue.divide(million, 2, java.math.RoundingMode.HALF_UP).toDouble())
+                absValue >= thousand -> String.format("%s%.2fK", sign, absValue.divide(thousand, 2, java.math.RoundingMode.HALF_UP).toDouble())
+                else -> String.format("%s%.0f", sign, absValue.setScale(0, java.math.RoundingMode.HALF_UP).toDouble())
         }
+}
+
+/** Overload for String input */
+private fun formatNumber(value: String): String {
+        return try {
+                formatNumber(java.math.BigDecimal(value))
+        } catch (e: NumberFormatException) {
+                value
+        }
+}
+
+/** Deprecated: Use BigDecimal version */
+@Deprecated("Use formatNumber(BigDecimal) or formatNumber(String)")
+private fun formatNumber(value: Double): String {
+        return formatNumber(java.math.BigDecimal(value.toString()))
 }
 
 /** Check if metric represents a quantity rather than currency */

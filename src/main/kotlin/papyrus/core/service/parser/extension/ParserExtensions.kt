@@ -19,7 +19,7 @@ fun ExtendedFinancialMetric.toFinancialMetric(): FinancialMetric {
     return FinancialMetric(
             name = this.name,
             value = this.value,
-            rawValue = this.getRawValueBigDecimal()?.toDouble(),
+            rawValue = this.rawValue,
             context = this.context
     )
 }

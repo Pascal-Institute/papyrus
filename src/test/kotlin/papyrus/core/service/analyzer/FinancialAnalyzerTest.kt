@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.MetricCategory
 import papyrus.util.finance.RatioCalculator
+import java.math.BigDecimal
 
 class FinancialAnalyzerTest {
 
@@ -24,7 +25,8 @@ class FinancialAnalyzerTest {
         // Net Margin = (200 / 1000) * 100 = 20.0
         val netMargin = ratios.find { it.name == "Net Margin" }
         assertNotNull(netMargin, "Net Margin should be calculated")
-        assertEquals(20.0, netMargin!!.value, 0.01)
+        val actualValue = BigDecimal(netMargin!!.value).toDouble()
+        assertEquals(20.0, actualValue, 0.01)
         assertEquals("20.00%", netMargin.formattedValue)
     }
 
@@ -46,7 +48,8 @@ class FinancialAnalyzerTest {
         // Current Ratio = 500 / 250 = 2.0
         val currentRatio = ratios.find { it.name == "Current Ratio" }
         assertNotNull(currentRatio)
-        assertEquals(2.0, currentRatio!!.value, 0.01)
+        val actualValue = BigDecimal(currentRatio!!.value).toDouble()
+        assertEquals(2.0, actualValue, 0.01)
         assertEquals("2.00x", currentRatio.formattedValue)
     }
 
@@ -68,7 +71,8 @@ class FinancialAnalyzerTest {
         // D/E = 2000 / 1000 = 2.0
         val deRatio = ratios.find { it.name == "Debt-to-Equity" }
         assertNotNull(deRatio)
-        assertEquals(2.0, deRatio!!.value, 0.01)
+        val actualValue = BigDecimal(deRatio!!.value).toDouble()
+        assertEquals(2.0, actualValue, 0.01)
     }
 
     private fun createMetric(value: String, category: MetricCategory): ExtendedFinancialMetric {

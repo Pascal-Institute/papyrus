@@ -105,11 +105,7 @@ object FinancialAnalyzer {
                                         ExtendedFinancialMetric(
                                                 name = metric.name,
                                                 value = metric.value,
-                                                rawValue =
-                                                        metric.rawValue?.let {
-                                                                java.math.BigDecimal(it.toString())
-                                                                        .toString()
-                                                        },
+                                                rawValue = metric.rawValue, // Already String representation
                                                 category = category,
                                                 source = "Pattern matching",
                                                 confidence = 0.7,
@@ -135,7 +131,7 @@ object FinancialAnalyzer {
                                 FinancialMetric(
                                         name = ext.name,
                                         value = ext.value,
-                                        rawValue = ext.getRawValueBigDecimal()?.toDouble(),
+                                        rawValue = ext.rawValue,
                                         context = ext.context
                                 )
                         } +
@@ -282,7 +278,7 @@ object FinancialAnalyzer {
                                                 )
 
                                         // Parse numeric value
-                                        val rawValue = parseAmount(valueStr)
+                                        val rawValue = parseAmount(valueStr)?.toString()
 
                                         results.add(
                                                 FinancialMetric(
@@ -387,6 +383,15 @@ object FinancialAnalyzer {
                         value >= 1_000_000 -> String.format("$%.2fM", value / 1_000_000)
                         value >= 1_000 -> String.format("$%.2fK", value / 1_000)
                         else -> String.format("$%.2f", value)
+                }
+        }
+
+        /** Format number from String (BigDecimal representation) */
+        private fun formatNumber(value: String): String {
+                return try {
+                        formatNumber(value.toDouble())
+                } catch (e: NumberFormatException) {
+                        value
                 }
         }
 
@@ -994,7 +999,7 @@ object FinancialAnalyzer {
                                         FinancialMetric(
                                                 name = ext.name,
                                                 value = ext.value,
-                                                rawValue = ext.getRawValueBigDecimal()?.toDouble(),
+                                                rawValue = ext.rawValue,
                                                 context = ext.context
                                         )
                                 )
@@ -1635,7 +1640,7 @@ object FinancialAnalyzer {
                         ratios.add(
                                 FinancialRatio(
                                         name = "순이익률 (Net Profit Margin)",
-                                        value = margin,
+                                        value = margin.toString(),
                                         formattedValue = String.format("%.1f%%", margin),
                                         description = "매출 대비 순이익의 비율",
                                         interpretation = getMarginInterpretation(margin),
@@ -1659,7 +1664,7 @@ object FinancialAnalyzer {
                         ratios.add(
                                 FinancialRatio(
                                         name = "총자산이익률 (ROA)",
-                                        value = roa,
+                                        value = roa.toString(),
                                         formattedValue = String.format("%.1f%%", roa),
                                         description = "보유 자산으로 얼마나 효율적으로 수익을 창출하는지",
                                         interpretation = getRoaInterpretation(roa),
@@ -1683,7 +1688,7 @@ object FinancialAnalyzer {
                         ratios.add(
                                 FinancialRatio(
                                         name = "자기자본이익률 (ROE)",
-                                        value = roe,
+                                        value = roe.toString(),
                                         formattedValue = String.format("%.1f%%", roe),
                                         description = "주주가 투자한 자본으로 얼마나 수익을 창출하는지",
                                         interpretation = getRoeInterpretation(roe),
@@ -1707,7 +1712,7 @@ object FinancialAnalyzer {
                         ratios.add(
                                 FinancialRatio(
                                         name = "부채비율 (Debt to Equity)",
-                                        value = debtRatio,
+                                        value = debtRatio.toString(),
                                         formattedValue = String.format("%.0f%%", debtRatio),
                                         description = "자기자본 대비 부채의 비율",
                                         interpretation = getDebtRatioInterpretation(debtRatio),
@@ -1731,7 +1736,7 @@ object FinancialAnalyzer {
                         ratios.add(
                                 FinancialRatio(
                                         name = "유동비율 (Current Ratio)",
-                                        value = currentRatio,
+                                        value = currentRatio.toString(),
                                         formattedValue = String.format("%.2f", currentRatio),
                                         description = "단기 부채를 갚을 수 있는 능력",
                                         interpretation =
@@ -1748,7 +1753,13 @@ object FinancialAnalyzer {
         private fun findMetricValue(metrics: List<FinancialMetric>, terms: List<String>): Double? {
                 for (term in terms) {
                         val metric = metrics.find { it.name.contains(term, ignoreCase = true) }
-                        if (metric?.rawValue != null) return metric.rawValue
+                        if (metric?.rawValue != null) {
+                                return try {
+                                        metric.rawValue.toDouble()
+                                } catch (e: NumberFormatException) {
+                                        null
+                                }
+                        }
                 }
                 return null
         }
