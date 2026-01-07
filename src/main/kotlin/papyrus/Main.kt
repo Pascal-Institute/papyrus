@@ -183,7 +183,7 @@ fun PapyrusApp() {
                                                                                 companyNews = null
                                                                         )
 
-                                                                // 병렬로 제출 데이터와 뉴스를 가져옴
+                                                                // Fetch submissions and news in parallel
                                                                 val submissionsDeferred = async {
                                                                         val sub =
                                                                                 SecApi.getSubmissions(
@@ -596,7 +596,7 @@ private fun LeftPanel(
                 if (appState.selectedTicker == null) {
                         // Bookmarks and Search Results
                         Column(modifier = Modifier.fillMaxSize()) {
-                                // 북마크 섹션 (검색어가 비어있을 때만 표시)
+                                // Bookmark section (only shown when search is empty)
                                 if (appState.searchText.isEmpty() && bookmarks.isNotEmpty()) {
                                         BookmarkHorizontalList(
                                                 bookmarks = bookmarks,
@@ -691,13 +691,13 @@ private fun CompanyFilingsPanel(
 
                 Divider(color = AppColors.Divider)
 
-                // 탭 선택
+                // Tab selection
                 var selectedTab by remember { mutableStateOf(0) }
                 
-                // 보고서 타입 필터 상태
+                // Report type filter state
                 var selectedReportTypes by remember { mutableStateOf(setOf<String>()) }
                 
-                // 필터링된 보고서 리스트
+                // Filtered filings list
                 val filteredFilings = remember(filings, selectedReportTypes) {
                     if (selectedReportTypes.isEmpty()) {
                         filings
@@ -736,7 +736,7 @@ private fun CompanyFilingsPanel(
 
                 Divider(color = AppColors.Divider)
 
-                // 탭 컨텐츠
+                // Tab content
                 when (selectedTab) {
                         0 -> {
                                 // SEC Filings
@@ -749,7 +749,7 @@ private fun CompanyFilingsPanel(
                                         )
                                 } else {
                                         Column(modifier = Modifier.fillMaxSize()) {
-                                                // 보고서 타입 필터
+                                                // Report type filter
                                                 ReportTypeFilter(
                                                     availableTypes = filings.map { it.form }.distinct().sorted(),
                                                     selectedTypes = selectedReportTypes,
@@ -758,7 +758,7 @@ private fun CompanyFilingsPanel(
                                                 
                                                 Divider(color = AppColors.Divider)
                                                 
-                                                // 필터링된 보고서가 없을 경우
+                                                // If no filtered results
                                                 if (filteredFilings.isEmpty()) {
                                                     EmptyState(
                                                         icon = Icons.Outlined.FilterAlt,

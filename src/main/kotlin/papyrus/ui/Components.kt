@@ -275,7 +275,7 @@ fun CompanyInfoCard(
                                         }
                                 }
 
-                                // 북마크 버튼
+                                // Bookmark button
                                 if (onBookmarkClick != null) {
                                         IconButton(
                                                 onClick = onBookmarkClick,
@@ -362,7 +362,7 @@ fun FilingCard(
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
 
-        // 파일 형식 선택 상태 (기본값: PDF)
+        // File format selection state (default: PDF)
         var selectedFileFormat by remember { mutableStateOf(FileFormatType.PDF) }
 
         Card(
@@ -769,10 +769,10 @@ fun AnalysisTabRow(
 }
 
 // ==========================================
-// 북마크 관련 컴포넌트
+// Bookmark Related Components
 // ==========================================
 
-/** 북마크 섹션 헤더 */
+/** Bookmark section header */
 @Composable
 fun BookmarkSectionHeader(
         onViewAllClick: () -> Unit,
@@ -830,7 +830,7 @@ fun BookmarkSectionHeader(
         }
 }
 
-/** 북마크 티커 카드 (간략 버전) */
+/** Bookmarked ticker card (compact version) */
 @Composable
 fun BookmarkedTickerCard(
         ticker: String,
@@ -861,7 +861,7 @@ fun BookmarkedTickerCard(
                                 ),
                         verticalAlignment = Alignment.CenterVertically
                 ) {
-                        // 티커 배지
+                        // Ticker badge
                         Box(
                                 modifier =
                                         Modifier.size(36.dp)
@@ -897,7 +897,7 @@ fun BookmarkedTickerCard(
                                 )
                         }
 
-                        // 호버 시 삭제 버튼 표시
+                        // Show delete button on hover
                         AnimatedVisibility(visible = isHovered) {
                                 IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
                                         Icon(
@@ -1065,7 +1065,7 @@ fun NewsSectionHeader(companyName: String, articleCount: Int, modifier: Modifier
         }
 }
 
-/** 개별 뉴스 카드 */
+/** Individual news article card */
 @Composable
 fun NewsArticleCard(
         article: NewsArticle,
@@ -1079,7 +1079,7 @@ fun NewsArticleCard(
                 backgroundColor = AppColors.Surface
         ) {
                 Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-                        // 제목
+                        // Title
                         Text(
                                 text = article.title,
                                 style = AppTypography.Headline3,
@@ -1091,7 +1091,7 @@ fun NewsArticleCard(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // 설명
+                        // Description
                         if (!article.description.isNullOrEmpty()) {
                                 Text(
                                         text = article.description,
@@ -1105,7 +1105,7 @@ fun NewsArticleCard(
                                 Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        // 메타 정보
+                        // Meta information
                         Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1115,7 +1115,7 @@ fun NewsArticleCard(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                        // 출처
+                                        // Source
                                         Row(
                                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                                 verticalAlignment = Alignment.CenterVertically
@@ -1134,7 +1134,7 @@ fun NewsArticleCard(
                                                 )
                                         }
 
-                                        // 날짜
+                                        // Date
                                         Row(
                                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                                 verticalAlignment = Alignment.CenterVertically
@@ -1153,7 +1153,7 @@ fun NewsArticleCard(
                                         }
                                 }
 
-                                // 외부 링크 아이콘
+                                // External link icon
                                 Icon(
                                         Icons.Outlined.OpenInNew,
                                         contentDescription = "Open in browser",
@@ -1165,7 +1165,7 @@ fun NewsArticleCard(
         }
 }
 
-/** 뉴스 리스트 (스크롤 가능) */
+/** News article list (scrollable) */
 @Composable
 fun NewsArticleList(
         news: CompanyNews,
@@ -1195,7 +1195,7 @@ fun NewsArticleList(
                                         )
                                 }
 
-                                // 마지막 업데이트 시간
+                                // Last update time
                                 item {
                                         Text(
                                                 text = "Last updated: ${news.lastUpdated}",

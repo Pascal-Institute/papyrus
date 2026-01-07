@@ -2,30 +2,30 @@ package papyrus.core.model
 
 import kotlinx.serialization.Serializable
 
-/** SEC 보고서 타입 */
+/** SEC report type */
 enum class SecReportType(val displayName: String, val importance: Int) {
-    // 핵심 재무 보고서 (Financial Reports)
+    // Core financial reports (Financial Reports)
     FORM_10K("10-K Annual Report", 10),
     FORM_10Q("10-Q Quarterly Report", 9),
     FORM_8K("8-K Current Report", 8),
 
-    // IPO & 등록
+    // IPO & Registration
     FORM_S1("S-1 IPO Registration", 7),
     FORM_S4("S-4 M&A Registration", 6),
 
-    // 주주 및 지배구조
+    // Shareholder and Governance
     FORM_DEF14A("DEF 14A Proxy Statement", 5),
 
-    // 외국 기업
+    // Foreign Companies
     FORM_20F("20-F Foreign Annual Report", 8),
     FORM_6K("6-K Foreign Current Report", 6),
 
-    // 특수 목적
+    // Special Purpose
     FORM_11K("11-K Employee Stock Plans", 3),
     FORM_NT_10K("NT 10-K Late Filing Notice", 2),
     FORM_NT_10Q("NT 10-Q Late Filing Notice", 2),
 
-    // 기타
+    // Others
     FORM_4("Form 4 Insider Trading", 4),
     FORM_3("Form 3 Initial Ownership", 3),
     FORM_SC_13G("SC 13G Ownership Report", 4),
@@ -55,10 +55,10 @@ enum class SecReportType(val displayName: String, val importance: Int) {
 }
 
 // ========================================
-// 공통 SEC 보고서 파싱 결과
+// Common SEC Report Parse Results
 // ========================================
 
-/** 모든 SEC 보고서 파싱 결과의 기본 인터페이스 */
+/** Base interface for all SEC report parse results */
 interface SecReportParseResult {
     val metadata: SecReportMetadata
     val rawContent: String
@@ -66,17 +66,17 @@ interface SecReportParseResult {
 }
 
 // ========================================
-// 10-K 보고서 모델
+// 10-K Report Model
 // ========================================
 
-/** 10-K 연간 보고서 파싱 결과 */
+/** 10-K annual report parse result */
 @Serializable
 data class Form10KParseResult(
         override val metadata: SecReportMetadata,
         override val rawContent: String,
         override val sections: Map<String, String>,
 
-        // 10-K 특화 섹션
+        // 10-K specialized sections
         val businessDescription: String? = null, // Item 1: Business
         val riskFactors: List<RiskFactor> = emptyList(), // Item 1A: Risk Factors
         val properties: String? = null, // Item 2: Properties
@@ -89,7 +89,7 @@ data class Form10KParseResult(
         val exhibits: List<String> = emptyList() // Item 15: Exhibits
 ) : SecReportParseResult
 
-/** 10-K 보고서 Item (섹션) 정의 */
+/** 10-K report Item (section) definition */
 enum class Form10KItem(val itemNumber: String, val title: String) {
     ITEM_1("1", "Business"),
     ITEM_1A("1A", "Risk Factors"),
@@ -114,17 +114,17 @@ enum class Form10KItem(val itemNumber: String, val title: String) {
 }
 
 // ========================================
-// 10-Q 보고서 모델
+// 10-Q Report Model
 // ========================================
 
-/** 10-Q 분기 보고서 파싱 결과 */
+/** 10-Q quarterly report parse result */
 @Serializable
 data class Form10QParseResult(
         override val metadata: SecReportMetadata,
         override val rawContent: String,
         override val sections: Map<String, String>,
 
-        // 10-Q 특화 섹션
+        // 10-Q specialized sections
         val financialStatements: StructuredFinancialData? = null, // Part I, Item 1
         val mdAndA: ManagementDiscussion? = null, // Part I, Item 2
         val marketRiskDisclosures: String? = null, // Part I, Item 3
@@ -133,12 +133,12 @@ data class Form10QParseResult(
         val riskFactors: List<RiskFactor> = emptyList(), // Part II, Item 1A
         val exhibits: List<String> = emptyList(), // Part II, Item 6
 
-        // 분기 정보
+        // Quarterly information
         val quarter: String? = null, // Q1, Q2, Q3
         val fiscalYear: String? = null
 ) : SecReportParseResult
 
-/** 10-Q 보고서 Item (섹션) 정의 */
+/** 10-Q report Item (section) definition */
 enum class Form10QItem(val part: String, val itemNumber: String, val title: String) {
     PART1_ITEM1("Part I", "1", "Financial Statements"),
     PART1_ITEM2("Part I", "2", "Management's Discussion and Analysis"),
@@ -154,22 +154,22 @@ enum class Form10QItem(val part: String, val itemNumber: String, val title: Stri
 }
 
 // ========================================
-// 8-K 보고서 모델
+// 8-K Report Model
 // ========================================
 
-/** 8-K 현재 보고서 파싱 결과 */
+/** 8-K current report parse result */
 @Serializable
 data class Form8KParseResult(
         override val metadata: SecReportMetadata,
         override val rawContent: String,
         override val sections: Map<String, String>,
 
-        // 8-K 특화 정보
+        // 8-K specialized information
         val eventDate: String? = null,
-        val eventItems: List<String> = emptyList(), // 예: "Item 2.02", "Item 5.02"
+        val eventItems: List<String> = emptyList(), // e.g., "Item 2.02", "Item 5.02"
         val eventDescriptions: Map<String, String> = emptyMap(),
 
-        // 주요 이벤트 카테고리별
+        // Major events by category
         val financialResults: String? = null, // Item 2.02
         val acquisitions: String? = null, // Item 2.01
         val dispositions: String? = null, // Item 2.01
@@ -178,7 +178,7 @@ data class Form8KParseResult(
         val exhibits: List<String> = emptyList()
 ) : SecReportParseResult
 
-/** 8-K 보고서 Item (이벤트) 정의 */
+/** 8-K report Item (event) definition */
 enum class Form8KItem(val itemNumber: String, val title: String, val category: String) {
     ITEM_1_01("1.01", "Entry into Material Agreement", "Corporate"),
     ITEM_1_02("1.02", "Termination of Material Agreement", "Corporate"),
@@ -212,17 +212,17 @@ enum class Form8KItem(val itemNumber: String, val title: String, val category: S
 }
 
 // ========================================
-// S-1 보고서 모델
+// S-1 Report Model
 // ========================================
 
-/** S-1 IPO 등록서 파싱 결과 */
+/** S-1 IPO registration statement parse result */
 @Serializable
 data class FormS1ParseResult(
         override val metadata: SecReportMetadata,
         override val rawContent: String,
         override val sections: Map<String, String>,
 
-        // S-1 특화 섹션
+        // S-1 specialized sections
         val prospectus: String? = null,
         val businessDescription: String? = null,
         val riskFactors: List<RiskFactor> = emptyList(),
@@ -236,17 +236,17 @@ data class FormS1ParseResult(
 ) : SecReportParseResult
 
 // ========================================
-// DEF 14A 보고서 모델
+// DEF 14A Report Model
 // ========================================
 
-/** DEF 14A Proxy Statement 파싱 결과 */
+/** DEF 14A Proxy Statement parse result */
 @Serializable
 data class FormDEF14AParseResult(
         override val metadata: SecReportMetadata,
         override val rawContent: String,
         override val sections: Map<String, String>,
 
-        // DEF 14A 특화 섹션
+        // DEF 14A specialized sections
         val meetingDate: String? = null,
         val votingMatters: List<String> = emptyList(),
         val executiveCompensation: String? = null,
@@ -257,33 +257,33 @@ data class FormDEF14AParseResult(
 ) : SecReportParseResult
 
 // ========================================
-// 20-F 보고서 모델
+// 20-F Report Model
 // ========================================
 
-/** 20-F 외국 기업 연간 보고서 파싱 결과 */
+/** 20-F foreign company annual report parse result */
 @Serializable
 data class Form20FParseResult(
         override val metadata: SecReportMetadata,
         override val rawContent: String,
         override val sections: Map<String, String>,
 
-        // 20-F 특화 섹션 (10-K와 유사하지만 외국 기업용)
+        // 20-F specialized sections (similar to 10-K but for foreign companies)
         val businessDescription: String? = null,
         val riskFactors: List<RiskFactor> = emptyList(),
         val financialStatements: StructuredFinancialData? = null,
         val mdAndA: ManagementDiscussion? = null,
         val corporateGovernance: String? = null,
 
-        // 외국 기업 특화 정보
+        // Foreign company specialized information
         val countryOfIncorporation: String? = null,
         val accountingStandard: String? = null // US GAAP, IFRS, etc.
 ) : SecReportParseResult
 
 // ========================================
-// 기타 보고서 모델
+// Other Report Models
 // ========================================
 
-/** 범용 SEC 보고서 파싱 결과 (알 수 없는 형식) */
+/** Generic SEC report parse result (unknown format) */
 @Serializable
 data class GenericSecReportParseResult(
         override val metadata: SecReportMetadata,

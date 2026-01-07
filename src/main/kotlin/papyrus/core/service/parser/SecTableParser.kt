@@ -6,21 +6,21 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /**
- * SEC 문서 테이블 전문 파서
+ * SEC document table specialized parser
  * 
- * SEC 10-K, 10-Q 등의 재무제표 테이블을 정확하게 파싱합니다.
- * HTML 테이블 구조를 인식하고, 숫자 데이터를 정확하게 추출합니다.
+ * Accurately parses financial statement tables in SEC 10-K, 10-Q, etc.
+ * Recognizes HTML table structure and extracts numeric data accurately.
  * 
- * 지원 형식:
- * - Apple, Microsoft, NVE 등 다양한 회사의 10-K 형식
- * - Products/Services 분리 매출 형식
- * - 세그먼트별 매출 형식
- * - 간단한 단일 테이블 형식
+ * Supported formats:
+ * - Various company 10-K formats (Apple, Microsoft, NVE, etc.)
+ * - Products/Services separated revenue format
+ * - Revenue by segment format
+ * - Simple single table format
  */
 object SecTableParser {
     
     /**
-     * 재무제표 테이블 파싱 결과
+     * Financial statement table parsing result
      */
     data class ParsedFinancialTable(
         val statementType: StatementType,
@@ -87,7 +87,7 @@ object SecTableParser {
     )
     
     /**
-     * HTML 문서에서 재무제표 테이블을 찾아 파싱
+     * Find and parse financial statement tables from HTML document
      */
     fun parseFinancialTables(htmlContent: String): List<ParsedFinancialTable> {
         val tables = mutableListOf<ParsedFinancialTable>()

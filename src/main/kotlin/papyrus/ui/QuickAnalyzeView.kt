@@ -864,7 +864,7 @@ private fun HealthScoreMainCard(healthScore: FinancialHealthScore) {
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
-            // 요약 설명
+            // Summary description
             Card(backgroundColor = Color.White, elevation = 0.dp, shape = AppShapes.Medium) {
                 Text(
                         text = healthScore.summary,
@@ -1010,7 +1010,7 @@ private fun ReportTypeCard(reportType: String?, explanation: String?) {
     }
 }
 
-/** 초보자 인사이트 탭 - 쉬운 설명 */
+/** Beginner insights tab - easy explanations */
 @Composable
 private fun BeginnerInsightsTab(insights: List<BeginnerInsight>, keyTakeaways: List<String>) {
     if (insights.isEmpty()) {
@@ -1037,7 +1037,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
             backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
-            // 헤더
+            // Header
             Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1073,14 +1073,14 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
                 )
             }
 
-            // 확장 콘텐츠
+            // Expanded content
             AnimatedVisibility(visible = isExpanded) {
                 Column(modifier = Modifier.padding(top = AppDimens.PaddingMedium)) {
                     Divider(color = AppColors.Divider)
 
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-                    // 상세 설명
+                    // Detailed explanation
                     InsightSection(
                             title = "상세 설명",
                             content = insight.detailedExplanation,
@@ -1089,7 +1089,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
 
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-                    // 이것이 의미하는 것
+                    // What this means
                     InsightSection(
                             title = "이게 무슨 뜻이에요?",
                             content = insight.whatItMeans,
@@ -1098,7 +1098,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
 
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-                    // 왜 중요한지
+                    // Why it's important
                     InsightSection(
                             title = "왜 중요한가요?",
                             content = insight.whyItMatters,
@@ -1107,7 +1107,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
 
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-                    // 실행 가능한 조언
+                    // Actionable advice
                     InsightSection(
                             title = "투자자 팁",
                             content = insight.actionableAdvice,
@@ -1139,7 +1139,7 @@ private fun InsightSection(title: String, content: String, backgroundColor: Colo
     }
 }
 
-/** 용어 사전 탭 */
+/** Glossary tab */
 @Composable
 private fun TermGlossaryTab(terms: List<FinancialTermExplanation>, modifier: Modifier = Modifier) {
     if (terms.isEmpty()) {
@@ -1258,7 +1258,7 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
 
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-                    // 비유
+                    // Analogy
                     Card(
                             backgroundColor = AppColors.InfoLight,
                             elevation = 0.dp,
@@ -1282,7 +1282,7 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
 
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
-                    // 예시
+                    // Example
                     Card(
                             backgroundColor = AppColors.SuccessLight,
                             elevation = 0.dp,
@@ -1309,7 +1309,7 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
     }
 }
 
-/** 재무 비율 탭 - 상세 지표 */
+/** Financial ratios tab - detailed metrics */
 @Composable
 private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<FinancialMetric>) {
     val scrollState = rememberScrollState()
@@ -1820,18 +1820,18 @@ private fun FinancialOverviewTab(analysis: FinancialAnalysis) {
     val scrollState = rememberScrollState()
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
-        // 빠른 재무 요약 카드 (새로운 컴포넌트)
+        // Quick financial summary card (new component)
         if (analysis.extendedMetrics.isNotEmpty()) {
             QuickFinancialSummaryCard(analysis)
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
         }
         
-        // 핵심 재무 지표 대시보드 (새로운 컴포넌트)
+        // Key financial metrics dashboard (new component)
         if (analysis.extendedMetrics.isNotEmpty()) {
             KeyFinancialMetricsDashboard(analysis)
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
         } else {
-            // 폴백: 기존 메트릭 요약 그리드
+            // Fallback: existing metric summary grid
             MetricsSummaryGrid(analysis.metrics)
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
         }
@@ -2618,7 +2618,7 @@ private fun AiDetailedAnalysisCard(aiAnalysis: AiAnalysisResult) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 요약
+            // Summary
             Text(
                     text = aiAnalysis.summary,
                     style = AppTypography.Body1,
@@ -2734,7 +2734,7 @@ private fun AiDetailedAnalysisCard(aiAnalysis: AiAnalysisResult) {
                 }
             }
 
-            // AI 모델 정보
+            // AI model information
             Spacer(modifier = Modifier.height(16.dp))
             Divider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(12.dp))
@@ -2832,12 +2832,12 @@ private fun AiIndustryComparisonCard(comparison: String) {
 }
 
 // ============================================================
-// 핵심 재무 지표 시각화 컴포넌트 (Key Financial Metrics Display)
+// Key Financial Metrics Visualization Component
 // ============================================================
 
 /**
- * 핵심 재무 지표 대시보드 카드
- * 파싱된 재무 데이터를 시각적으로 보여줍니다.
+ * Key financial metrics dashboard card
+ * Visualizes parsed financial data.
  */
 @Composable
 fun KeyFinancialMetricsDashboard(
@@ -2846,7 +2846,7 @@ fun KeyFinancialMetricsDashboard(
 ) {
     val extendedMetrics = analysis.extendedMetrics
     
-    // 카테고리별 메트릭 그룹화
+    // Group metrics by category
     val revenueMetrics = extendedMetrics.filter { 
         it.category in listOf(
             MetricCategory.REVENUE,
@@ -2874,12 +2874,12 @@ fun KeyFinancialMetricsDashboard(
     }
     
     Column(modifier = modifier) {
-        // 파싱 품질 표시
+        // Parsing quality indicator
         ParsingQualityIndicator(analysis)
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 손익계산서 핵심 지표
+        // Income statement key metrics
         if (revenueMetrics.isNotEmpty()) {
             FinancialStatementCard(
                 title = "Income Statement Highlights",
@@ -2890,7 +2890,7 @@ fun KeyFinancialMetricsDashboard(
             Spacer(modifier = Modifier.height(12.dp))
         }
         
-        // 재무상태표 핵심 지표
+        // Balance sheet key metrics
         if (balanceMetrics.isNotEmpty()) {
             FinancialStatementCard(
                 title = "Balance Sheet Highlights",
@@ -2901,7 +2901,7 @@ fun KeyFinancialMetricsDashboard(
             Spacer(modifier = Modifier.height(12.dp))
         }
         
-        // 현금흐름표 핵심 지표
+        // Cash flow statement key metrics
         if (cashFlowMetrics.isNotEmpty()) {
             FinancialStatementCard(
                 title = "Cash Flow Highlights",
@@ -2911,7 +2911,7 @@ fun KeyFinancialMetricsDashboard(
             )
         }
         
-        // 메트릭이 없는 경우
+        // If no metrics found
         if (revenueMetrics.isEmpty() && balanceMetrics.isEmpty() && cashFlowMetrics.isEmpty()) {
             NoMetricsFoundCard()
         }
@@ -2996,7 +2996,7 @@ private fun FinancialStatementCard(
         backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // 헤더
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -3016,7 +3016,7 @@ private fun FinancialStatementCard(
                     )
                 }
                 
-                // 메트릭 수 표시
+                // Metric count display
                 Box(
                     modifier = Modifier
                         .background(accentColor.copy(alpha = 0.1f), AppShapes.Pill)
@@ -3035,7 +3035,7 @@ private fun FinancialStatementCard(
             Divider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(12.dp))
             
-            // 메트릭 그리드
+            // Metric grid
             metrics.chunked(2).forEach { rowMetrics ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -3048,7 +3048,7 @@ private fun FinancialStatementCard(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    // 홀수 개일 경우 빈 공간 채우기
+                    // Fill empty space for odd count
                     if (rowMetrics.size == 1) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
@@ -3078,7 +3078,7 @@ private fun MetricDisplayCard(
         backgroundColor = AppColors.SurfaceVariant.copy(alpha = 0.5f)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // 메트릭 이름
+            // Metric name
             Text(
                 text = metric.name,
                 style = AppTypography.Caption,
@@ -3089,7 +3089,7 @@ private fun MetricDisplayCard(
             
             Spacer(modifier = Modifier.height(4.dp))
             
-            // 값
+            // Value
             Text(
                 text = metric.value,
                 style = AppTypography.Subtitle1,
@@ -3097,7 +3097,7 @@ private fun MetricDisplayCard(
                 color = valueColor
             )
             
-            // YoY 변화율 (있는 경우)
+            // YoY change rate (if available)
             metric.yearOverYearChange?.let { yoy ->
                 Spacer(modifier = Modifier.height(4.dp))
                 val yoyColor = if (yoy >= 0) AppColors.Success else AppColors.Error
@@ -3121,7 +3121,7 @@ private fun MetricDisplayCard(
                 }
             }
             
-            // 신뢰도 표시
+            // Confidence display
             if (metric.confidence < 0.9) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -3189,7 +3189,7 @@ fun QuickFinancialSummaryCard(
 ) {
     val metrics = analysis.extendedMetrics
     
-    // 핵심 지표 추출
+    // Extract key metrics
     val revenue = metrics.find { it.category == MetricCategory.REVENUE }
     val netIncome = metrics.find { it.category == MetricCategory.NET_INCOME }
     val totalAssets = metrics.find { it.category == MetricCategory.TOTAL_ASSETS }
@@ -3205,7 +3205,7 @@ fun QuickFinancialSummaryCard(
         backgroundColor = AppColors.Primary.copy(alpha = 0.05f)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            // 헤더
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -3247,7 +3247,7 @@ fun QuickFinancialSummaryCard(
             Divider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(16.dp))
             
-            // 핵심 지표 그리드
+            // Key metrics grid
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly

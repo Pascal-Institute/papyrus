@@ -32,11 +32,11 @@ enum class HealthStatus {
 
 @Serializable
 enum class RatioCategory {
-        PROFITABILITY, // 수익성
-        LIQUIDITY, // 유동성
-        SOLVENCY, // 지급능력
-        EFFICIENCY, // 효율성
-        VALUATION // 가치평가
+        PROFITABILITY, // Profitability
+        LIQUIDITY, // Liquidity
+        SOLVENCY, // Solvency
+        EFFICIENCY, // Efficiency
+        VALUATION // Valuation
 }
 
 @Serializable
@@ -55,7 +55,7 @@ data class BeginnerInsight(
 data class FinancialTermExplanation(
         val term: String,
         val simpleDefinition: String,
-        val analogy: String, // 실생활 비유
+        val analogy: String, // Real-life analogy
         val example: String
 )
 
@@ -102,8 +102,8 @@ data class FinancialAnalysis(
         val extendedMetrics: List<ExtendedFinancialMetric> = emptyList(),
 
         // Enhanced financial information (AGENTS.md principle 3 & 5)
-        val segmentAnalysis: List<SegmentRevenue> = emptyList(), // 세그먼트별 매출 분석
-        val managementDiscussion: ManagementDiscussion? = null, // 경영진 논의 및 분석
+        val segmentAnalysis: List<SegmentRevenue> = emptyList(), // Revenue analysis by segment
+        val managementDiscussion: ManagementDiscussion? = null, // Management discussion and analysis
 
         // AI Analysis
         val aiAnalysis: AiAnalysisResult? = null,

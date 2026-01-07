@@ -22,7 +22,7 @@ import kotlinx.coroutines.withContext
 import papyrus.core.service.analyzer.AiAnalysisService
 import papyrus.util.SettingsManager
 
-/** API 키 설정 다이얼로그 */
+/** API key settings dialog */
 @Composable
 fun SettingsDialog(onDismiss: () -> Unit) {
     var apiKey by remember { mutableStateOf(SettingsManager.getApiKey() ?: "") }
@@ -39,7 +39,7 @@ fun SettingsDialog(onDismiss: () -> Unit) {
                 elevation = 8.dp
         ) {
             Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
-                // 헤더
+                // Header
                 Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -55,7 +55,7 @@ fun SettingsDialog(onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // API 키 섹션
+                // API key section
                 Text(
                         text = "OpenRouter API 키",
                         style = MaterialTheme.typography.h6,
@@ -72,12 +72,12 @@ fun SettingsDialog(onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // API 키 입력 필드
+                // API key input field
                 OutlinedTextField(
                         value = apiKey,
                         onValueChange = {
                             apiKey = it
-                            testStatus = TestStatus.None // 입력 시 테스트 상태 초기화
+                            testStatus = TestStatus.None // Reset test status on input
                         },
                         label = { Text("API 키") },
                         placeholder = { Text("sk-or-v1-...") },
@@ -102,7 +102,7 @@ fun SettingsDialog(onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 현재 설정 소스
+                // Current settings source
                 val apiKeySource = SettingsManager.getApiKeySource()
                 if (apiKeySource != "Not Configured") {
                     Row(
@@ -126,7 +126,7 @@ fun SettingsDialog(onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 테스트 상태 표시
+                // Test status display
                 when (testStatus) {
                     is TestStatus.Success -> {
                         Card(
@@ -187,12 +187,12 @@ fun SettingsDialog(onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 액션 버튼들
+                // Action buttons
                 Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 테스트 버튼
+                    // Test button
                     OutlinedButton(
                             onClick = {
                                 if (apiKey.isNotBlank()) {
@@ -226,7 +226,7 @@ fun SettingsDialog(onDismiss: () -> Unit) {
                         Text(if (isTesting) "테스트 중..." else "테스트")
                     }
 
-                    // 저장 버튼
+                    // Save button
                     Button(
                             onClick = {
                                 if (apiKey.isNotBlank()) {
@@ -249,7 +249,7 @@ fun SettingsDialog(onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 삭제 버튼
+                // Delete button
                 if (SettingsManager.hasApiKey()) {
                     TextButton(
                             onClick = {
@@ -274,7 +274,7 @@ fun SettingsDialog(onDismiss: () -> Unit) {
                 Divider()
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 도움말 섹션
+                // Help section
                 Text(
                         text = "API 키 받는 방법",
                         style = MaterialTheme.typography.subtitle2,

@@ -20,7 +20,7 @@ object AnalysisCache {
 
     /** Generate cache key from document content */
     private fun getCacheKey(documentContent: String): String {
-        // Use hash of content as cache key
+        // Use content hash as cache key
         return documentContent.hashCode().toString()
     }
 

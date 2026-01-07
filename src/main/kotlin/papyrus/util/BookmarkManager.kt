@@ -10,7 +10,7 @@ import papyrus.core.model.BookmarkData
 import papyrus.core.model.BookmarkedTicker
 import papyrus.core.model.TickerEntry
 
-/** 북마크 관리자 - 티커 즐겨찾기 저장/로드 */
+/** Bookmark manager - save/load ticker favorites */
 object BookmarkManager {
     private val json = Json {
         prettyPrint = true
@@ -25,7 +25,7 @@ object BookmarkManager {
 
     private var cachedData: BookmarkData? = null
 
-    /** 북마크 데이터 로드 */
+    /** Load bookmark data */
     fun loadBookmarks(): BookmarkData {
         cachedData?.let {
             return it
@@ -44,7 +44,7 @@ object BookmarkManager {
         }
     }
 
-    /** 북마크 데이터 저장 */
+    /** Save bookmark data */
     private fun saveBookmarks(data: BookmarkData) {
         try {
             cachedData = data
@@ -54,7 +54,7 @@ object BookmarkManager {
         }
     }
 
-    /** 티커 북마크 추가 */
+    /** Add ticker bookmark */
     fun addBookmark(
             ticker: TickerEntry,
             notes: String = "",
@@ -62,7 +62,7 @@ object BookmarkManager {
     ): Boolean {
         val data = loadBookmarks()
 
-        // 이미 북마크된 경우 스킵
+        // Skip if already bookmarked
         if (data.bookmarks.any { it.cik == ticker.cik }) {
             return false
         }
@@ -82,7 +82,7 @@ object BookmarkManager {
         return true
     }
 
-    /** 티커 북마크 제거 */
+    /** Remove ticker bookmark */
     fun removeBookmark(cik: Int): Boolean {
         val data = loadBookmarks()
         val filtered = data.bookmarks.filter { it.cik != cik }
@@ -94,17 +94,17 @@ object BookmarkManager {
         return true
     }
 
-    /** 북마크 여부 확인 */
+    /** Check if bookmarked */
     fun isBookmarked(cik: Int): Boolean {
         return loadBookmarks().bookmarks.any { it.cik == cik }
     }
 
-    /** 모든 북마크 가져오기 */
+    /** Get all bookmarks */
     fun getAllBookmarks(): List<BookmarkedTicker> {
         return loadBookmarks().bookmarks
     }
 
-    /** 북마크 노트 업데이트 */
+    /** Update bookmark notes */
     fun updateBookmarkNotes(cik: Int, notes: String): Boolean {
         val data = loadBookmarks()
         val updated = data.bookmarks.map { if (it.cik == cik) it.copy(notes = notes) else it }
@@ -115,7 +115,7 @@ object BookmarkManager {
         return true
     }
 
-    /** 북마크 태그 업데이트 */
+    /** Update bookmark tags */
     fun updateBookmarkTags(cik: Int, tags: List<String>): Boolean {
         val data = loadBookmarks()
         val updated = data.bookmarks.map { if (it.cik == cik) it.copy(tags = tags) else it }
@@ -126,12 +126,12 @@ object BookmarkManager {
         return true
     }
 
-    /** 최근 조회 기록 추가 */
+    /** Add to recently viewed history */
     fun addToRecentlyViewed(cik: Int) {
         val data = loadBookmarks()
         val recent = (listOf(cik) + data.recentlyViewed.filter { it != cik }).take(10)
 
-        // 북마크된 티커의 lastViewed 업데이트
+        // Update lastViewed for bookmarked ticker
         val updatedBookmarks =
                 data.bookmarks.map {
                     if (it.cik == cik) {
@@ -146,12 +146,12 @@ object BookmarkManager {
         saveBookmarks(data.copy(recentlyViewed = recent, bookmarks = updatedBookmarks))
     }
 
-    /** 최근 조회 기록 가져오기 */
+    /** Get recently viewed history */
     fun getRecentlyViewed(): List<Int> {
         return loadBookmarks().recentlyViewed
     }
 
-    /** 컬렉션 생성 */
+    /** Create collection */
     fun createCollection(
             name: String,
             description: String = "",
@@ -174,7 +174,7 @@ object BookmarkManager {
         return true
     }
 
-    /** 컬렉션에 티커 추가 */
+    /** Add ticker to collection */
     fun addToCollection(collectionName: String, cik: Int): Boolean {
         val data = loadBookmarks()
         val updated =
@@ -190,7 +190,7 @@ object BookmarkManager {
         return true
     }
 
-    /** 컬렉션에서 티커 제거 */
+    /** Remove ticker from collection */
     fun removeFromCollection(collectionName: String, cik: Int): Boolean {
         val data = loadBookmarks()
         val updated =
@@ -206,7 +206,7 @@ object BookmarkManager {
         return true
     }
 
-    /** 컬렉션 삭제 */
+    /** Delete collection */
     fun deleteCollection(name: String): Boolean {
         val data = loadBookmarks()
         val filtered = data.collections.filter { it.name != name }
@@ -217,17 +217,17 @@ object BookmarkManager {
         return true
     }
 
-    /** 모든 컬렉션 가져오기 */
+    /** Get all collections */
     fun getAllCollections(): List<BookmarkCollection> {
         return loadBookmarks().collections
     }
 
-    /** 태그별 북마크 검색 */
+    /** Search bookmarks by tag */
     fun getBookmarksByTag(tag: String): List<BookmarkedTicker> {
         return loadBookmarks().bookmarks.filter { tag in it.tags }
     }
 
-    /** 북마크 검색 */
+    /** Search bookmarks */
     fun searchBookmarks(query: String): List<BookmarkedTicker> {
         val q = query.lowercase()
         return loadBookmarks().bookmarks.filter {
@@ -238,7 +238,7 @@ object BookmarkManager {
         }
     }
 
-    /** 캐시 초기화 */
+    /** Clear cache */
     fun clearCache() {
         cachedData = null
     }

@@ -12,7 +12,7 @@ object SettingsManager {
         loadSettings()
     }
 
-    /** 저장된 설정을 파일에서 로드 */
+    /** Load saved settings from file */
     private fun loadSettings() {
         try {
             if (settingsFile.exists()) {
@@ -23,7 +23,7 @@ object SettingsManager {
         }
     }
 
-    /** 현재 설정을 파일에 저장 */
+    /** Save current settings to file */
     private fun saveSettings() {
         try {
             settingsFile.parentFile?.mkdirs()
@@ -37,17 +37,17 @@ object SettingsManager {
 
     /** Get OpenRouter API key - Priority: environment variable -> system property -> saved settings */
     fun getApiKey(): String? {
-        // 1. 환경 변수 확인
+        // 1. Check environment variable
         System.getenv("OPENROUTER_API_KEY")?.let {
             return it
         }
 
-        // 2. 시스템 프로퍼티 확인
+        // 2. Check system property
         System.getProperty("openrouter.api.key")?.let {
             return it
         }
 
-        // 3. 저장된 설정 확인
+        // 3. Check saved settings
         return properties.getProperty("openrouter.api.key")
     }
 
@@ -63,10 +63,10 @@ object SettingsManager {
         saveSettings()
     }
 
-    /** API 키가 설정되어 있는지 확인 */
+    /** Check if API key is configured */
     fun hasApiKey(): Boolean = getApiKey()?.isNotBlank() == true
 
-    /** 저장된 설정의 소스 표시 (디버깅용) */
+    /** Show source of saved settings (for debugging) */
     fun getApiKeySource(): String {
         return when {
             System.getenv("OPENROUTER_API_KEY") != null -> "Environment Variable"

@@ -39,16 +39,16 @@ object PdfParser {
     }
     
     /**
-     * SEC 문서 전용 텍스트 추출 - 테이블 구조 보존
+     * SEC document-specific text extraction - preserves table structure
      * 
-     * PDF에서 테이블 형식의 데이터를 더 잘 보존하기 위해 
-     * 열 정렬을 인식하고 적절한 구분자를 추가합니다.
+     * Recognizes column alignment and adds appropriate separators
+     * to better preserve tabular data from PDFs.
      */
     fun extractTextForSec(file: File): SecDocumentText {
         return try {
             PDDocument.load(file).use { document ->
                 val stripper = PDFTextStripper().apply {
-                    sortByPosition = true  // 위치 기반 정렬로 테이블 구조 보존
+                    sortByPosition = true  // Position-based sorting to preserve table structure
                     addMoreFormatting = true
                 }
                 
@@ -56,14 +56,14 @@ object PdfParser {
                 val sections = mutableListOf<SecSection>()
                 val pageTexts = mutableListOf<String>()
                 
-                // 페이지별 텍스트 추출
+                // Extract text page by page
                 for (pageNum in 1..document.numberOfPages) {
                     stripper.startPage = pageNum
                     stripper.endPage = pageNum
                     pageTexts.add(stripper.getText(document))
                 }
                 
-                // SEC 섹션 식별
+                // Identify SEC sections
                 val sectionMarkers = listOf(
                     SectionMarker("CONSOLIDATED STATEMENTS OF OPERATIONS", SecSectionType.INCOME_STATEMENT),
                     SectionMarker("CONSOLIDATED STATEMENTS OF INCOME", SecSectionType.INCOME_STATEMENT),
@@ -85,14 +85,14 @@ object PdfParser {
                 for (marker in sectionMarkers) {
                     val startIdx = fullText.uppercase().indexOf(marker.pattern.uppercase())
                     if (startIdx != -1) {
-                        // 다음 섹션 또는 최대 길이까지 추출
+                        // Extract up to next section or max length
                         val endIdx = findNextSectionEnd(fullText, startIdx + marker.pattern.length, sectionMarkers)
                         val sectionText = fullText.substring(startIdx, minOf(endIdx, startIdx + 30000))
                         sections.add(SecSection(marker.type, sectionText, startIdx))
                     }
                 }
                 
-                // 문서 메타데이터 추출
+                // Extract document metadata
                 val documentType = detectDocumentType(fullText)
                 val fiscalYear = extractFiscalYear(fullText)
                 val companyName = extractCompanyName(fullText, document.documentInformation.title ?: "")
@@ -113,7 +113,7 @@ object PdfParser {
     }
     
     /**
-     * 재무제표 테이블 추출 - 숫자와 레이블을 구조화
+     * Extract financial statement tables - structure numbers and labels
      */
     fun extractFinancialTables(file: File): List<ExtractedTable> {
         return try {
@@ -129,7 +129,7 @@ object PdfParser {
                     stripper.endPage = pageNum
                     val pageText = stripper.getText(document)
                     
-                    // 재무제표 페이지 감지
+                    // Detect financial statement page
                     if (isFinancialStatementPage(pageText)) {
                         val tableRows = parseTableFromText(pageText)
                         if (tableRows.isNotEmpty()) {
@@ -162,7 +162,7 @@ object PdfParser {
             }
         }
         
-        // "Notes to" 또는 "Item" 패턴도 섹션 끝으로 인식
+        // Also recognize "Notes to" or "Item" patterns as section end
         val notesIdx = upperText.indexOf("NOTES TO", startIdx + 100)
         if (notesIdx != -1 && notesIdx < minEnd) minEnd = notesIdx
         
@@ -188,7 +188,7 @@ object PdfParser {
     }
     
     private fun extractFiscalYear(text: String): String? {
-        // 다양한 회계연도 패턴 매칭
+        // Match various fiscal year patterns
         val patterns = listOf(
             Regex("""fiscal\s+year\s+ended?\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})""", RegexOption.IGNORE_CASE),
             Regex("""for\s+the\s+year\s+ended?\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4})""", RegexOption.IGNORE_CASE),
@@ -206,12 +206,12 @@ object PdfParser {
     }
     
     private fun extractCompanyName(text: String, title: String): String {
-        // 제목에서 회사명 추출 시도
+        // Attempt to extract company name from title
         if (title.isNotBlank() && !title.contains("10-K", ignoreCase = true)) {
             return title.trim()
         }
         
-        // 텍스트 첫 부분에서 회사명 추출
+        // Extract company name from beginning of text
         val patterns = listOf(
             Regex("""([A-Z][A-Za-z\s,\.]+(?:Inc\.|Corp\.|Corporation|Company|Ltd\.?|LLC))"""),
             Regex("""UNITED STATES.*?\n\n\s*([A-Z][A-Za-z\s,\.]+)\n""", setOf(RegexOption.DOT_MATCHES_ALL))
@@ -267,49 +267,49 @@ object PdfParser {
     }
     
     /**
-     * PDF 텍스트에서 테이블 행 파싱
+     * Parse table rows from PDF text
      * 
-     * SEC PDF 문서는 보통 다음과 같은 형식:
+     * SEC PDF documents usually follow this format:
      * Label                    Value1    Value2    Value3
      * 
-     * 이를 구조화된 데이터로 변환
+     * Convert this to structured data
      */
     private fun parseTableFromText(text: String): List<TableRow> {
         val rows = mutableListOf<TableRow>()
         val lines = text.split("\n")
         
-        // 숫자 패턴 (음수 괄호 포함)
+        // Number pattern (including negative parentheses)
         val numberPattern = Regex("""\(?\$?\s*[\d,]+(?:\.\d+)?\)?""")
         
         for (line in lines) {
             val trimmedLine = line.trim()
             if (trimmedLine.length < 5) continue
             
-            // 숫자 찾기
+            // Find numbers
             val numbers = numberPattern.findAll(trimmedLine).toList()
             if (numbers.isEmpty()) continue
             
-            // 첫 번째 숫자 위치로 레이블과 값 분리
+            // Separate label and values by first number position
             val firstNumberStart = numbers.first().range.first
             val label = trimmedLine.substring(0, firstNumberStart).trim()
             
-            // 유효한 레이블 검증
+            // Validate valid label
             if (label.length < 3) continue
             if (label.all { it.isDigit() || it.isWhitespace() || it == ',' || it == '.' }) continue
             if (label.contains("Page ") || label.matches(Regex("""F-\d+"""))) continue
             
-            // 값들 파싱
+            // Parse values
             val values = numbers.map { match ->
                 val valueStr = match.value.trim()
                 parseNumericValue(valueStr)
             }
             
-            // 소계/합계 여부 확인
+            // Check if subtotal/total
             val lowerLabel = label.lowercase()
             val isTotal = lowerLabel.startsWith("total") || lowerLabel.contains("total ")
             val isSubtotal = lowerLabel.contains("subtotal")
             
-            // 카테고리 추론
+            // Infer category
             val category = inferCategory(label)
             
             rows.add(TableRow(
@@ -348,44 +348,44 @@ object PdfParser {
         val lowerLabel = label.lowercase().trim()
         
         return when {
-            // 수익
+            // Revenue
             lowerLabel.contains("revenue") || lowerLabel.contains("net sales") || 
                 lowerLabel == "sales" -> "REVENUE"
             
-            // 매출원가
+            // Cost of revenue
             lowerLabel.contains("cost of") && (lowerLabel.contains("revenue") || 
                 lowerLabel.contains("sales") || lowerLabel.contains("goods")) -> "COST_OF_REVENUE"
             
-            // 이익 지표
+            // Profit indicators
             lowerLabel == "gross profit" || lowerLabel == "gross margin" -> "GROSS_PROFIT"
             lowerLabel.contains("operating income") || lowerLabel.contains("income from operations") -> "OPERATING_INCOME"
             lowerLabel == "net income" || lowerLabel.contains("net income (loss)") || 
                 lowerLabel == "net earnings" -> "NET_INCOME"
             
-            // 자산
+            // Assets
             lowerLabel == "total assets" -> "TOTAL_ASSETS"
             lowerLabel.contains("current assets") -> "CURRENT_ASSETS"
             lowerLabel.contains("cash and cash equivalents") || lowerLabel == "cash" -> "CASH"
             lowerLabel.contains("accounts receivable") -> "ACCOUNTS_RECEIVABLE"
             lowerLabel.contains("inventor") -> "INVENTORY"
             
-            // 부채
+            // Liabilities
             lowerLabel == "total liabilities" -> "TOTAL_LIABILITIES"
             lowerLabel.contains("current liabilities") -> "CURRENT_LIABILITIES"
             lowerLabel.contains("long-term debt") || lowerLabel.contains("long term debt") -> "LONG_TERM_DEBT"
             lowerLabel.contains("accounts payable") -> "ACCOUNTS_PAYABLE"
             
-            // 자본
+            // Equity
             lowerLabel.contains("equity") || lowerLabel.contains("shareholders") || 
                 lowerLabel.contains("stockholders") -> "EQUITY"
             lowerLabel.contains("retained earnings") || lowerLabel.contains("accumulated deficit") -> "RETAINED_EARNINGS"
             
-            // 현금흐름
+            // Cash flow
             lowerLabel.contains("operating activities") || lowerLabel.contains("cash from operations") -> "OPERATING_CASH_FLOW"
             lowerLabel.contains("investing activities") -> "INVESTING_CASH_FLOW"
             lowerLabel.contains("financing activities") -> "FINANCING_CASH_FLOW"
             
-            // 비용
+            // Expenses
             lowerLabel.contains("research and development") || lowerLabel.contains("r&d") -> "RD_EXPENSE"
             lowerLabel.contains("selling") && lowerLabel.contains("administrative") -> "SGA_EXPENSE"
             lowerLabel.contains("interest expense") -> "INTEREST_EXPENSE"
@@ -419,7 +419,7 @@ object PdfParser {
     }
 }
 
-// SEC 문서 관련 데이터 클래스들
+// SEC document-related data classes
 data class SecDocumentText(
     val fullText: String,
     val pageTexts: List<String>,
