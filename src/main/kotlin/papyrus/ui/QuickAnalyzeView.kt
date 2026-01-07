@@ -76,11 +76,89 @@ private fun sanitizeUiText(text: String): String {
 
 /** Helper function to format currency values */
 private fun formatCurrency(value: Double): String {
+        val absValue = kotlin.math.abs(value)
+        val sign = if (value < 0) "-" else ""
+
         return when {
-                value >= 1_000_000_000 -> String.format("$%.2fB", value / 1_000_000_000)
-                value >= 1_000_000 -> String.format("$%.2fM", value / 1_000_000)
-                value >= 1_000 -> String.format("$%.2fK", value / 1_000)
-                else -> String.format("$%.2f", value)
+                absValue >= 1_000_000_000 -> String.format("%s$%.2fB", sign, absValue / 1_000_000_000)
+                absValue >= 1_000_000 -> String.format("%s$%.2fM", sign, absValue / 1_000_000)
+                absValue >= 1_000 -> String.format("%s$%.2fK", sign, absValue / 1_000)
+                else -> String.format("%s$%.2f", sign, absValue)
+        }
+}
+
+/** Parse metric value string to double for formatting */
+private fun parseMetricValue(valueString: String): Double? {
+        return try {
+                // Check for negative sign first
+                val isNegative = valueString.trim().startsWith("-")
+
+                // Remove currency symbols, commas, whitespace, and negative sign
+                val cleaned = valueString.replace("[$,\\s-]".toRegex(), "")
+
+                // Handle existing M/B/K suffixes
+                val parsedValue = when {
+                        cleaned.endsWith("B", ignoreCase = true) ->
+                                cleaned.dropLast(1).toDoubleOrNull()?.times(1_000_000_000)
+                        cleaned.endsWith("M", ignoreCase = true) ->
+                                cleaned.dropLast(1).toDoubleOrNull()?.times(1_000_000)
+                        cleaned.endsWith("K", ignoreCase = true) ->
+                                cleaned.dropLast(1).toDoubleOrNull()?.times(1_000)
+                        else -> cleaned.toDoubleOrNull()
+                }
+
+                // Apply negative sign if present
+                parsedValue?.let { if (isNegative) -it else it }
+        } catch (e: Exception) {
+                null
+        }
+}
+
+/** Translate financial metric names to Korean */
+private fun getKoreanTranslation(englishName: String): String? {
+        return when (englishName.lowercase().trim()) {
+                "revenue", "revenues" -> "매출"
+                "net income", "net income (loss)" -> "순이익"
+                "net loss" -> "순손실"
+                "total assets" -> "총자산"
+                "current assets", "total current assets" -> "유동자산"
+                "total liabilities" -> "총부채"
+                "current liabilities", "total current liabilities" -> "유동부채"
+                "stockholders' equity", "total equity", "shareholders' equity" -> "자본총계"
+                "cash and cash equivalents" -> "현금및현금성자산"
+                "operating income" -> "영업이익"
+                "operating expenses" -> "영업비용"
+                "gross profit" -> "매출총이익"
+                "cost of revenue", "cost of goods sold" -> "매출원가"
+                "accounts receivable" -> "매출채권"
+                "accounts payable" -> "매입채무"
+                "inventory" -> "재고자산"
+                "long-term debt" -> "장기부채"
+                "retained earnings" -> "이익잉여금"
+                "operating cash flow" -> "영업현금흐름"
+                "free cash flow" -> "잉여현금흐름"
+                "capital expenditures", "capex" -> "자본적지출"
+                "total expenses" -> "총비용"
+                "research and development", "r&d" -> "연구개발비"
+                "selling, general and administrative", "sg&a" -> "판매관리비"
+                "depreciation" -> "감가상각비"
+                "amortization" -> "무형자산상각비"
+                "interest expense" -> "이자비용"
+                "income tax" -> "법인세"
+                "earnings per share", "eps" -> "주당순이익"
+                "dividends" -> "배당금"
+                "working capital" -> "운전자본"
+                else -> null
+        }
+}
+
+/** Format metric name with English and Korean translation */
+private fun formatMetricName(name: String): String {
+        val korean = getKoreanTranslation(name)
+        return if (korean != null) {
+                "$name ($korean)"
+        } else {
+                name
         }
 }
 
@@ -561,12 +639,12 @@ fun FinancialAnalysisPanel(
                 if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
                         add("Health Score")
                         add("Insights")
-                        add("Ratios")
+                        add("Financials")
                         if (hasXbrlTab) add("XBRL")
                         add("Raw Data")
                 } else {
                         add("Overview")
-                        add("Metrics")
+                        add("Financials")
                         if (hasXbrlTab) add("XBRL")
                         add("Raw Data")
                 }
@@ -600,8 +678,7 @@ fun FinancialAnalysisPanel(
                                         analysis.beginnerInsights,
                                         analysis.keyTakeaways
                                 )
-                        "Ratios" -> FinancialRatiosTab(analysis.ratios, analysis.metrics)
-                        "Metrics" -> FinancialMetricsTab(analysis.metrics)
+                        "Financials" -> FinancialsTab(analysis.ratios, analysis.metrics)
                         "XBRL" -> XbrlTab(analysis)
                         "Raw Data" -> FinancialRawDataTab(analysis.rawContent, analysis)
                         else -> FinancialRawDataTab(analysis.rawContent, analysis)
@@ -1451,9 +1528,9 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
         }
 }
 
-/** Financial ratios tab - detailed metrics */
+/** Financials tab - comprehensive view of ratios and concrete financial metrics */
 @Composable
-private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<FinancialMetric>) {
+private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialMetric>) {
         val scrollState = rememberScrollState()
         var showVisualization by remember { mutableStateOf(true) }
 
@@ -1465,7 +1542,7 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
                         verticalAlignment = Alignment.CenterVertically
                 ) {
                         Text(
-                                text = "Financial Ratios & Metrics",
+                                text = "Financial Data",
                                 style = AppTypography.Headline3,
                                 fontWeight = FontWeight.Bold,
                                 color = AppColors.OnSurface
@@ -1484,7 +1561,48 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
                         }
                 }
 
+                // Financial Metrics (Concrete values: dollars, quantities, etc.)
+                if (metrics.isNotEmpty()) {
+                        Text(
+                                text = "Financial Metrics (Concrete Values)",
+                                style = AppTypography.Headline3,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Primary,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Text(
+                                text = "Extracted dollar amounts, quantities, and other absolute values from financial statements",
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // Display metrics in a single card
+                        SimpleMetricsCard(metrics)
+
+                        Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
+                        Divider(color = AppColors.Divider, thickness = 2.dp)
+                        Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
+                }
+
+                // Financial Ratios (Calculated percentages and ratios)
                 if (ratios.isNotEmpty()) {
+                        Text(
+                                text = "Financial Ratios (Calculated Metrics)",
+                                style = AppTypography.Headline3,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Primary,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Text(
+                                text = "Calculated financial ratios and percentages for analysis and benchmarking",
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
                         if (showVisualization) {
                                 // Visual representation of ratios
                                 RatioVisualizationPanel(ratios)
@@ -1498,31 +1616,11 @@ private fun FinancialRatiosTab(ratios: List<FinancialRatio>, metrics: List<Finan
                         }
                 }
 
-                if (metrics.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
-
-                        Text(
-                                text = "Extracted Financial Metrics",
-                                style = AppTypography.Headline3,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.OnSurface
-                        )
-
-                        Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
-
-                        // Group ratios by category
-                        val groupedRatios = ratios.groupBy { it.category }
-                        groupedRatios.forEach { (category, categoryRatios) ->
-                                MetricCategoryCard(category, categoryRatios)
-                                Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
-                        }
-                }
-
                 if (ratios.isEmpty() && metrics.isEmpty()) {
                         EmptyState(
                                 icon = Icons.Outlined.Analytics,
-                                title = "No Metrics Found",
-                                description = "Unable to extract financial metrics from document."
+                                title = "No Financial Data Found",
+                                description = "Unable to extract financial metrics or ratios from document."
                         )
                 }
         }
@@ -1961,6 +2059,60 @@ private fun MetricCategoryCard(category: RatioCategory, metrics: List<FinancialR
                                                 fontWeight = FontWeight.Bold,
                                                 color = AppColors.OnSurface
                                         )
+                                }
+                        }
+                }
+        }
+}
+
+/** Display financial metrics in a simple card */
+@Composable
+private fun SimpleMetricsCard(metrics: List<FinancialMetric>) {
+        Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = AppDimens.CardElevation,
+                shape = AppShapes.Medium,
+                backgroundColor = AppColors.Surface
+        ) {
+                Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+                        // Display each metric with value and raw value if available
+                        metrics.forEach { metric ->
+                                Column(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                ) {
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                Text(
+                                                        text = formatMetricName(metric.name),
+                                                        style = AppTypography.Body1,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = AppColors.OnSurface,
+                                                        modifier = Modifier.weight(1f)
+                                                )
+
+                                                val displayValue = metric.rawValue?.let { formatCurrency(it) }
+                                                        ?: parseMetricValue(metric.value)?.let { formatCurrency(it) }
+                                                        ?: metric.value
+
+                                                Text(
+                                                        text = displayValue,
+                                                        style = AppTypography.Subtitle1,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = AppColors.Primary
+                                                )
+                                        }
+
+                                        // Add subtle divider between metrics
+                                        if (metric != metrics.last()) {
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Divider(
+                                                        color = AppColors.Divider.copy(alpha = 0.3f),
+                                                        thickness = 0.5.dp
+                                                )
+                                        }
                                 }
                         }
                 }

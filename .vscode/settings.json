@@ -82,5 +82,7 @@
       "bold": true,
       "italic": false
     }
-  ]
+  ],
+  "chat.agentSessionsViewLocation": "view",
+  "chat.customAgentInSubagent.enabled": true
 }
