@@ -164,7 +164,7 @@ object EnhancedFinancialParser {
                         }
 
                 val monetaryAmount =
-                        papyrus.core.util.FinancialPrecision.parseSecValue(valueStr, unitStr, "USD")
+                        papyrus.util.FinancialPrecision.parseSecValue(valueStr, unitStr, "USD")
                 return monetaryAmount?.number?.numberValue(java.math.BigDecimal::class.java)
         }
 
@@ -1978,8 +1978,7 @@ object EnhancedFinancialParser {
                                 else -> "dollars"
                         }
 
-                val result =
-                        papyrus.core.util.FinancialPrecision.parseSecValue(value, unitStr, "USD")
+                val result = papyrus.util.FinancialPrecision.parseSecValue(value, unitStr, "USD")
                 return result?.number?.numberValue(java.math.BigDecimal::class.java)?.let {
                         if (isNegative && it > java.math.BigDecimal.ZERO) it.negate() else it
                 }

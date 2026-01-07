@@ -1,4 +1,4 @@
-package papyrus.core.util
+package papyrus.util
 
 import java.math.BigDecimal
 import java.math.RoundingMode
