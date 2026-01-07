@@ -34,7 +34,7 @@ import papyrus.core.model.TickerEntry
 
 /** Enhanced App Header with gradient background */
 @Composable
-fun AppHeader(title: String, subtitle: String? = null, onSettingsClick: (() -> Unit)? = null) {
+fun AppHeader(title: String, subtitle: String? = null) {
         Surface(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = AppDimens.CardElevation,
@@ -71,16 +71,6 @@ fun AppHeader(title: String, subtitle: String? = null, onSettingsClick: (() -> U
                                                         text = subtitle,
                                                         color = Color.White.copy(alpha = 0.8f),
                                                         fontSize = 12.sp
-                                                )
-                                        }
-                                }
-
-                                if (onSettingsClick != null) {
-                                        IconButton(onClick = onSettingsClick) {
-                                                Icon(
-                                                        Icons.Default.Settings,
-                                                        contentDescription = "Settings",
-                                                        tint = Color.White
                                                 )
                                         }
                                 }

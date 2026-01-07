@@ -6,7 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import papyrus.core.model.*
 
-/** Cache for storing and retrieving AI analysis results to avoid redundant API calls */
+/** Cache for storing and retrieving financial analysis results to avoid redundant calculations */
 object AnalysisCache {
     private val cacheDir = File(System.getProperty("user.home"), ".papyrus/cache")
     private val json = Json {

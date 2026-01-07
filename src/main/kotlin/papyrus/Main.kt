@@ -46,7 +46,7 @@ fun PapyrusApp() {
 
         // State management
         var appState by remember { mutableStateOf(AppState()) }
-        var showSettingsDialog by remember { mutableStateOf(false) }
+
 
         // Bookmark state
         var bookmarks by remember { mutableStateOf(BookmarkManager.getAllBookmarks()) }
@@ -234,43 +234,6 @@ fun PapyrusApp() {
                                                                                 url
                                                                         )
 
-                                                                // Check for existing analysis
-                                                                // results
-                                                                val existingAnalysis =
-                                                                        (appState.analysisState as?
-                                                                                        AnalysisState.FinancialAnalysisResult)
-                                                                                ?.analysis
-                                                                val hasAiAnalysis =
-                                                                        existingAnalysis
-                                                                                ?.aiAnalysis !=
-                                                                                null ||
-                                                                                existingAnalysis
-                                                                                        ?.aiSummary !=
-                                                                                        null ||
-                                                                                existingAnalysis
-                                                                                        ?.industryComparison !=
-                                                                                        null ||
-                                                                                existingAnalysis
-                                                                                        ?.investmentAdvice !=
-                                                                                        null
-
-                                                                // Decide whether to skip AI
-                                                                // analysis
-                                                                // Quick Analyze always skips AI -
-                                                                // use AI tab for AI analysis
-                                                                val skipAi = true
-
-                                                                // Perform financial analysis
-                                                                // without AI
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .Loading(
-                                                                                                        "${fileFormat.displayName} Analyzing document..."
-                                                                                                )
-                                                                        )
-
                                                                 // Perform financial analysis
                                                                 val analysis =
                                                                         withContext(
@@ -279,11 +242,9 @@ fun PapyrusApp() {
                                                                                         .IO
                                                                         ) {
                                                                                 FinancialAnalyzer
-                                                                                        .analyzeWithAI(
+                                                                                        .analyzeForBeginners(
                                                                                                 "${filing.form} (${fileFormat.displayName})",
-                                                                                                rawHtml,
-                                                                                                skipAiAnalysis =
-                                                                                                        skipAi
+                                                                                                rawHtml
                                                                                         )
                                                                         }
 
@@ -333,7 +294,7 @@ fun PapyrusApp() {
                                                         Desktop.getDesktop().browse(URI(url))
                                                 }
                                         },
-                                        onSettingsClick = { showSettingsDialog = true }
+
                                 )
 
                                 // Divider
@@ -457,62 +418,12 @@ fun PapyrusApp() {
                                                 if (Desktop.isDesktopSupported()) {
                                                         Desktop.getDesktop().browse(URI(url))
                                                 }
-                                        },
-                                        onReanalyzeWithAI = { analysis ->
-                                                scope.launch {
-                                                        appState =
-                                                                appState.copy(
-                                                                        analysisState =
-                                                                                AnalysisState
-                                                                                        .Loading(
-                                                                                                "AI ?щ텇??以?.."
-                                                                                        )
-                                                                )
-
-                                                        try {
-                                                                val reanalyzed =
-                                                                        withContext(
-                                                                                kotlinx.coroutines
-                                                                                        .Dispatchers
-                                                                                        .IO
-                                                                        ) {
-                                                                                FinancialAnalyzer
-                                                                                        .reanalyzeWithAI(
-                                                                                                analysis,
-                                                                                                analysis.rawContent
-                                                                                        )
-                                                                        }
-
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .FinancialAnalysisResult(
-                                                                                                        reanalyzed
-                                                                                                )
-                                                                        )
-                                                        } catch (e: Exception) {
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .Error(
-                                                                                                        message =
-                                                                                                                "AI reanalysis failed: ${e.message}",
-                                                                                                        retryAction =
-                                                                                                                null
-                                                                                                )
-                                                                        )
-                                                        }
-                                                }
                                         }
                                 )
                         }
 
                         // Settings dialog
-                        if (showSettingsDialog) {
-                                SettingsDialog(onDismiss = { showSettingsDialog = false })
-                        }
+
                 }
         }
 }
@@ -530,7 +441,7 @@ private fun LeftPanel(
         onBackToSearch: () -> Unit,
         onQuickAnalyze: (FilingItem, papyrus.ui.FileFormatType) -> Unit,
         onOpenInBrowser: (FilingItem) -> Unit,
-        onSettingsClick: () -> Unit
+
 ) {
         Column(
                 modifier =
@@ -542,7 +453,7 @@ private fun LeftPanel(
                 AppHeader(
                         title = "Papyrus",
                         subtitle = "SEC Financial Analyzer",
-                        onSettingsClick = onSettingsClick
+
                 )
 
                 // Search Box
@@ -755,8 +666,7 @@ private fun RightPanel(
         onFileDropped: (java.io.File) -> Unit,
         onDragStateChange: (Boolean) -> Unit,
         onCloseAnalysis: () -> Unit,
-        onOpenInBrowser: (String) -> Unit,
-        onReanalyzeWithAI: (FinancialAnalysis) -> Unit
+        onOpenInBrowser: (String) -> Unit
 ) {
         Box(
                 modifier =
@@ -795,8 +705,7 @@ private fun RightPanel(
                                 is AnalysisState.FinancialAnalysisResult -> {
                                         FinancialAnalysisPanel(
                                                 analysis = state.analysis,
-                                                onClose = onCloseAnalysis,
-                                                onReanalyzeWithAI = onReanalyzeWithAI
+                                                onClose = onCloseAnalysis
                                         )
                                 }
                                 is AnalysisState.Error -> {
