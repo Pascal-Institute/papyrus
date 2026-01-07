@@ -159,13 +159,6 @@ object SecApi {
                 // The complete submission text file uses the accession number
                 "$baseUrl/$accessionNumber.txt"
             }
-            "pdf" -> {
-                // SEC no longer provides direct PDF rendering via cgi-bin/viewer
-                // Instead, use the HTML primary document which is the most reliable
-                // Users can save/print as PDF from their browser if needed
-                println("Note: SEC does not provide direct PDF access. Using HTML primary document instead.")
-                "$baseUrl/$primaryDocument"
-            }
             "html", "htm" -> {
                 // Use the primary document (usually HTML)
                 "$baseUrl/$primaryDocument"

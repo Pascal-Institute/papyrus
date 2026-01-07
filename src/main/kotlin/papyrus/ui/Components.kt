@@ -510,8 +510,7 @@ enum class FileFormatType(
 ) {
         HTML("HTML", "html", Icons.Outlined.Code, Color(0xFF1E88E5), "Recommended - Best compatibility"),
         HTM("HTM", "htm", Icons.Outlined.Code, Color(0xFF1E88E5), "Same as HTML"),
-        TXT("TXT", "txt", Icons.Outlined.Description, Color(0xFF43A047), "Plain text format"),
-        PDF("PDF", "pdf", Icons.Outlined.PictureAsPdf, Color(0xFFE53935), "Not available - use HTML instead")
+        TXT("TXT", "txt", Icons.Outlined.Description, Color(0xFF43A047), "Plain text format")
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -526,18 +525,10 @@ private fun FileFormatSelector(
         ) {
                 FileFormatType.values().forEach { format ->
                         val isSelected = format == selectedFormat
-                        val isPdfDisabled = format == FileFormatType.PDF
                         val backgroundColor =
-                                when {
-                                        isPdfDisabled -> AppColors.Error.copy(alpha = 0.05f)
-                                        isSelected -> format.color.copy(alpha = 0.15f)
-                                        else -> Color.Transparent
-                                }
-                        val borderColor = when {
-                                isPdfDisabled -> AppColors.Error.copy(alpha = 0.3f)
-                                isSelected -> format.color
-                                else -> AppColors.Divider
-                        }
+                                if (isSelected) format.color.copy(alpha = 0.15f)
+                                else Color.Transparent
+                        val borderColor = if (isSelected) format.color else AppColors.Divider
 
                         TooltipArea(
                                 tooltip = {
@@ -551,13 +542,13 @@ private fun FileFormatSelector(
                                                                 text = format.displayName,
                                                                 style = AppTypography.Caption,
                                                                 fontWeight = FontWeight.Bold,
-                                                                color = if (isPdfDisabled) AppColors.Error else AppColors.OnSurface
+                                                                color = AppColors.OnSurface
                                                         )
                                                         if (format.description.isNotEmpty()) {
                                                                 Text(
                                                                         text = format.description,
                                                                         style = AppTypography.Caption,
-                                                                        color = if (isPdfDisabled) AppColors.Error else AppColors.OnSurfaceSecondary,
+                                                                        color = AppColors.OnSurfaceSecondary,
                                                                         fontSize = 10.sp
                                                                 )
                                                         }
@@ -577,11 +568,7 @@ private fun FileFormatSelector(
                                                                 color = borderColor,
                                                                 shape = AppShapes.Small
                                                         )
-                                                        .then(
-                                                                if (!isPdfDisabled) {
-                                                                        Modifier.clickable { onFormatSelected(format) }
-                                                                } else Modifier
-                                                        )
+                                                        .clickable { onFormatSelected(format) }
                                                         .padding(6.dp),
                                         contentAlignment = Alignment.Center
                                 ) {
@@ -589,11 +576,8 @@ private fun FileFormatSelector(
                                                 format.icon,
                                                 contentDescription = format.displayName,
                                                 tint =
-                                                        when {
-                                                                isPdfDisabled -> AppColors.Error.copy(alpha = 0.5f)
-                                                                isSelected -> format.color
-                                                                else -> AppColors.OnSurfaceSecondary
-                                                        },
+                                                        if (isSelected) format.color
+                                                        else AppColors.OnSurfaceSecondary,
                                                 modifier = Modifier.size(20.dp)
                                         )
                                 }
