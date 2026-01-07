@@ -5,14 +5,17 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.FinancialMetric
+import papyrus.core.service.ai.LocalFinancialAI
 
 /**
- * HTML Document Parser (Enhanced with Jsoup)
+ * HTML Document Parser (Enhanced with Jsoup + AI)
  *
  * Specialized parser for HTML and HTM formatted SEC filings. Uses Jsoup for robust HTML parsing,
- * table structure preservation, and XBRL data handling.
+ * table structure preservation, XBRL data handling, and AI-powered sentiment analysis.
  */
 class HtmlParser : DocumentParser {
+
+        private val ai = LocalFinancialAI.getInstance()
 
         override fun parse(content: String, documentName: String): ParseResult {
                 val startTime = System.currentTimeMillis()
@@ -60,6 +63,22 @@ class HtmlParser : DocumentParser {
                 val mergedExtended = mergeByNamePreferFirst(xbrlMetrics, parsedMetrics)
                 val metrics = mergedExtended.map { it.toFinancialMetric() }
 
+                // AI Enhancement: Extract sentiment and entities
+                println("  🤖 AI Enhancement: Analyzing sentiment...")
+                val aiStart = System.currentTimeMillis()
+                val mdaSentiment = extractAndAnalyzeMDA(document)
+                val riskSentiment = extractAndAnalyzeRiskFactors(document)
+                val aiEntities = ai.extractFinancialEntities(cleanedContent)
+                val aiTime = System.currentTimeMillis() - aiStart
+                println("  ✓ AI analysis complete in ${aiTime}ms")
+                if (mdaSentiment != null) {
+                        println("    📊 MD&A Sentiment: ${mdaSentiment.sentiment} (${String.format("%.2f", mdaSentiment.confidence)})")
+                }
+                if (riskSentiment != null) {
+                        println("    ⚠️  Risk Sentiment: ${riskSentiment.sentiment} (${String.format("%.2f", riskSentiment.confidence)})")
+                }
+                println("    🔍 AI Extracted Entities: ${aiEntities.size}")
+
                 val totalTime = System.currentTimeMillis() - startTime
                 println("  ✅ Parsing complete in ${totalTime}ms")
                 println()
@@ -67,7 +86,7 @@ class HtmlParser : DocumentParser {
                 return ParseResult(
                         metrics = metrics,
                         documentName = documentName,
-                        parserType = "HTML (Jsoup)",
+                        parserType = "HTML (Jsoup + AI)",
                         rawContent = content,
                         cleanedContent = cleanedContent,
                         metadata =
@@ -81,7 +100,12 @@ class HtmlParser : DocumentParser {
                                         "originalSize" to "${content.length} chars",
                                         "cleanedSize" to "${cleanedContent.length} chars",
                                         "compressionRatio" to
-                                                "${String.format("%.1f", (1 - cleanedContent.length.toDouble() / content.length) * 100)}%"
+                                                "${String.format("%.1f", (1 - cleanedContent.length.toDouble() / content.length) * 100)}%",
+                                        "mdaSentiment" to (mdaSentiment?.sentiment ?: "N/A"),
+                                        "mdaConfidence" to (mdaSentiment?.confidence?.let { String.format("%.2f", it) } ?: "N/A"),
+                                        "riskSentiment" to (riskSentiment?.sentiment ?: "N/A"),
+                                        "riskConfidence" to (riskSentiment?.confidence?.let { String.format("%.2f", it) } ?: "N/A"),
+                                        "aiEntitiesCount" to aiEntities.size.toString()
                                 )
                 )
         }
@@ -208,6 +232,70 @@ class HtmlParser : DocumentParser {
                 }
 
                 return "UTF-8"
+        }
+
+        /**
+         * Extract and analyze MD&A (Management Discussion & Analysis) section
+         * Uses AI to determine sentiment: positive, negative, or neutral
+         */
+        private fun extractAndAnalyzeMDA(doc: Document): papyrus.core.model.FinancialSentiment? {
+                // Look for MD&A section - common patterns in SEC filings
+                val mdaPatterns = listOf(
+                        "management's discussion and analysis",
+                        "management discussion and analysis",
+                        "md&a",
+                        "item 7"
+                )
+
+                var mdaText: String? = null
+
+                // Search full text (Jsoup containsOwn selector not available in 1.18)
+                val fullText = doc.text()
+                val mdaIndex = mdaPatterns.firstNotNullOfOrNull { pattern ->
+                        fullText.indexOf(pattern, ignoreCase = true).takeIf { it >= 0 }
+                }
+
+                if (mdaIndex != null && mdaIndex >= 0) {
+                        // Extract next 5000 characters as MD&A section
+                        val endIndex = minOf(mdaIndex + 5000, fullText.length)
+                        mdaText = fullText.substring(mdaIndex, endIndex)
+                }
+
+                return if (mdaText != null && mdaText.length > 100) {
+                        ai.analyzeMDA(mdaText)
+                } else {
+                        null
+                }
+        }
+
+        /**
+         * Extract and analyze Risk Factors section
+         * Typically negative, but degree of negativity matters
+         */
+        private fun extractAndAnalyzeRiskFactors(doc: Document): papyrus.core.model.FinancialSentiment? {
+                val riskPatterns = listOf(
+                        "risk factors",
+                        "item 1a"
+                )
+
+                var riskText: String? = null
+
+                // Search full text (Jsoup containsOwn selector not available in 1.18)
+                val fullText = doc.text()
+                val riskIndex = riskPatterns.firstNotNullOfOrNull { pattern ->
+                        fullText.indexOf(pattern, ignoreCase = true).takeIf { it >= 0 }
+                }
+
+                if (riskIndex != null && riskIndex >= 0) {
+                        val endIndex = minOf(riskIndex + 3000, fullText.length)
+                        riskText = fullText.substring(riskIndex, endIndex)
+                }
+
+                return if (riskText != null && riskText.length > 100) {
+                        ai.analyzeRiskFactors(riskText)
+                } else {
+                        null
+                }
         }
 }
 

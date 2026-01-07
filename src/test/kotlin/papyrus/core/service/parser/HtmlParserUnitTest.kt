@@ -213,7 +213,7 @@ class HtmlParserUnitTest {
         val html = "<html><body>Test</body></html>"
         val result = parser.parse(html, "type-test.html")
 
-        assertEquals("HTML (Jsoup)", result.parserType)
+        assertEquals("HTML (Jsoup + AI)", result.parserType)
     }
 
     @Test
