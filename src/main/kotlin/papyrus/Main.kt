@@ -17,15 +17,14 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import java.awt.Desktop
 import java.net.URI
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import papyrus.core.model.BookmarkedTicker
 import papyrus.core.model.FilingItem
-import papyrus.core.model.FinancialAnalysis
 import papyrus.core.model.TickerEntry
-import papyrus.core.network.SecApi
-import papyrus.core.service.analyzer.FinancialAnalyzer
+import papyrus.core.state.AppState
+import papyrus.core.state.AnalysisState
+import papyrus.core.viewmodel.AnalysisViewModel
+import papyrus.core.viewmodel.MainViewModel
 import papyrus.ui.*
 import papyrus.util.data.BookmarkManager
 import papyrus.util.file.FileUtils
@@ -44,22 +43,15 @@ fun main() = application {
 fun PapyrusApp() {
         val scope = rememberCoroutineScope()
 
-        // State management
-        var appState by remember { mutableStateOf(AppState()) }
+        // ViewModels - centralized business logic
+        val mainViewModel = remember { MainViewModel(scope) }
+        val analysisViewModel = remember { AnalysisViewModel(scope) }
 
-
-        // Bookmark state
-        var bookmarks by remember { mutableStateOf(BookmarkManager.getAllBookmarks()) }
-        var recentlyViewedCiks by remember { mutableStateOf(BookmarkManager.getRecentlyViewed()) }
-
-        // Load tickers on startup
-        LaunchedEffect(Unit) {
-                appState = appState.copy(isLoading = true)
-                SecApi.loadTickers()
-                bookmarks = BookmarkManager.getAllBookmarks()
-                recentlyViewedCiks = BookmarkManager.getRecentlyViewed()
-                appState = appState.copy(isLoading = false)
-        }
+        // Extract state for easier access
+        val appState = mainViewModel.appState
+        val bookmarks = mainViewModel.bookmarks
+        val analysisState = analysisViewModel.analysisState
+        val currentAnalyzingFiling = analysisViewModel.currentAnalyzingFiling
 
         PapyrusTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = AppColors.Background) {
@@ -68,230 +60,36 @@ fun PapyrusApp() {
                                 LeftPanel(
                                         appState = appState,
                                         bookmarks = bookmarks,
-                                        onSearchTextChange = { query ->
-                                                appState =
-                                                        appState.copy(
-                                                                searchText = query,
-                                                                searchResults =
-                                                                        SecApi.searchTicker(query)
-                                                        )
-                                        },
-                                        onTickerSelected = { ticker ->
-                                                scope.launch {
-                                                        // Add to recent view history
-                                                        BookmarkManager.addToRecentlyViewed(
-                                                                ticker.cik
-                                                        )
-                                                        recentlyViewedCiks =
-                                                                BookmarkManager.getRecentlyViewed()
-
-                                                        appState =
-                                                                appState.copy(
-                                                                        selectedTicker = ticker,
-                                                                        searchText = "",
-                                                                        searchResults = emptyList(),
-                                                                        isLoading = true,
-                                                                        analysisState =
-                                                                                AnalysisState.Idle
-                                                                )
-
-                                                        // Fetch submissions and news in parallel
-                                                        val submissionsDeferred = async {
-                                                                val sub =
-                                                                        SecApi.getSubmissions(
-                                                                                ticker.cik
-                                                                        )
-                                                                sub?.filings?.recent?.let {
-                                                                        SecApi.transformFilings(it)
-                                                                }
-                                                                        ?: emptyList()
-                                                        }
-
-                                                        val filings = submissionsDeferred.await()
-
-                                                        appState =
-                                                                appState.copy(
-                                                                        submissions = filings,
-                                                                        isLoading = false
-                                                                )
-                                                }
-                                        },
-                                        onBookmarkClick = { ticker ->
-                                                if (BookmarkManager.isBookmarked(ticker.cik)) {
-                                                        BookmarkManager.removeBookmark(ticker.cik)
-                                                } else {
-                                                        BookmarkManager.addBookmark(ticker)
-                                                }
-                                                bookmarks = BookmarkManager.getAllBookmarks()
-                                        },
-                                        onBookmarkedTickerClick = { cik ->
-                                                scope.launch {
-                                                        // Find ticker info by CIK
-                                                        val ticker =
-                                                                SecApi.searchTicker("").find {
-                                                                        it.cik == cik
-                                                                }
-                                                                        ?: bookmarks
-                                                                                .find {
-                                                                                        it.cik ==
-                                                                                                cik
-                                                                                }
-                                                                                ?.let {
-                                                                                        TickerEntry(
-                                                                                                it.cik,
-                                                                                                it.ticker,
-                                                                                                it.companyName
-                                                                                        )
-                                                                                }
-
-                                                        if (ticker != null) {
-                                                                BookmarkManager.addToRecentlyViewed(
-                                                                        cik
-                                                                )
-                                                                recentlyViewedCiks =
-                                                                        BookmarkManager
-                                                                                .getRecentlyViewed()
-
-                                                                appState =
-                                                                        appState.copy(
-                                                                                selectedTicker =
-                                                                                        ticker,
-                                                                                searchText = "",
-                                                                                searchResults =
-                                                                                        emptyList(),
-                                                                                isLoading = true,
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .Idle
-                                                                        )
-
-                                                                // Fetch submissions and news in
-                                                                // parallel
-                                                                val submissionsDeferred = async {
-                                                                        val sub =
-                                                                                SecApi.getSubmissions(
-                                                                                        cik
-                                                                                )
-                                                                        sub?.filings?.recent?.let {
-                                                                                SecApi.transformFilings(
-                                                                                        it
-                                                                                )
-                                                                        }
-                                                                                ?: emptyList()
-                                                                }
-
-                                                                val filings =
-                                                                        submissionsDeferred.await()
-
-                                                                appState =
-                                                                        appState.copy(
-                                                                                submissions =
-                                                                                        filings,
-                                                                                isLoading = false
-                                                                        )
-                                                        }
-                                                }
-                                        },
-                                        onRemoveBookmark = { cik ->
-                                                BookmarkManager.removeBookmark(cik)
-                                                bookmarks = BookmarkManager.getAllBookmarks()
-                                        },
+                                        onSearchTextChange = mainViewModel::onSearchTextChange,
+                                        onTickerSelected = mainViewModel::onTickerSelected,
+                                        onBookmarkClick = mainViewModel::onBookmarkClick,
+                                        onBookmarkedTickerClick = mainViewModel::onBookmarkedTickerClick,
+                                        onRemoveBookmark = mainViewModel::onRemoveBookmark,
                                         onBackToSearch = {
-                                                appState =
-                                                        appState.copy(
-                                                                selectedTicker = null,
-                                                                submissions = emptyList(),
-                                                                analysisState = AnalysisState.Idle
-                                                        )
+                                                mainViewModel.onBackToSearch()
+                                                analysisViewModel.resetAnalysis()
                                         },
                                         onAnalyze = { filing, fileFormat ->
-                                                scope.launch {
-                                                        val cik =
-                                                                appState.selectedTicker?.cik
-                                                                        .toString()
-                                                        val url =
-                                                                SecApi.getDocumentUrlWithFormat(
-                                                                        cik,
-                                                                        filing.accessionNumber,
-                                                                        filing.primaryDocument,
-                                                                        fileFormat.extension
-                                                                )
-
-                                                        appState =
-                                                                appState.copy(
-                                                                        analysisState =
-                                                                                AnalysisState
-                                                                                        .Loading(
-                                                                                                "${fileFormat.displayName} 臾몄꽌瑜?遺꾩꽍?섍퀬 ?덉뒿?덈떎..."
-                                                                                        ),
-                                                                        currentAnalyzingFiling =
-                                                                                filing.accessionNumber
-                                                                )
-
-                                                        try {
-                                                                val rawHtml =
-                                                                        SecApi.fetchDocumentContent(
-                                                                                url
-                                                                        )
-
-                                                                // Perform financial analysis
-                                                                val analysis =
-                                                                        withContext(
-                                                                                kotlinx.coroutines
-                                                                                        .Dispatchers
-                                                                                        .IO
-                                                                        ) {
-                                                                                FinancialAnalyzer
-                                                                                        .analyzeForBeginners(
-                                                                                                "${filing.form} (${fileFormat.displayName})",
-                                                                                                rawHtml
-                                                                                        )
-                                                                        }
-
-                                                                val analysisWithCik =
-                                                                        analysis.copy(
-                                                                                cik =
-                                                                                        appState.selectedTicker
-                                                                                                ?.cik
-                                                                        )
-
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .FinancialAnalysisResult(
-                                                                                                        analysisWithCik
-                                                                                                ),
-                                                                                currentAnalyzingFiling =
-                                                                                        null
-                                                                        )
-                                                        } catch (e: Exception) {
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .Error(
-                                                                                                        message =
-                                                                                                                "Document analysis failed: ${e.message}",
-                                                                                                        retryAction =
-                                                                                                                null
-                                                                                                ),
-                                                                                currentAnalyzingFiling =
-                                                                                        null
-                                                                        )
-                                                        }
+                                                appState.selectedTicker?.let { ticker ->
+                                                        analysisViewModel.analyzeFiling(
+                                                                filing,
+                                                                ticker.cik,
+                                                                fileFormat
+                                                        )
                                                 }
                                         },
                                         onOpenInBrowser = { filing ->
-                                                val cik = appState.selectedTicker?.cik.toString()
-                                                val url =
-                                                        SecApi.getDocumentUrl(
-                                                                cik,
-                                                                filing.accessionNumber,
-                                                                filing.primaryDocument
-                                                        )
-                                                if (Desktop.isDesktopSupported()) {
-                                                        Desktop.getDesktop().browse(URI(url))
+                                                appState.selectedTicker?.let { ticker ->
+                                                        val url =
+                                                                papyrus.core.network.SecApi
+                                                                        .getDocumentUrl(
+                                                                                ticker.cik.toString(),
+                                                                                filing.accessionNumber,
+                                                                                filing.primaryDocument
+                                                                        )
+                                                        if (Desktop.isDesktopSupported()) {
+                                                                Desktop.getDesktop().browse(URI(url))
+                                                        }
                                                 }
                                         },
 
@@ -305,45 +103,35 @@ fun PapyrusApp() {
 
                                 // Right Panel: Analysis Results
                                 RightPanel(
-                                        appState = appState,
+                                        appState = appState.copy(analysisState = analysisState),
                                         onFileDropped = { file ->
                                                 scope.launch {
                                                         // Immediately show loading state
-                                                        appState =
-                                                                appState.copy(
-                                                                        analysisState =
-                                                                                AnalysisState
-                                                                                        .Loading(
-                                                                                                "Reading file... ${file.name}"
-                                                                                        )
+                                                        analysisViewModel.analysisState =
+                                                                AnalysisState.Loading(
+                                                                        "Reading file... ${file.name}"
                                                                 )
 
                                                         try {
                                                                 if (!FileUtils.isSupportedFile(file)
                                                                 ) {
-                                                                        appState =
-                                                                                appState.copy(
-                                                                                        analysisState =
-                                                                                                AnalysisState
-                                                                                                        .Error(
-                                                                                                                message =
-                                                                                                                        "Unsupported file type: ${file.extension}\nSupported: PDF, HTML, HTM, TXT",
-                                                                                                                retryAction =
-                                                                                                                        null
-                                                                                                        )
-                                                                                )
+                                                                        analysisViewModel
+                                                                                .analysisState =
+                                                                                        AnalysisState
+                                                                                                .Error(
+                                                                                                        message =
+                                                                                                                "Unsupported file type: ${file.extension}\nSupported: PDF, HTML, HTM, TXT",
+                                                                                                        retryAction =
+                                                                                                                null
+                                                                                                )
                                                                         return@launch
                                                                 }
 
                                                                 // Update loading message for
                                                                 // content extraction
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .Loading(
-                                                                                                        "臾몄꽌 ?댁슜??異붿텧?섎뒗 以?.."
-                                                                                                )
+                                                                analysisViewModel.analysisState =
+                                                                        AnalysisState.Loading(
+                                                                                "문서 내용을 추출하는 중.."
                                                                         )
 
                                                                 val extracted =
@@ -365,55 +153,47 @@ fun PapyrusApp() {
 
                                                                 // Update loading message for
                                                                 // analysis
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .Loading(
-                                                                                                        "?щТ ?곗씠?곕? 遺꾩꽍?섎뒗 以?.."
-                                                                                                )
+                                                                analysisViewModel.analysisState =
+                                                                        AnalysisState.Loading(
+                                                                                "재무 데이터를 분석하는 중.."
                                                                         )
 
                                                                 // Use beginner-friendly analysis
                                                                 val analysis =
-                                                                        FinancialAnalyzer
-                                                                                .analyzeForBeginners(
-                                                                                        file.name,
-                                                                                        content
-                                                                                )
+                                                                        kotlinx.coroutines
+                                                                                .withContext(
+                                                                                        kotlinx
+                                                                                                .coroutines
+                                                                                                .Dispatchers
+                                                                                                .IO
+                                                                                ) {
+                                                                                        papyrus.core
+                                                                                                .service
+                                                                                                .analyzer
+                                                                                                .FinancialAnalyzer
+                                                                                                .analyzeForBeginners(
+                                                                                                        file.name,
+                                                                                                        content
+                                                                                                )
+                                                                                }
 
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .FinancialAnalysisResult(
-                                                                                                        analysis
-                                                                                                )
-                                                                        )
+                                                                analysisViewModel.analysisState =
+                                                                        AnalysisState
+                                                                                .FinancialAnalysisResult(
+                                                                                        analysis
+                                                                                )
                                                         } catch (e: Exception) {
-                                                                appState =
-                                                                        appState.copy(
-                                                                                analysisState =
-                                                                                        AnalysisState
-                                                                                                .Error(
-                                                                                                        message =
-                                                                                                                "Error reading file: ${e.message}",
-                                                                                                        retryAction =
-                                                                                                                null
-                                                                                                )
+                                                                analysisViewModel.analysisState =
+                                                                        AnalysisState.Error(
+                                                                                message =
+                                                                                        "Error reading file: ${e.message}",
+                                                                                retryAction = null
                                                                         )
                                                         }
                                                 }
                                         },
-                                        onDragStateChange = { isDragging ->
-                                                appState = appState.copy(isDragging = isDragging)
-                                        },
-                                        onCloseAnalysis = {
-                                                appState =
-                                                        appState.copy(
-                                                                analysisState = AnalysisState.Idle
-                                                        )
-                                        },
+                                        onDragStateChange = mainViewModel::setDragging,
+                                        onCloseAnalysis = analysisViewModel::resetAnalysis,
                                         onOpenInBrowser = { url ->
                                                 if (Desktop.isDesktopSupported()) {
                                                         Desktop.getDesktop().browse(URI(url))
@@ -747,34 +527,4 @@ private fun buildAnalysisSummary(rawHtml: String, cleanText: String): String {
 
 private fun Int.formatWithCommas(): String {
         return String.format("%,d", this)
-}
-
-/** Application State */
-data class AppState(
-        val searchText: String = "",
-        val searchResults: List<TickerEntry> = emptyList(),
-        val selectedTicker: TickerEntry? = null,
-        val submissions: List<FilingItem> = emptyList(),
-        val isLoading: Boolean = false,
-        val isDragging: Boolean = false,
-        val analysisState: AnalysisState = AnalysisState.Idle,
-        val currentAnalyzingFiling: String? = null
-)
-
-/** Analysis State - sealed class for different states */
-sealed class AnalysisState {
-        object Idle : AnalysisState()
-
-        data class Loading(val message: String = "Loading...") : AnalysisState()
-
-        data class AnalyzeResult(
-                val documentTitle: String,
-                val documentUrl: String?,
-                val content: String,
-                val summary: String
-        ) : AnalysisState()
-
-        data class FinancialAnalysisResult(val analysis: FinancialAnalysis) : AnalysisState()
-
-        data class Error(val message: String, val retryAction: (() -> Unit)?) : AnalysisState()
 }
