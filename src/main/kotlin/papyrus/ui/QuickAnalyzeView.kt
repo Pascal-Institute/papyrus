@@ -36,36 +36,37 @@ import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
 import papyrus.core.model.XbrlCompanyFact
 import papyrus.core.network.SecApi
-import papyrus.core.service.parser.XbrlCompanyFactsExtractor
 import papyrus.core.service.analyzer.AiAnalysisService
+import papyrus.core.service.parser.XbrlCompanyFactsExtractor
 
-private val uiEmojiMarkers = listOf(
-        "✅",
-        "⚠️",
-        "⚠",
-        "📌",
-        "📊",
-        "📈",
-        "📋",
-        "🔍",
-        "✨",
-        "🚀",
-        "⭐",
-        "💡",
-        "🏢",
-        "💰",
-        "⚖️",
-        "💵",
-        "💧",
-        "🏦",
-        "👤",
-        "⚙️",
-        "📜",
-        "🏃",
-        "💻",
-        "🌍",
-        "🌐"
-)
+private val uiEmojiMarkers =
+        listOf(
+                "✅",
+                "⚠️",
+                "⚠",
+                "📌",
+                "📊",
+                "📈",
+                "📋",
+                "🔍",
+                "✨",
+                "🚀",
+                "⭐",
+                "💡",
+                "🏢",
+                "💰",
+                "⚖️",
+                "💵",
+                "💧",
+                "🏦",
+                "👤",
+                "⚙️",
+                "📜",
+                "🏃",
+                "💻",
+                "🌍",
+                "🌐"
+        )
 
 private fun sanitizeUiText(text: String): String {
     var result = text
@@ -544,9 +545,9 @@ fun FinancialAnalysisPanel(
     Column(modifier = modifier.fillMaxSize()) {
         // Header
         FinancialAnalysisHeader(
-            analysis = analysis,
-            onGlossaryClick = { showGlossaryDialog = true },
-            onClose = onClose
+                analysis = analysis,
+                onGlossaryClick = { showGlossaryDialog = true },
+                onClose = onClose
         )
 
         Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
@@ -570,7 +571,10 @@ fun FinancialAnalysisPanel(
         }
 
         if (showGlossaryDialog) {
-            GlossaryDialog(terms = analysis.termExplanations, onDismiss = { showGlossaryDialog = false })
+            GlossaryDialog(
+                    terms = analysis.termExplanations,
+                    onDismiss = { showGlossaryDialog = false }
+            )
         }
     }
 }
@@ -593,11 +597,12 @@ private fun XbrlTab(analysis: FinancialAnalysis) {
         isLoadingFacts = true
         try {
             val facts = SecApi.getCompanyFacts(cik)
-            companyFacts = if (facts != null) {
-                XbrlCompanyFactsExtractor.extractKeyFacts(facts)
-            } else {
-                emptyList()
-            }
+            companyFacts =
+                    if (facts != null) {
+                        XbrlCompanyFactsExtractor.extractKeyFacts(facts)
+                    } else {
+                        emptyList()
+                    }
         } catch (e: Exception) {
             factsError = e.message ?: "Failed to load company facts"
         } finally {
@@ -608,49 +613,61 @@ private fun XbrlTab(analysis: FinancialAnalysis) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
         if (analysis.xbrlMetrics.isNotEmpty()) {
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = AppDimens.CardElevationHigh,
-                shape = AppShapes.Large,
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = AppDimens.CardElevationHigh,
+                    shape = AppShapes.Large,
             ) {
                 Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
                     Text(
-                        text = "Inline XBRL (from document)",
-                        style = AppTypography.Headline3,
-                        color = AppColors.OnSurface,
-                        fontWeight = FontWeight.Bold
+                            text = "Inline XBRL (from document)",
+                            style = AppTypography.Headline3,
+                            color = AppColors.OnSurface,
+                            fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
                     analysis.xbrlMetrics.take(50).forEach { metric ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
-                                text = metric.name,
-                                style = AppTypography.Body2,
-                                color = AppColors.OnSurface,
-                                modifier = Modifier.weight(1f)
+                                    text = metric.name,
+                                    style = AppTypography.Body2,
+                                    color = AppColors.OnSurface,
+                                    modifier = Modifier.weight(1f)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = metric.value,
-                                style = AppTypography.Body2,
-                                color = AppColors.OnSurface,
-                                textAlign = TextAlign.End
+                                    text = metric.value,
+                                    style = AppTypography.Body2,
+                                    color = AppColors.OnSurface,
+                                    textAlign = TextAlign.End
                             )
                         }
 
                         if (!metric.period.isNullOrBlank() || metric.source.isNotBlank()) {
                             Text(
-                                text = buildString {
-                                    if (!metric.period.isNullOrBlank()) append("Period: ${metric.period}")
-                                    if (!metric.period.isNullOrBlank() && metric.source.isNotBlank()) append(" · ")
-                                    if (metric.source.isNotBlank()) append(metric.source)
-                                },
-                                style = AppTypography.Caption,
-                                color = AppColors.OnSurfaceSecondary
+                                    text =
+                                            buildString {
+                                                if (!metric.period.isNullOrBlank())
+                                                        append("Period: ${metric.period}")
+                                                if (!metric.period.isNullOrBlank() &&
+                                                                metric.source.isNotBlank()
+                                                )
+                                                        append(" · ")
+                                                if (metric.source.isNotBlank())
+                                                        append(metric.source)
+                                            },
+                                    style = AppTypography.Caption,
+                                    color = AppColors.OnSurfaceSecondary
                             )
                         }
 
-                        Divider(color = AppColors.Divider, modifier = Modifier.padding(vertical = 8.dp))
+                        Divider(
+                                color = AppColors.Divider,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                        )
                     }
                 }
             }
@@ -660,83 +677,96 @@ private fun XbrlTab(analysis: FinancialAnalysis) {
 
         if (cik != null) {
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = AppDimens.CardElevationHigh,
-                shape = AppShapes.Large,
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = AppDimens.CardElevationHigh,
+                    shape = AppShapes.Large,
             ) {
                 Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
                     Text(
-                        text = "SEC Company Facts (XBRL)",
-                        style = AppTypography.Headline3,
-                        color = AppColors.OnSurface,
-                        fontWeight = FontWeight.Bold
+                            text = "SEC Company Facts (XBRL)",
+                            style = AppTypography.Headline3,
+                            color = AppColors.OnSurface,
+                            fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
                     if (isLoadingFacts) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = AppColors.Primary
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = AppColors.Primary
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Loading company facts...",
-                                style = AppTypography.Body2,
-                                color = AppColors.OnSurfaceSecondary
+                                    text = "Loading company facts...",
+                                    style = AppTypography.Body2,
+                                    color = AppColors.OnSurfaceSecondary
                             )
                         }
                     } else if (factsError != null) {
                         Text(
-                            text = factsError ?: "Failed to load company facts",
-                            style = AppTypography.Body2,
-                            color = AppColors.Error
+                                text = factsError ?: "Failed to load company facts",
+                                style = AppTypography.Body2,
+                                color = AppColors.Error
                         )
                     } else if (companyFacts.isEmpty()) {
                         Text(
-                            text = "No company facts available.",
-                            style = AppTypography.Body2,
-                            color = AppColors.OnSurfaceSecondary
+                                text = "No company facts available.",
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurfaceSecondary
                         )
                     } else {
                         companyFacts.forEach { fact ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
                                 Text(
-                                    text = fact.label,
-                                    style = AppTypography.Body2,
-                                    color = AppColors.OnSurface,
-                                    modifier = Modifier.weight(1f)
+                                        text = fact.label,
+                                        style = AppTypography.Body2,
+                                        color = AppColors.OnSurface,
+                                        modifier = Modifier.weight(1f)
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = fact.value?.toString() ?: "—",
-                                    style = AppTypography.Body2,
-                                    color = AppColors.OnSurface,
-                                    textAlign = TextAlign.End
+                                        text = fact.value?.toString() ?: "—",
+                                        style = AppTypography.Body2,
+                                        color = AppColors.OnSurface,
+                                        textAlign = TextAlign.End
                                 )
                             }
                             Text(
-                                text = buildString {
-                                    if (!fact.periodEnd.isNullOrBlank()) append("End: ${fact.periodEnd}")
-                                    if (!fact.periodEnd.isNullOrBlank() && !fact.unit.isNullOrBlank()) append(" · ")
-                                    if (!fact.unit.isNullOrBlank()) append("Unit: ${fact.unit}")
-                                    if ((fact.periodEnd != null || fact.unit != null)) append(" · ")
-                                    append(fact.concept)
-                                },
-                                style = AppTypography.Caption,
-                                color = AppColors.OnSurfaceSecondary
+                                    text =
+                                            buildString {
+                                                if (!fact.periodEnd.isNullOrBlank())
+                                                        append("End: ${fact.periodEnd}")
+                                                if (!fact.periodEnd.isNullOrBlank() &&
+                                                                !fact.unit.isNullOrBlank()
+                                                )
+                                                        append(" · ")
+                                                if (!fact.unit.isNullOrBlank())
+                                                        append("Unit: ${fact.unit}")
+                                                if ((fact.periodEnd != null || fact.unit != null))
+                                                        append(" · ")
+                                                append(fact.concept)
+                                            },
+                                    style = AppTypography.Caption,
+                                    color = AppColors.OnSurfaceSecondary
                             )
-                            Divider(color = AppColors.Divider, modifier = Modifier.padding(vertical = 8.dp))
+                            Divider(
+                                    color = AppColors.Divider,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                            )
                         }
                     }
                 }
             }
         } else if (analysis.xbrlMetrics.isEmpty()) {
             EmptyState(
-                icon = Icons.Outlined.DataObject,
-                title = "No XBRL data",
-                description = "This analysis does not include XBRL facts."
+                    icon = Icons.Outlined.DataObject,
+                    title = "No XBRL data",
+                    description = "This analysis does not include XBRL facts."
             )
         }
     }
@@ -762,7 +792,7 @@ private fun HealthScoreTab(analysis: FinancialAnalysis) {
             ) {
                 // Strengths card
                 StrengthWeaknessCard(
-                    title = "Strengths",
+                        title = "Strengths",
                         items = healthScore.strengths,
                         backgroundColor = AppColors.SuccessLight,
                         modifier = Modifier.weight(1f)
@@ -770,7 +800,7 @@ private fun HealthScoreTab(analysis: FinancialAnalysis) {
 
                 // Weaknesses card
                 StrengthWeaknessCard(
-                    title = "Needs Improvement",
+                        title = "Needs Improvement",
                         items = healthScore.weaknesses,
                         backgroundColor = AppColors.WarningLight,
                         modifier = Modifier.weight(1f)
@@ -1047,10 +1077,10 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Outlined.Lightbulb,
-                        contentDescription = null,
-                        tint = AppColors.Primary,
-                        modifier = Modifier.size(28.dp)
+                            imageVector = Icons.Outlined.Lightbulb,
+                            contentDescription = null,
+                            tint = AppColors.Primary,
+                            modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
@@ -1061,7 +1091,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
                                 color = AppColors.Primary
                         )
                         Text(
-                            text = sanitizeUiText(insight.summary).trim(),
+                                text = sanitizeUiText(insight.summary).trim(),
                                 style = AppTypography.Body2,
                                 color = AppColors.OnSurface
                         )
@@ -1158,9 +1188,7 @@ private fun TermGlossaryTab(terms: List<FinancialTermExplanation>, modifier: Mod
     LazyColumn(
             modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingSmall)
-    ) {
-        items(terms) { term -> TermExplanationCard(term) }
-    }
+    ) { items(terms) { term -> TermExplanationCard(term) } }
 }
 
 @Composable
@@ -1721,9 +1749,9 @@ private fun MetricCategoryCard(category: RatioCategory, metrics: List<FinancialR
 
 @Composable
 private fun FinancialAnalysisHeader(
-    analysis: FinancialAnalysis,
-    onGlossaryClick: () -> Unit,
-    onClose: () -> Unit
+        analysis: FinancialAnalysis,
+        onGlossaryClick: () -> Unit,
+        onClose: () -> Unit
 ) {
     Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1787,31 +1815,42 @@ private fun FinancialAnalysisHeader(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+        ) {
             OutlinedButton(
-                onClick = onGlossaryClick,
-                colors =
-                    ButtonDefaults.outlinedButtonColors(
-                        contentColor = AppColors.OnSurfaceSecondary
-                    ),
-                shape = AppShapes.Small
+                    onClick = onGlossaryClick,
+                    colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                    contentColor = AppColors.OnSurfaceSecondary
+                            ),
+                    shape = AppShapes.Small
             ) {
-            Icon(Icons.Outlined.Book, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Glossary")
+                Icon(
+                        Icons.Outlined.Book,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Glossary")
             }
 
             OutlinedButton(
-                onClick = onClose,
-                colors =
-                    ButtonDefaults.outlinedButtonColors(
-                        contentColor = AppColors.OnSurfaceSecondary
-                    ),
-                shape = AppShapes.Small
+                    onClick = onClose,
+                    colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                    contentColor = AppColors.OnSurfaceSecondary
+                            ),
+                    shape = AppShapes.Small
             ) {
-            Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Close")
+                Icon(
+                        Icons.Default.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Close")
             }
         }
     }
@@ -1827,7 +1866,7 @@ private fun FinancialOverviewTab(analysis: FinancialAnalysis) {
             QuickFinancialSummaryCard(analysis)
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
         }
-        
+
         // Key financial metrics dashboard (new component)
         if (analysis.extendedMetrics.isNotEmpty()) {
             KeyFinancialMetricsDashboard(analysis)
@@ -2837,82 +2876,82 @@ private fun AiIndustryComparisonCard(comparison: String) {
 // Key Financial Metrics Visualization Component
 // ============================================================
 
-/**
- * Key financial metrics dashboard card
- * Visualizes parsed financial data.
- */
+/** Key financial metrics dashboard card Visualizes parsed financial data. */
 @Composable
-fun KeyFinancialMetricsDashboard(
-    analysis: FinancialAnalysis,
-    modifier: Modifier = Modifier
-) {
+fun KeyFinancialMetricsDashboard(analysis: FinancialAnalysis, modifier: Modifier = Modifier) {
     val extendedMetrics = analysis.extendedMetrics
-    
+
     // Group metrics by category
-    val revenueMetrics = extendedMetrics.filter { 
-        it.category in listOf(
-            MetricCategory.REVENUE,
-            MetricCategory.GROSS_PROFIT,
-            MetricCategory.OPERATING_INCOME,
-            MetricCategory.NET_INCOME
-        )
-    }
-    
-    val balanceMetrics = extendedMetrics.filter {
-        it.category in listOf(
-            MetricCategory.TOTAL_ASSETS,
-            MetricCategory.CASH_AND_EQUIVALENTS,
-            MetricCategory.TOTAL_LIABILITIES,
-            MetricCategory.TOTAL_EQUITY
-        )
-    }
-    
-    val cashFlowMetrics = extendedMetrics.filter {
-        it.category in listOf(
-            MetricCategory.OPERATING_CASH_FLOW,
-            MetricCategory.FREE_CASH_FLOW,
-            MetricCategory.CAPITAL_EXPENDITURES
-        )
-    }
-    
+    val revenueMetrics =
+            extendedMetrics.filter {
+                it.category in
+                        listOf(
+                                MetricCategory.REVENUE,
+                                MetricCategory.GROSS_PROFIT,
+                                MetricCategory.OPERATING_INCOME,
+                                MetricCategory.NET_INCOME
+                        )
+            }
+
+    val balanceMetrics =
+            extendedMetrics.filter {
+                it.category in
+                        listOf(
+                                MetricCategory.TOTAL_ASSETS,
+                                MetricCategory.CASH_AND_EQUIVALENTS,
+                                MetricCategory.TOTAL_LIABILITIES,
+                                MetricCategory.TOTAL_EQUITY
+                        )
+            }
+
+    val cashFlowMetrics =
+            extendedMetrics.filter {
+                it.category in
+                        listOf(
+                                MetricCategory.OPERATING_CASH_FLOW,
+                                MetricCategory.FREE_CASH_FLOW,
+                                MetricCategory.CAPITAL_EXPENDITURES
+                        )
+            }
+
     Column(modifier = modifier) {
         // Parsing quality indicator
         ParsingQualityIndicator(analysis)
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Income statement key metrics
         if (revenueMetrics.isNotEmpty()) {
             FinancialStatementCard(
-                title = "Income Statement Highlights",
-                subtitle = "손익계산서 핵심 지표",
-                metrics = revenueMetrics,
-                accentColor = AppColors.Revenue
+                    title = "Income Statement Highlights",
+                    subtitle = "손익계산서 핵심 지표",
+                    metrics = revenueMetrics,
+                    accentColor = AppColors.Revenue
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
-        
+
         // Balance sheet key metrics
         if (balanceMetrics.isNotEmpty()) {
             FinancialStatementCard(
-                title = "Balance Sheet Highlights",
-                subtitle = "재무상태표 핵심 지표",
-                metrics = balanceMetrics,
-                accentColor = AppColors.Primary
+                    title = "Balance Sheet Highlights",
+                    subtitle = "재무상태표 핵심 지표",
+                    metrics = balanceMetrics,
+                    accentColor = AppColors.Primary
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
-        
+
         // Cash flow statement key metrics
         if (cashFlowMetrics.isNotEmpty()) {
             FinancialStatementCard(
-                title = "Cash Flow Highlights",
-                subtitle = "현금흐름표 핵심 지표",
-                metrics = cashFlowMetrics,
-                accentColor = AppColors.Success
+                    title = "Cash Flow Highlights",
+                    subtitle = "현금흐름표 핵심 지표",
+                    metrics = cashFlowMetrics,
+                    accentColor = AppColors.Success
             )
         }
-        
+
         // If no metrics found
         if (revenueMetrics.isEmpty() && balanceMetrics.isEmpty() && cashFlowMetrics.isEmpty()) {
             NoMetricsFoundCard()
@@ -2920,134 +2959,130 @@ fun KeyFinancialMetricsDashboard(
     }
 }
 
-/**
- * 파싱 품질 표시기
- */
+/** 파싱 품질 표시기 */
 @Composable
 private fun ParsingQualityIndicator(analysis: FinancialAnalysis) {
     val metrics = analysis.extendedMetrics
     val totalCount = metrics.size
-    val avgConfidence = if (metrics.isNotEmpty()) {
-        metrics.map { it.confidence }.average()
-    } else 0.0
-    
-    val qualityLevel = when {
-        totalCount >= 10 && avgConfidence >= 0.8 -> "High"
-        totalCount >= 5 && avgConfidence >= 0.6 -> "Medium"
-        totalCount >= 1 -> "Low"
-        else -> "None"
-    }
-    
-    val qualityColor = when (qualityLevel) {
-        "High" -> AppColors.Success
-        "Medium" -> AppColors.Warning
-        "Low" -> AppColors.Error
-        else -> AppColors.Divider
-    }
-    
+    val avgConfidence =
+            if (metrics.isNotEmpty()) {
+                metrics.map { it.confidence }.average()
+            } else 0.0
+
+    val qualityLevel =
+            when {
+                totalCount >= 10 && avgConfidence >= 0.8 -> "High"
+                totalCount >= 5 && avgConfidence >= 0.6 -> "Medium"
+                totalCount >= 1 -> "Low"
+                else -> "None"
+            }
+
+    val qualityColor =
+            when (qualityLevel) {
+                "High" -> AppColors.Success
+                "Medium" -> AppColors.Warning
+                "Low" -> AppColors.Error
+                else -> AppColors.Divider
+            }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = 1.dp,
-        shape = AppShapes.Small,
-        backgroundColor = qualityColor.copy(alpha = 0.1f)
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 1.dp,
+            shape = AppShapes.Small,
+            backgroundColor = qualityColor.copy(alpha = 0.1f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .background(qualityColor, CircleShape)
-                )
+                Box(modifier = Modifier.size(10.dp).background(qualityColor, CircleShape))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Data Quality: $qualityLevel",
-                    style = AppTypography.Body2,
-                    fontWeight = FontWeight.Medium,
-                    color = AppColors.OnSurface
+                        text = "Data Quality: $qualityLevel",
+                        style = AppTypography.Body2,
+                        fontWeight = FontWeight.Medium,
+                        color = AppColors.OnSurface
                 )
             }
-            
+
             Text(
-                text = "$totalCount metrics • ${String.format("%.0f", avgConfidence * 100)}% confidence",
-                style = AppTypography.Caption,
-                color = AppColors.OnSurfaceSecondary
+                    text =
+                            "$totalCount metrics • ${String.format("%.0f", avgConfidence * 100)}% confidence",
+                    style = AppTypography.Caption,
+                    color = AppColors.OnSurfaceSecondary
             )
         }
     }
 }
 
-/**
- * 재무제표별 카드 컴포넌트
- */
+/** 재무제표별 카드 컴포넌트 */
 @Composable
 private fun FinancialStatementCard(
-    title: String,
-    subtitle: String,
-    metrics: List<ExtendedFinancialMetric>,
-    accentColor: Color,
-    modifier: Modifier = Modifier
+        title: String,
+        subtitle: String,
+        metrics: List<ExtendedFinancialMetric>,
+        accentColor: Color,
+        modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = AppDimens.CardElevation,
-        shape = AppShapes.Medium,
-        backgroundColor = AppColors.Surface
+            modifier = modifier.fillMaxWidth(),
+            elevation = AppDimens.CardElevation,
+            shape = AppShapes.Medium,
+            backgroundColor = AppColors.Surface
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
-                        text = title,
-                        style = AppTypography.Subtitle1,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.OnSurface
+                            text = title,
+                            style = AppTypography.Subtitle1,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.OnSurface
                     )
                     Text(
-                        text = subtitle,
-                        style = AppTypography.Caption,
-                        color = AppColors.OnSurfaceSecondary
+                            text = subtitle,
+                            style = AppTypography.Caption,
+                            color = AppColors.OnSurfaceSecondary
                     )
                 }
-                
+
                 // Metric count display
                 Box(
-                    modifier = Modifier
-                        .background(accentColor.copy(alpha = 0.1f), AppShapes.Pill)
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        modifier =
+                                Modifier.background(accentColor.copy(alpha = 0.1f), AppShapes.Pill)
+                                        .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "${metrics.size} items",
-                        style = AppTypography.Caption,
-                        color = accentColor,
-                        fontWeight = FontWeight.Medium
+                            text = "${metrics.size} items",
+                            style = AppTypography.Caption,
+                            color = accentColor,
+                            fontWeight = FontWeight.Medium
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
             Divider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Metric grid
             metrics.chunked(2).forEach { rowMetrics ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     rowMetrics.forEach { metric ->
                         MetricDisplayCard(
-                            metric = metric,
-                            accentColor = accentColor,
-                            modifier = Modifier.weight(1f)
+                                metric = metric,
+                                accentColor = accentColor,
+                                modifier = Modifier.weight(1f)
                         )
                     }
                     // Fill empty space for odd count
@@ -3061,225 +3096,218 @@ private fun FinancialStatementCard(
     }
 }
 
-/**
- * 개별 메트릭 표시 카드
- */
+/** 개별 메트릭 표시 카드 */
 @Composable
 private fun MetricDisplayCard(
-    metric: ExtendedFinancialMetric,
-    accentColor: Color,
-    modifier: Modifier = Modifier
+        metric: ExtendedFinancialMetric,
+        accentColor: Color,
+        modifier: Modifier = Modifier
 ) {
-    val isNegative = (metric.rawValue ?: 0.0) < 0
+    val isNegative = (metric.getRawValueBigDecimal()?.toDouble() ?: 0.0) < 0
     val valueColor = if (isNegative) AppColors.Error else AppColors.OnSurface
-    
+
     Card(
-        modifier = modifier,
-        elevation = 0.dp,
-        shape = AppShapes.Small,
-        backgroundColor = AppColors.SurfaceVariant.copy(alpha = 0.5f)
+            modifier = modifier,
+            elevation = 0.dp,
+            shape = AppShapes.Small,
+            backgroundColor = AppColors.SurfaceVariant.copy(alpha = 0.5f)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             // Metric name
             Text(
-                text = metric.name,
-                style = AppTypography.Caption,
-                color = AppColors.OnSurfaceSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                    text = metric.name,
+                    style = AppTypography.Caption,
+                    color = AppColors.OnSurfaceSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             // Value
             Text(
-                text = metric.value,
-                style = AppTypography.Subtitle1,
-                fontWeight = FontWeight.Bold,
-                color = valueColor
+                    text = metric.value,
+                    style = AppTypography.Subtitle1,
+                    fontWeight = FontWeight.Bold,
+                    color = valueColor
             )
-            
+
             // YoY change rate (if available)
-            metric.yearOverYearChange?.let { yoy ->
+            metric.getYoyChangeBigDecimal()?.toDouble()?.let { yoy ->
                 Spacer(modifier = Modifier.height(4.dp))
                 val yoyColor = if (yoy >= 0) AppColors.Success else AppColors.Error
                 val yoySign = if (yoy >= 0) "+" else ""
-                val yoyIcon = if (yoy >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
-                
+                val yoyIcon =
+                        if (yoy >= 0) Icons.AutoMirrored.Filled.TrendingUp
+                        else Icons.AutoMirrored.Filled.TrendingDown
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = yoyIcon,
-                        contentDescription = null,
-                        tint = yoyColor,
-                        modifier = Modifier.size(14.dp)
+                            imageVector = yoyIcon,
+                            contentDescription = null,
+                            tint = yoyColor,
+                            modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "$yoySign${String.format("%.1f", yoy)}% YoY",
-                        style = AppTypography.Caption,
-                        color = yoyColor,
-                        fontWeight = FontWeight.Medium
+                            text = "$yoySign${String.format("%.1f", yoy)}% YoY",
+                            style = AppTypography.Caption,
+                            color = yoyColor,
+                            fontWeight = FontWeight.Medium
                     )
                 }
             }
-            
+
             // Confidence display
             if (metric.confidence < 0.9) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Confidence: ${String.format("%.0f", metric.confidence * 100)}%",
-                    style = AppTypography.Caption,
-                    color = AppColors.Warning,
-                    fontSize = 10.sp
+                        text = "Confidence: ${String.format("%.0f", metric.confidence * 100)}%",
+                        style = AppTypography.Caption,
+                        color = AppColors.Warning,
+                        fontSize = 10.sp
                 )
             }
         }
     }
 }
 
-/**
- * 메트릭이 없을 때 표시하는 카드
- */
+/** 메트릭이 없을 때 표시하는 카드 */
 @Composable
 private fun NoMetricsFoundCard() {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = AppDimens.CardElevation,
-        shape = AppShapes.Medium,
-        backgroundColor = AppColors.WarningLight
+            modifier = Modifier.fillMaxWidth(),
+            elevation = AppDimens.CardElevation,
+            shape = AppShapes.Medium,
+            backgroundColor = AppColors.WarningLight
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Outlined.SearchOff,
-                contentDescription = null,
-                tint = AppColors.Warning,
-                modifier = Modifier.size(48.dp)
+                    imageVector = Icons.Outlined.SearchOff,
+                    contentDescription = null,
+                    tint = AppColors.Warning,
+                    modifier = Modifier.size(48.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Text(
-                text = "No Financial Metrics Detected",
-                style = AppTypography.Subtitle1,
-                fontWeight = FontWeight.Bold,
-                color = AppColors.OnSurface
+                    text = "No Financial Metrics Detected",
+                    style = AppTypography.Subtitle1,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.OnSurface
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
-                text = "The document may not contain standard financial statements, " +
-                       "or the format is not yet supported. Try using AI Analysis for deeper insights.",
-                style = AppTypography.Body2,
-                color = AppColors.OnSurfaceSecondary,
-                textAlign = TextAlign.Center
+                    text =
+                            "The document may not contain standard financial statements, " +
+                                    "or the format is not yet supported. Try using AI Analysis for deeper insights.",
+                    style = AppTypography.Body2,
+                    color = AppColors.OnSurfaceSecondary,
+                    textAlign = TextAlign.Center
             )
         }
     }
 }
 
-/**
- * 빠른 재무 요약 카드 (단일 카드로 핵심 정보 표시)
- */
+/** 빠른 재무 요약 카드 (단일 카드로 핵심 정보 표시) */
 @Composable
-fun QuickFinancialSummaryCard(
-    analysis: FinancialAnalysis,
-    modifier: Modifier = Modifier
-) {
+fun QuickFinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = Modifier) {
     val metrics = analysis.extendedMetrics
-    
+
     // Extract key metrics
     val revenue = metrics.find { it.category == MetricCategory.REVENUE }
     val netIncome = metrics.find { it.category == MetricCategory.NET_INCOME }
     val totalAssets = metrics.find { it.category == MetricCategory.TOTAL_ASSETS }
-    val eps = metrics.find { 
-        it.category == MetricCategory.EPS_BASIC || 
-        it.category == MetricCategory.EPS_DILUTED 
-    }
-    
+    val eps =
+            metrics.find {
+                it.category == MetricCategory.EPS_BASIC || it.category == MetricCategory.EPS_DILUTED
+            }
+
     Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = AppDimens.CardElevationHigh,
-        shape = AppShapes.Medium,
-        backgroundColor = AppColors.Primary.copy(alpha = 0.05f)
+            modifier = modifier.fillMaxWidth(),
+            elevation = AppDimens.CardElevationHigh,
+            shape = AppShapes.Medium,
+            backgroundColor = AppColors.Primary.copy(alpha = 0.05f)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             // Header
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Quick Financial Summary",
-                    style = AppTypography.Subtitle1,
-                    fontWeight = FontWeight.Bold,
-                    color = AppColors.OnSurface
+                        text = "Quick Financial Summary",
+                        style = AppTypography.Subtitle1,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.OnSurface
                 )
-                
+
                 analysis.reportType?.let { type ->
                     Box(
-                        modifier = Modifier
-                            .background(AppColors.Primary.copy(alpha = 0.1f), AppShapes.Pill)
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            modifier =
+                                    Modifier.background(
+                                                    AppColors.Primary.copy(alpha = 0.1f),
+                                                    AppShapes.Pill
+                                            )
+                                            .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "Form $type",
-                            style = AppTypography.Caption,
-                            color = AppColors.Primary,
-                            fontWeight = FontWeight.Medium
+                                text = "Form $type",
+                                style = AppTypography.Caption,
+                                color = AppColors.Primary,
+                                fontWeight = FontWeight.Medium
                         )
                     }
                 }
             }
-            
+
             analysis.companyName?.let { name ->
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = name,
-                    style = AppTypography.Body2,
-                    color = AppColors.OnSurfaceSecondary
-                )
+                Text(text = name, style = AppTypography.Body2, color = AppColors.OnSurfaceSecondary)
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
             Divider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Key metrics grid
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 QuickMetricItem(
-                    label = "Revenue",
-                    value = revenue?.value ?: "N/A",
-                    icon = Icons.Outlined.AttachMoney,
-                    color = AppColors.Revenue
+                        label = "Revenue",
+                        value = revenue?.value ?: "N/A",
+                        icon = Icons.Outlined.AttachMoney,
+                        color = AppColors.Revenue
                 )
-                
+
                 QuickMetricItem(
-                    label = "Net Income",
-                    value = netIncome?.value ?: "N/A",
-                    icon = Icons.AutoMirrored.Outlined.TrendingUp,
-                    color = AppColors.Income
+                        label = "Net Income",
+                        value = netIncome?.value ?: "N/A",
+                        icon = Icons.AutoMirrored.Outlined.TrendingUp,
+                        color = AppColors.Income
                 )
-                
+
                 QuickMetricItem(
-                    label = "Total Assets",
-                    value = totalAssets?.value ?: "N/A",
-                    icon = Icons.Outlined.AccountBalance,
-                    color = AppColors.Primary
+                        label = "Total Assets",
+                        value = totalAssets?.value ?: "N/A",
+                        icon = Icons.Outlined.AccountBalance,
+                        color = AppColors.Primary
                 )
-                
+
                 QuickMetricItem(
-                    label = "EPS",
-                    value = eps?.value ?: "N/A",
-                    icon = Icons.Outlined.BarChart,
-                    color = AppColors.Secondary
+                        label = "EPS",
+                        value = eps?.value ?: "N/A",
+                        icon = Icons.Outlined.BarChart,
+                        color = AppColors.Secondary
                 )
             }
         }
@@ -3287,31 +3315,21 @@ fun QuickFinancialSummaryCard(
 }
 
 @Composable
-private fun QuickMetricItem(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    color: Color
-) {
+private fun QuickMetricItem(label: String, value: String, icon: ImageVector, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(24.dp)
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, style = AppTypography.Caption, color = AppColors.OnSurfaceSecondary)
         Text(
-            text = label,
-            style = AppTypography.Caption,
-            color = AppColors.OnSurfaceSecondary
-        )
-        Text(
-            text = value,
-            style = AppTypography.Body2,
-            fontWeight = FontWeight.Bold,
-            color = AppColors.OnSurface
+                text = value,
+                style = AppTypography.Body2,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.OnSurface
         )
     }
 }
-

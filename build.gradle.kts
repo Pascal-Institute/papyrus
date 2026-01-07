@@ -38,6 +38,10 @@ dependencies {
     // JSON mapping (companyfacts, submissions)
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     
+    // JavaMoney for precise financial calculations (AGENTS.md Principle 4)
+    implementation("org.javamoney:moneta:1.4.2")
+    implementation("javax.money:money-api:1.1")
+    
     // Logging
     implementation("org.slf4j:slf4j-simple:2.0.16")
     

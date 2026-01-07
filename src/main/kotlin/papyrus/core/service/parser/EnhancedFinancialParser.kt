@@ -100,18 +100,28 @@ object EnhancedFinancialParser {
                         // 카테고리 추론
                         val category = inferCategoryFromLabel(label) ?: continue
 
-                        // YoY 변화율 계산
+                        // YoY 변화율 계산 (BigDecimal for precision)
                         val yoyChange =
-                                if (priorValue != null && priorValue != 0.0) {
-                                        ((currentValue - priorValue) /
-                                                kotlin.math.abs(priorValue)) * 100
+                                if (priorValue != null && priorValue != java.math.BigDecimal.ZERO) {
+                                        currentValue
+                                                .subtract(priorValue)
+                                                .divide(
+                                                        priorValue.abs(),
+                                                        10,
+                                                        java.math.RoundingMode.HALF_UP
+                                                )
+                                                .multiply(java.math.BigDecimal("100"))
+                                                .setScale(2, java.math.RoundingMode.HALF_UP)
                                 } else null
 
                         metrics.add(
                                 ExtendedFinancialMetric(
                                         name = label,
                                         value = formatValue(currentValue),
-                                        rawValue = currentValue,
+                                        rawValue =
+                                                currentValue
+                                                        .setScale(2, java.math.RoundingMode.HALF_UP)
+                                                        .toString(),
                                         unit = unit,
                                         period = years.firstOrNull(),
                                         category = category,
@@ -119,7 +129,7 @@ object EnhancedFinancialParser {
                                         confidence =
                                                 if (label.lowercase().startsWith("total")) 0.95
                                                 else 0.85,
-                                        yearOverYearChange = yoyChange
+                                        yearOverYearChange = yoyChange?.toString()
                                 )
                         )
                 }
@@ -144,31 +154,18 @@ object EnhancedFinancialParser {
                 return true
         }
 
-        private fun parseSecValue(valueStr: String, unit: MetricUnit): Double? {
-                val cleaned = valueStr.replace("$", "").replace(",", "").replace(" ", "").trim()
+        private fun parseSecValue(valueStr: String, unit: MetricUnit): java.math.BigDecimal? {
+                val unitStr =
+                        when (unit) {
+                                MetricUnit.BILLIONS -> "billions"
+                                MetricUnit.MILLIONS -> "millions"
+                                MetricUnit.THOUSANDS -> "thousands"
+                                else -> "dollars"
+                        }
 
-                if (cleaned.isEmpty() || cleaned == "-" || cleaned == "—" || cleaned == "–")
-                        return null
-
-                val isNegative = cleaned.startsWith("(") && cleaned.endsWith(")")
-                val numberStr = cleaned.replace("(", "").replace(")", "")
-
-                return try {
-                        var value = numberStr.toDouble()
-
-                        // 단위 적용
-                        value =
-                                when (unit) {
-                                        MetricUnit.BILLIONS -> value * 1_000_000_000
-                                        MetricUnit.MILLIONS -> value * 1_000_000
-                                        MetricUnit.THOUSANDS -> value * 1_000
-                                        else -> value
-                                }
-
-                        if (isNegative) -value else value
-                } catch (e: Exception) {
-                        null
-                }
+                val monetaryAmount =
+                        papyrus.core.util.FinancialPrecision.parseSecValue(valueStr, unitStr, "USD")
+                return monetaryAmount?.number?.numberValue(java.math.BigDecimal::class.java)
         }
 
         private fun inferCategoryFromLabel(label: String): MetricCategory? {
@@ -441,7 +438,12 @@ object EnhancedFinancialParser {
                                                                 matches.first().groupValues[1]
                                                         val value = parseSecValue(valueStr, unit)
 
-                                                        if (value != null && value > 1000
+                                                        if (value != null &&
+                                                                        value >
+                                                                                java.math
+                                                                                        .BigDecimal(
+                                                                                                "1000"
+                                                                                        )
                                                         ) { // 최소 임계값
                                                                 segments.add(
                                                                         SegmentRevenue(
@@ -450,7 +452,8 @@ object EnhancedFinancialParser {
                                                                                 segmentType =
                                                                                         SegmentType
                                                                                                 .GEOGRAPHIC,
-                                                                                revenue = value,
+                                                                                revenue =
+                                                                                        value.toDouble(),
                                                                                 percentOfTotal =
                                                                                         null,
                                                                                 source =
@@ -476,7 +479,13 @@ object EnhancedFinancialParser {
                                                                 matches.first().groupValues[1]
                                                         val value = parseSecValue(valueStr, unit)
 
-                                                        if (value != null && value > 1000) {
+                                                        if (value != null &&
+                                                                        value >
+                                                                                java.math
+                                                                                        .BigDecimal(
+                                                                                                "1000"
+                                                                                        )
+                                                        ) {
                                                                 segments.add(
                                                                         SegmentRevenue(
                                                                                 segmentName =
@@ -484,7 +493,8 @@ object EnhancedFinancialParser {
                                                                                 segmentType =
                                                                                         SegmentType
                                                                                                 .PRODUCT,
-                                                                                revenue = value,
+                                                                                revenue =
+                                                                                        value.toDouble(),
                                                                                 percentOfTotal =
                                                                                         null,
                                                                                 source =
@@ -1147,7 +1157,7 @@ object EnhancedFinancialParser {
                                                         rawValue =
                                                                 row.values
                                                                         .firstOrNull()
-                                                                        ?.toDouble(),
+                                                                        ?.toString(),
                                                         category = row.category!!,
                                                         confidence = if (row.isTotal) 0.95 else 0.85
                                                 )
@@ -1345,9 +1355,11 @@ object EnhancedFinancialParser {
 
                 // 메트릭에서 값 추출하는 헬퍼
                 fun getValue(category: MetricCategory): Double? {
-                        return metrics.find { it.category == category }?.rawValue
+                        return metrics
+                                .find { it.category == category }
+                                ?.getRawValueBigDecimal()
+                                ?.toDouble()
                 }
-
                 val revenue = getValue(MetricCategory.REVENUE)
                 val grossProfit = getValue(MetricCategory.GROSS_PROFIT)
                 val operatingIncome = getValue(MetricCategory.OPERATING_INCOME)
@@ -1923,14 +1935,15 @@ object EnhancedFinancialParser {
 
                                 val rawValue = parseNumber(valueStr, unit, isNegative, context)
 
-                                if (rawValue != null && kotlin.math.abs(rawValue) >= 1000
+                                if (rawValue != null &&
+                                                rawValue.abs() >= java.math.BigDecimal("1000")
                                 ) { // Filter out unrealistic small values
 
                                         results.add(
                                                 ExtendedFinancialMetric(
                                                         name = term,
                                                         value = formatValue(rawValue),
-                                                        rawValue = rawValue,
+                                                        rawValue = rawValue.toString(),
                                                         unit = unit,
                                                         period = period,
                                                         periodType = periodType,
@@ -1956,50 +1969,34 @@ object EnhancedFinancialParser {
                 unit: MetricUnit,
                 isNegative: Boolean = false,
                 contextText: String = ""
-        ): Double? {
-                return try {
-                        val cleaned = value.replace(",", "").replace("$", "").trim()
-                        var number = cleaned.toDoubleOrNull() ?: return null
+        ): java.math.BigDecimal? {
+                val unitStr =
+                        when (unit) {
+                                MetricUnit.BILLIONS -> "billions"
+                                MetricUnit.MILLIONS -> "millions"
+                                MetricUnit.THOUSANDS -> "thousands"
+                                else -> "dollars"
+                        }
 
-                        // 컨텍스트 텍스트에서 단위 힌트 확인 (실제 단위가 텍스트에 명시된 경우)
-                        val lowerContext = contextText.lowercase()
-                        val actualUnit =
-                                when {
-                                        lowerContext.contains("billion") ||
-                                                lowerContext.contains("b)") -> MetricUnit.BILLIONS
-                                        lowerContext.contains("million") ||
-                                                lowerContext.contains("m)") -> MetricUnit.MILLIONS
-                                        lowerContext.contains("thousand") ||
-                                                lowerContext.contains("k)") -> MetricUnit.THOUSANDS
-                                        else -> unit
-                                }
-
-                        // 단위에 따라 조정
-                        number =
-                                when (actualUnit) {
-                                        MetricUnit.BILLIONS -> number * 1_000_000_000
-                                        MetricUnit.MILLIONS -> number * 1_000_000
-                                        MetricUnit.THOUSANDS -> number * 1_000
-                                        else -> number
-                                }
-
-                        if (isNegative) -number else number
-                } catch (e: Exception) {
-                        null
+                val result =
+                        papyrus.core.util.FinancialPrecision.parseSecValue(value, unitStr, "USD")
+                return result?.number?.numberValue(java.math.BigDecimal::class.java)?.let {
+                        if (isNegative && it > java.math.BigDecimal.ZERO) it.negate() else it
                 }
         }
 
-        private fun formatValue(value: Double): String {
-                val absValue = kotlin.math.abs(value)
-                val prefix = if (value < 0) "-" else ""
+        private fun formatValue(value: java.math.BigDecimal): String {
+                val absValue = value.abs()
+                val prefix = if (value < java.math.BigDecimal.ZERO) "-" else ""
 
                 return when {
-                        absValue >= 1_000_000_000 ->
-                                "${prefix}$${String.format("%.2f", absValue / 1_000_000_000)}B"
-                        absValue >= 1_000_000 ->
-                                "${prefix}$${String.format("%.2f", absValue / 1_000_000)}M"
-                        absValue >= 1_000 -> "${prefix}$${String.format("%.2f", absValue / 1_000)}K"
-                        else -> "${prefix}$${String.format("%.2f", absValue)}"
+                        absValue >= java.math.BigDecimal("1000000000") ->
+                                "${prefix}$${absValue.divide(java.math.BigDecimal("1000000000"), 2, java.math.RoundingMode.HALF_UP)}B"
+                        absValue >= java.math.BigDecimal("1000000") ->
+                                "${prefix}$${absValue.divide(java.math.BigDecimal("1000000"), 2, java.math.RoundingMode.HALF_UP)}M"
+                        absValue >= java.math.BigDecimal("1000") ->
+                                "${prefix}$${absValue.divide(java.math.BigDecimal("1000"), 2, java.math.RoundingMode.HALF_UP)}K"
+                        else -> "${prefix}$${absValue.setScale(2, java.math.RoundingMode.HALF_UP)}"
                 }
         }
 

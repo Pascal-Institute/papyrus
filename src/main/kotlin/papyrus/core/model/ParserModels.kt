@@ -7,125 +7,135 @@ import kotlinx.serialization.Serializable
 data class ExtendedFinancialMetric(
         val name: String,
         val value: String,
-        val rawValue: Double? = null,
+        val rawValue: String? = null, // BigDecimal as String for precision
         val unit: MetricUnit = MetricUnit.DOLLARS,
         val period: String? = null, // e.g., "Q3 2024", "FY 2024"
         val periodType: PeriodType? = null, // QUARTERLY, ANNUAL
         val category: MetricCategory,
-        val source: String = "", // Where in the document this was found
+        val source: String = "", // Where in the document this was found (traceability)
         val confidence: Double = 1.0, // How confident we are in this value (0-1)
-        val yearOverYearChange: Double? = null, // % change from previous year
+        val yearOverYearChange: String? = null, // % change as BigDecimal String
         val context: String = ""
-)
+) {
+        /** Get rawValue as BigDecimal for calculations */
+        fun getRawValueBigDecimal(): java.math.BigDecimal? {
+                return rawValue?.let { java.math.BigDecimal(it) }
+        }
+
+        /** Get YoY change as BigDecimal */
+        fun getYoyChangeBigDecimal(): java.math.BigDecimal? {
+                return yearOverYearChange?.let { java.math.BigDecimal(it) }
+        }
+}
 
 enum class MetricUnit {
-    DOLLARS,
-    THOUSANDS,
-    MILLIONS,
-    BILLIONS,
-    PERCENTAGE,
-    RATIO,
-    SHARES,
-    PER_SHARE,
-    NONE // For dimensionless values
+        DOLLARS,
+        THOUSANDS,
+        MILLIONS,
+        BILLIONS,
+        PERCENTAGE,
+        RATIO,
+        SHARES,
+        PER_SHARE,
+        NONE // For dimensionless values
 }
 
 enum class PeriodType {
-    QUARTERLY,
-    ANNUAL,
-    YTD, // Year to Date
-    TTM // Trailing Twelve Months
+        QUARTERLY,
+        ANNUAL,
+        YTD, // Year to Date
+        TTM // Trailing Twelve Months
 }
 
 enum class MetricCategory {
-    // Income Statement
-    REVENUE,
-    COST_OF_REVENUE,
-    GROSS_PROFIT,
-    OPERATING_EXPENSES,
-    OPERATING_INCOME,
-    NET_INCOME,
-    EBITDA,
-    INTEREST_EXPENSE,
-    RD_EXPENSE,
-    SGA_EXPENSE,
-    PRODUCT_REVENUE,
-    SERVICE_REVENUE,
-    RD_REVENUE,
-    TOTAL_EXPENSES,
-    INCOME_BEFORE_TAX,
-    INCOME_TAX,
-    INTEREST_INCOME,
-    OTHER_INCOME,
-    DEPRECIATION,
-    AMORTIZATION,
+        // Income Statement
+        REVENUE,
+        COST_OF_REVENUE,
+        GROSS_PROFIT,
+        OPERATING_EXPENSES,
+        OPERATING_INCOME,
+        NET_INCOME,
+        EBITDA,
+        INTEREST_EXPENSE,
+        RD_EXPENSE,
+        SGA_EXPENSE,
+        PRODUCT_REVENUE,
+        SERVICE_REVENUE,
+        RD_REVENUE,
+        TOTAL_EXPENSES,
+        INCOME_BEFORE_TAX,
+        INCOME_TAX,
+        INTEREST_INCOME,
+        OTHER_INCOME,
+        DEPRECIATION,
+        AMORTIZATION,
 
-    // Balance Sheet - Assets
-    TOTAL_ASSETS,
-    CURRENT_ASSETS,
-    CASH_AND_EQUIVALENTS,
-    ACCOUNTS_RECEIVABLE,
-    INVENTORY,
-    MARKETABLE_SECURITIES,
-    LONG_TERM_INVESTMENTS,
-    PREPAID_EXPENSES,
-    OTHER_CURRENT_ASSETS,
-    FIXED_ASSETS,
-    DEFERRED_TAX_ASSETS,
+        // Balance Sheet - Assets
+        TOTAL_ASSETS,
+        CURRENT_ASSETS,
+        CASH_AND_EQUIVALENTS,
+        ACCOUNTS_RECEIVABLE,
+        INVENTORY,
+        MARKETABLE_SECURITIES,
+        LONG_TERM_INVESTMENTS,
+        PREPAID_EXPENSES,
+        OTHER_CURRENT_ASSETS,
+        FIXED_ASSETS,
+        DEFERRED_TAX_ASSETS,
 
-    // Inventory Detail
-    RAW_MATERIALS,
-    WORK_IN_PROCESS,
-    FINISHED_GOODS,
+        // Inventory Detail
+        RAW_MATERIALS,
+        WORK_IN_PROCESS,
+        FINISHED_GOODS,
 
-    // Balance Sheet - Liabilities
-    TOTAL_LIABILITIES,
-    CURRENT_LIABILITIES,
-    LONG_TERM_DEBT,
-    ACCOUNTS_PAYABLE,
-    ACCRUED_EXPENSES,
-    OPERATING_LEASE,
-    LONG_TERM_LEASE,
-    DEFERRED_REVENUE,
+        // Balance Sheet - Liabilities
+        TOTAL_LIABILITIES,
+        CURRENT_LIABILITIES,
+        LONG_TERM_DEBT,
+        ACCOUNTS_PAYABLE,
+        ACCRUED_EXPENSES,
+        OPERATING_LEASE,
+        LONG_TERM_LEASE,
+        DEFERRED_REVENUE,
 
-    // Balance Sheet - Equity
-    TOTAL_EQUITY,
-    RETAINED_EARNINGS,
+        // Balance Sheet - Equity
+        TOTAL_EQUITY,
+        RETAINED_EARNINGS,
 
-    // Cash Flow
-    OPERATING_CASH_FLOW,
-    INVESTING_CASH_FLOW,
-    FINANCING_CASH_FLOW,
-    FREE_CASH_FLOW,
-    CAPITAL_EXPENDITURES,
-    INVESTMENT_PURCHASES,
-    INVESTMENT_PROCEEDS,
-    DIVIDENDS_PAID,
-    STOCK_COMPENSATION,
-    WORKING_CAPITAL_CHANGES,
+        // Cash Flow
+        OPERATING_CASH_FLOW,
+        INVESTING_CASH_FLOW,
+        FINANCING_CASH_FLOW,
+        FREE_CASH_FLOW,
+        CAPITAL_EXPENDITURES,
+        INVESTMENT_PURCHASES,
+        INVESTMENT_PROCEEDS,
+        DIVIDENDS_PAID,
+        STOCK_COMPENSATION,
+        WORKING_CAPITAL_CHANGES,
 
-    // Per Share Metrics
-    EPS_BASIC,
-    EPS_DILUTED,
-    BOOK_VALUE_PER_SHARE,
-    DIVIDENDS_PER_SHARE,
+        // Per Share Metrics
+        EPS_BASIC,
+        EPS_DILUTED,
+        BOOK_VALUE_PER_SHARE,
+        DIVIDENDS_PER_SHARE,
 
-    // Shares
-    SHARES_OUTSTANDING,
-    SHARES_DILUTED,
+        // Shares
+        SHARES_OUTSTANDING,
+        SHARES_DILUTED,
 
-    // Ratios (calculated)
-    GROSS_MARGIN,
-    OPERATING_MARGIN,
-    NET_MARGIN,
-    ROA,
-    ROE,
-    CURRENT_RATIO,
-    DEBT_TO_EQUITY,
+        // Ratios (calculated)
+        GROSS_MARGIN,
+        OPERATING_MARGIN,
+        NET_MARGIN,
+        ROA,
+        ROE,
+        CURRENT_RATIO,
+        DEBT_TO_EQUITY,
 
-    // Other
-    EMPLOYEES,
-    OTHER
+        // Other
+        EMPLOYEES,
+        OTHER
 }
 
 /** Financial statement section */
@@ -139,11 +149,11 @@ data class FinancialStatement(
 )
 
 enum class StatementType {
-    INCOME_STATEMENT, // Income statement
-    BALANCE_SHEET, // Balance sheet
-    CASH_FLOW_STATEMENT, // Cash flow statement
-    COMPREHENSIVE_INCOME, // Comprehensive income statement
-    EQUITY_STATEMENT // Statement of changes in equity
+        INCOME_STATEMENT, // Income statement
+        BALANCE_SHEET, // Balance sheet
+        CASH_FLOW_STATEMENT, // Cash flow statement
+        COMPREHENSIVE_INCOME, // Comprehensive income statement
+        EQUITY_STATEMENT // Statement of changes in equity
 }
 
 /** Risk factor */
@@ -156,23 +166,23 @@ data class RiskFactor(
 )
 
 enum class RiskCategory {
-    MARKET,
-    OPERATIONAL,
-    FINANCIAL,
-    REGULATORY,
-    COMPETITIVE,
-    TECHNOLOGY,
-    LEGAL,
-    ENVIRONMENTAL,
-    GEOPOLITICAL,
-    OTHER
+        MARKET,
+        OPERATIONAL,
+        FINANCIAL,
+        REGULATORY,
+        COMPETITIVE,
+        TECHNOLOGY,
+        LEGAL,
+        ENVIRONMENTAL,
+        GEOPOLITICAL,
+        OTHER
 }
 
 enum class RiskSeverity {
-    LOW,
-    MEDIUM,
-    HIGH,
-    CRITICAL
+        LOW,
+        MEDIUM,
+        HIGH,
+        CRITICAL
 }
 
 /** Executive information */
@@ -204,11 +214,11 @@ data class SegmentRevenue(
 )
 
 enum class SegmentType {
-    GEOGRAPHIC, // By region
-    PRODUCT, // By product
-    SERVICE, // By service
-    CUSTOMER, // By customer type
-    OTHER
+        GEOGRAPHIC, // By region
+        PRODUCT, // By product
+        SERVICE, // By service
+        CUSTOMER, // By customer type
+        OTHER
 }
 
 /** Management Discussion and Analysis (MD&A) */
@@ -224,7 +234,10 @@ data class ManagementDiscussion(
 // Structured Financial Statements Models
 // ========================================
 
-/** Complete financial statement set - contains structured income statement, balance sheet, and cash flow statement. */
+/**
+ * Complete financial statement set - contains structured income statement, balance sheet, and cash
+ * flow statement.
+ */
 @Serializable
 data class StructuredFinancialData(
         val companyName: String?,
@@ -241,10 +254,10 @@ data class StructuredFinancialData(
 )
 
 enum class DataQuality {
-    HIGH, // Table parsing successful, all major items present
-    MEDIUM, // Some items missing or pattern parsing
-    LOW, // Mostly pattern parsing, low confidence
-    UNKNOWN
+        HIGH, // Table parsing successful, all major items present
+        MEDIUM, // Some items missing or pattern parsing
+        LOW, // Mostly pattern parsing, low confidence
+        UNKNOWN
 }
 
 /** Structured Income Statement */
@@ -364,35 +377,97 @@ data class StructuredCashFlowStatement(
         val freeCashFlow: MonetaryValue? = null
 )
 
-/** Monetary value (maintains precision) */
+/**
+ * Monetary value (maintains precision using String representation of BigDecimal)
+ *
+ * AGENTS.MD Principle 4: Handle Data with Integrity
+ * - Stores amount as String to preserve BigDecimal precision during serialization
+ * - Uses explicit currency units
+ * - Maintains traceability through originalUnit and confidence
+ */
 @Serializable
 data class MonetaryValue(
-        val amount: Double, // Actual amount (normalized to dollars)
+        val amount: String, // BigDecimal as String (normalized to dollars) for precision
         val formatted: String, // Formatted for display (e.g., "$1.23B")
+        val currency: String = "USD", // Explicit currency unit
         val originalUnit: MetricUnit, // Unit in original document
         val isNegative: Boolean = false,
-        val yearOverYearChange: Double? = null, // YoY 변화율 (%)
-        val confidence: Double = 1.0
+        val yearOverYearChange: String? = null, // YoY change as BigDecimal String (%)
+        val confidence: Double = 1.0,
+        val source: String = "" // Traceability: where this value came from
 ) {
-    companion object {
-        fun fromDouble(value: Double, unit: MetricUnit = MetricUnit.DOLLARS): MonetaryValue {
-            val absValue = kotlin.math.abs(value)
-            val formatted =
-                    when {
-                        absValue >= 1_000_000_000 ->
-                                "$${String.format("%.2f", absValue / 1_000_000_000)}B"
-                        absValue >= 1_000_000 -> "$${String.format("%.2f", absValue / 1_000_000)}M"
-                        absValue >= 1_000 -> "$${String.format("%.2f", absValue / 1_000)}K"
-                        else -> "$${String.format("%.2f", absValue)}"
-                    }
-            return MonetaryValue(
-                    amount = value,
-                    formatted = if (value < 0) "-$formatted" else formatted,
-                    originalUnit = unit,
-                    isNegative = value < 0
-            )
+        companion object {
+                /**
+                 * Create from Double (for backward compatibility) WARNING: Prefer fromBigDecimal
+                 * when possible
+                 */
+                fun fromDouble(
+                        value: Double,
+                        unit: MetricUnit = MetricUnit.DOLLARS
+                ): MonetaryValue {
+                        return fromBigDecimal(java.math.BigDecimal(value.toString()), unit)
+                }
+
+                /** Create from BigDecimal (preferred method for precision) */
+                fun fromBigDecimal(
+                        value: java.math.BigDecimal,
+                        unit: MetricUnit = MetricUnit.DOLLARS,
+                        yoyChange: java.math.BigDecimal? = null,
+                        confidence: Double = 1.0,
+                        source: String = ""
+                ): MonetaryValue {
+                        val absValue = value.abs()
+                        val formatted =
+                                when {
+                                        absValue >= java.math.BigDecimal("1000000000") ->
+                                                "$${absValue.divide(java.math.BigDecimal("1000000000"), 2, java.math.RoundingMode.HALF_UP)}B"
+                                        absValue >= java.math.BigDecimal("1000000") ->
+                                                "$${absValue.divide(java.math.BigDecimal("1000000"), 2, java.math.RoundingMode.HALF_UP)}M"
+                                        absValue >= java.math.BigDecimal("1000") ->
+                                                "$${absValue.divide(java.math.BigDecimal("1000"), 2, java.math.RoundingMode.HALF_UP)}K"
+                                        else ->
+                                                "$${absValue.setScale(2, java.math.RoundingMode.HALF_UP)}"
+                                }
+
+                        return MonetaryValue(
+                                amount =
+                                        value.setScale(2, java.math.RoundingMode.HALF_UP)
+                                                .toString(),
+                                formatted =
+                                        if (value < java.math.BigDecimal.ZERO) "-$formatted"
+                                        else formatted,
+                                currency = "USD",
+                                originalUnit = unit,
+                                isNegative = value < java.math.BigDecimal.ZERO,
+                                yearOverYearChange =
+                                        yoyChange
+                                                ?.setScale(2, java.math.RoundingMode.HALF_UP)
+                                                ?.toString(),
+                                confidence = confidence,
+                                source = source
+                        )
+                }
+
+                /** Create from MonetaryAmount (JavaMoney) */
+                fun fromMonetaryAmount(
+                        amount: javax.money.MonetaryAmount,
+                        unit: MetricUnit = MetricUnit.DOLLARS,
+                        yoyChange: java.math.BigDecimal? = null,
+                        confidence: Double = 1.0,
+                        source: String = ""
+                ): MonetaryValue {
+                        val value = amount.number.numberValue(java.math.BigDecimal::class.java)
+                        return fromBigDecimal(value, unit, yoyChange, confidence, source)
+                }
         }
-    }
+
+        /** Get the amount as BigDecimal for calculations */
+        fun toBigDecimal(): java.math.BigDecimal = java.math.BigDecimal(amount)
+
+        /** Get the YoY change as BigDecimal */
+        fun getYoyChangeBigDecimal(): java.math.BigDecimal? {
+                return yearOverYearChange?.let { java.math.BigDecimal(it) }
+        }
 }
 
 /** Key financial metrics (calculated ratios) */

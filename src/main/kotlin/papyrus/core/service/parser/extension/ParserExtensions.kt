@@ -12,14 +12,14 @@ import papyrus.core.model.FinancialMetric
 /**
  * Converts an ExtendedFinancialMetric to a simpler FinancialMetric.
  *
- * This is a common operation across all document parsers to map the extended internal representation
- * to the public API model.
+ * This is a common operation across all document parsers to map the extended internal
+ * representation to the public API model.
  */
 fun ExtendedFinancialMetric.toFinancialMetric(): FinancialMetric {
     return FinancialMetric(
-        name = this.name,
-        value = this.value,
-        rawValue = this.rawValue,
-        context = this.context
+            name = this.name,
+            value = this.value,
+            rawValue = this.getRawValueBigDecimal()?.toDouble(),
+            context = this.context
     )
 }

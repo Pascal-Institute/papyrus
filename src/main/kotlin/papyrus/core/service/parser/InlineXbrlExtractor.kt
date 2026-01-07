@@ -1,8 +1,11 @@
 package papyrus.core.service.parser
 
+import java.math.BigDecimal
+import java.math.RoundingMode
+import javax.xml.transform.dom.DOMSource
+import net.sf.saxon.s9api.Axis
 import net.sf.saxon.s9api.Processor
 import net.sf.saxon.s9api.XPathExecutable
-import net.sf.saxon.s9api.Axis
 import net.sf.saxon.s9api.XdmNode
 import net.sf.saxon.s9api.XdmValue
 import org.jsoup.helper.W3CDom
@@ -10,9 +13,6 @@ import org.jsoup.nodes.Document
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.MetricUnit
-import java.math.BigDecimal
-import java.math.RoundingMode
-import javax.xml.transform.dom.DOMSource
 
 /**
  * Extract inline XBRL (iXBRL) facts from SEC HTML filings.
@@ -26,101 +26,111 @@ object InlineXbrlExtractor {
     private val xpath = processor.newXPathCompiler()
     private val contextExpr = xpath.compile("//*[local-name()='context']")
     private val factExpr =
-        xpath.compile("//*[local-name()='nonFraction' or local-name()='nonNumeric' or @contextRef or @contextref or @unitRef or @unitref]")
+            xpath.compile(
+                    "//*[local-name()='nonFraction' or local-name()='nonNumeric' or @contextRef or @contextref or @unitRef or @unitref]"
+            )
 
     private data class ConceptRule(
-        val name: String,
-        val category: MetricCategory,
-        val matchers: List<(String) -> Boolean>
+            val name: String,
+            val category: MetricCategory,
+            val matchers: List<(String) -> Boolean>
     )
 
-    private val conceptRules: List<ConceptRule> = listOf(
-        ConceptRule(
-            name = "Revenue",
-            category = MetricCategory.REVENUE,
-            matchers = matchers(
-                contains("us-gaap:revenues"),
-                contains("us-gaap:salesrevenuenet"),
-                endsWith(":revenues")
+    private val conceptRules: List<ConceptRule> =
+            listOf(
+                    ConceptRule(
+                            name = "Revenue",
+                            category = MetricCategory.REVENUE,
+                            matchers =
+                                    matchers(
+                                            contains("us-gaap:revenues"),
+                                            contains("us-gaap:salesrevenuenet"),
+                                            endsWith(":revenues")
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "Net Income",
+                            category = MetricCategory.NET_INCOME,
+                            matchers =
+                                    matchers(
+                                            contains("us-gaap:netincomeloss"),
+                                            endsWith(":netincomeloss")
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "Gross Profit",
+                            category = MetricCategory.GROSS_PROFIT,
+                            matchers =
+                                    matchers(
+                                            contains("us-gaap:grossprofit"),
+                                            endsWith(":grossprofit")
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "Operating Income",
+                            category = MetricCategory.OPERATING_INCOME,
+                            matchers =
+                                    matchers(
+                                            contains("us-gaap:operatingincomeloss"),
+                                            endsWith(":operatingincomeloss")
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "Total Assets",
+                            category = MetricCategory.TOTAL_ASSETS,
+                            matchers = matchers(contains("us-gaap:assets"), endsWith(":assets"))
+                    ),
+                    ConceptRule(
+                            name = "Total Liabilities",
+                            category = MetricCategory.TOTAL_LIABILITIES,
+                            matchers =
+                                    matchers(
+                                            contains("us-gaap:liabilities"),
+                                            endsWith(":liabilities")
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "Total Equity",
+                            category = MetricCategory.TOTAL_EQUITY,
+                            matchers =
+                                    matchers(
+                                            contains("us-gaap:stockholdersequity"),
+                                            contains(
+                                                    "us-gaap:stockholdersequityincludingportionattributabletononcontrollinginterest"
+                                            )
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "Cash and Cash Equivalents",
+                            category = MetricCategory.CASH_AND_EQUIVALENTS,
+                            matchers =
+                                    matchers(
+                                            contains(
+                                                    "us-gaap:cashandcashequivalentsatcarryingvalue"
+                                            )
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "Operating Cash Flow",
+                            category = MetricCategory.OPERATING_CASH_FLOW,
+                            matchers =
+                                    matchers(
+                                            contains(
+                                                    "us-gaap:netcashprovidedbyusedinoperatingactivities"
+                                            )
+                                    )
+                    ),
+                    ConceptRule(
+                            name = "EPS (Basic)",
+                            category = MetricCategory.EPS_BASIC,
+                            matchers = matchers(contains("us-gaap:earningspersharebasic"))
+                    ),
+                    ConceptRule(
+                            name = "EPS (Diluted)",
+                            category = MetricCategory.EPS_DILUTED,
+                            matchers = matchers(contains("us-gaap:earningspersharediluted"))
+                    ),
             )
-        ),
-        ConceptRule(
-            name = "Net Income",
-            category = MetricCategory.NET_INCOME,
-            matchers = matchers(
-                contains("us-gaap:netincomeloss"),
-                endsWith(":netincomeloss")
-            )
-        ),
-        ConceptRule(
-            name = "Gross Profit",
-            category = MetricCategory.GROSS_PROFIT,
-            matchers = matchers(
-                contains("us-gaap:grossprofit"),
-                endsWith(":grossprofit")
-            )
-        ),
-        ConceptRule(
-            name = "Operating Income",
-            category = MetricCategory.OPERATING_INCOME,
-            matchers = matchers(
-                contains("us-gaap:operatingincomeloss"),
-                endsWith(":operatingincomeloss")
-            )
-        ),
-        ConceptRule(
-            name = "Total Assets",
-            category = MetricCategory.TOTAL_ASSETS,
-            matchers = matchers(
-                contains("us-gaap:assets"),
-                endsWith(":assets")
-            )
-        ),
-        ConceptRule(
-            name = "Total Liabilities",
-            category = MetricCategory.TOTAL_LIABILITIES,
-            matchers = matchers(
-                contains("us-gaap:liabilities"),
-                endsWith(":liabilities")
-            )
-        ),
-        ConceptRule(
-            name = "Total Equity",
-            category = MetricCategory.TOTAL_EQUITY,
-            matchers = matchers(
-                contains("us-gaap:stockholdersequity"),
-                contains("us-gaap:stockholdersequityincludingportionattributabletononcontrollinginterest")
-            )
-        ),
-        ConceptRule(
-            name = "Cash and Cash Equivalents",
-            category = MetricCategory.CASH_AND_EQUIVALENTS,
-            matchers = matchers(
-                contains("us-gaap:cashandcashequivalentsatcarryingvalue")
-            )
-        ),
-        ConceptRule(
-            name = "Operating Cash Flow",
-            category = MetricCategory.OPERATING_CASH_FLOW,
-            matchers = matchers(
-                contains("us-gaap:netcashprovidedbyusedinoperatingactivities")
-            )
-        ),
-        ConceptRule(
-            name = "EPS (Basic)",
-            category = MetricCategory.EPS_BASIC,
-            matchers = matchers(
-                contains("us-gaap:earningspersharebasic")
-            )
-        ),
-        ConceptRule(
-            name = "EPS (Diluted)",
-            category = MetricCategory.EPS_DILUTED,
-            matchers = matchers(
-                contains("us-gaap:earningspersharediluted")
-            )
-        ),
-    )
 
     private fun XPathExecutable.eval(root: XdmNode): XdmValue {
         val selector = this.load()
@@ -129,30 +139,28 @@ object InlineXbrlExtractor {
     }
 
     data class XbrlContext(
-        val id: String,
-        val instant: String? = null,
-        val startDate: String? = null,
-        val endDate: String? = null,
+            val id: String,
+            val instant: String? = null,
+            val startDate: String? = null,
+            val endDate: String? = null,
     )
 
     data class XbrlFact(
-        val concept: String,
-        val value: BigDecimal,
-        val unitRef: String? = null,
-        val contextRef: String? = null,
-        val decimals: String? = null,
-        val scale: Int? = null,
-        val source: String,
+            val concept: String,
+            val value: BigDecimal,
+            val unitRef: String? = null,
+            val contextRef: String? = null,
+            val decimals: String? = null,
+            val scale: Int? = null,
+            val source: String,
     )
 
     fun extractMetrics(doc: Document): List<ExtendedFinancialMetric> {
         val w3c = W3CDom().fromJsoup(doc)
         val root = processor.newDocumentBuilder().build(DOMSource(w3c))
 
-        val contexts = mergeContexts(
-            primary = parseContexts(root),
-            fallback = parseContextsFallback(doc)
-        )
+        val contexts =
+                mergeContexts(primary = parseContexts(root), fallback = parseContextsFallback(doc))
         val facts = extractFacts(root).ifEmpty { extractFactsFallback(doc) }
 
         return facts.mapNotNull { fact ->
@@ -160,25 +168,30 @@ object InlineXbrlExtractor {
             val (name, category) = mapping
 
             val unit = inferUnit(fact)
-            val period = fact.contextRef?.let { contexts[normalizeId(it)] }?.let { ctx ->
-                ctx.instant ?: ctx.endDate ?: ctx.startDate
-            }
+            val period =
+                    fact.contextRef?.let { contexts[normalizeId(it)] }?.let { ctx ->
+                        ctx.instant ?: ctx.endDate ?: ctx.startDate
+                    }
 
             ExtendedFinancialMetric(
-                name = name,
-                value = fact.value.stripTrailingZeros().toPlainString(),
-                rawValue = fact.value.toDoubleOrNullSafe(),
-                unit = unit,
-                period = period,
-                category = category,
-                source = fact.source,
-                confidence = 0.97,
-                context = buildString {
-                    if (!period.isNullOrBlank()) append("period=$period ")
-                    if (!fact.unitRef.isNullOrBlank()) append("unit=${fact.unitRef} ")
-                    if (!fact.decimals.isNullOrBlank()) append("decimals=${fact.decimals} ")
-                    if (fact.scale != null) append("scale=${fact.scale} ")
-                }.trim(),
+                    name = name,
+                    value = fact.value.stripTrailingZeros().toPlainString(),
+                    rawValue = fact.value.toDoubleOrNullSafe()?.toString(),
+                    unit = unit,
+                    period = period,
+                    category = category,
+                    source = fact.source,
+                    confidence = 0.97,
+                    context =
+                            buildString {
+                                        if (!period.isNullOrBlank()) append("period=$period ")
+                                        if (!fact.unitRef.isNullOrBlank())
+                                                append("unit=${fact.unitRef} ")
+                                        if (!fact.decimals.isNullOrBlank())
+                                                append("decimals=${fact.decimals} ")
+                                        if (fact.scale != null) append("scale=${fact.scale} ")
+                                    }
+                                    .trim(),
             )
         }
     }
@@ -193,7 +206,13 @@ object InlineXbrlExtractor {
             val startDate = stringChild(ctx, "startDate")
             val endDate = stringChild(ctx, "endDate")
 
-            contexts[key] = XbrlContext(id = id, instant = instant, startDate = startDate, endDate = endDate)
+            contexts[key] =
+                    XbrlContext(
+                            id = id,
+                            instant = instant,
+                            startDate = startDate,
+                            endDate = endDate
+                    )
         }
 
         return contexts
@@ -203,13 +222,27 @@ object InlineXbrlExtractor {
         val contexts = mutableMapOf<String, XbrlContext>()
 
         doc.select("context, xbrli\\:context").forEach { ctxEl ->
-            val id = ctxEl.attr("id").ifBlank { return@forEach }
+            val id =
+                    ctxEl.attr("id").ifBlank {
+                        return@forEach
+                    }
             val key = normalizeId(id)
-            val instant = ctxEl.selectFirst("instant, xbrli\\:instant")?.text()?.trim()?.ifBlank { null }
-            val startDate = ctxEl.selectFirst("startDate, xbrli\\:startDate")?.text()?.trim()?.ifBlank { null }
-            val endDate = ctxEl.selectFirst("endDate, xbrli\\:endDate")?.text()?.trim()?.ifBlank { null }
+            val instant =
+                    ctxEl.selectFirst("instant, xbrli\\:instant")?.text()?.trim()?.ifBlank { null }
+            val startDate =
+                    ctxEl.selectFirst("startDate, xbrli\\:startDate")?.text()?.trim()?.ifBlank {
+                        null
+                    }
+            val endDate =
+                    ctxEl.selectFirst("endDate, xbrli\\:endDate")?.text()?.trim()?.ifBlank { null }
 
-            contexts[key] = XbrlContext(id = id, instant = instant, startDate = startDate, endDate = endDate)
+            contexts[key] =
+                    XbrlContext(
+                            id = id,
+                            instant = instant,
+                            startDate = startDate,
+                            endDate = endDate
+                    )
         }
 
         return contexts
@@ -229,15 +262,15 @@ object InlineXbrlExtractor {
             val parsed = parseNumericFact(rawText, scale = scale, sign = sign) ?: continue
 
             facts.add(
-                XbrlFact(
-                    concept = concept,
-                    value = parsed,
-                    unitRef = unitRef,
-                    contextRef = contextRef,
-                    decimals = decimals,
-                    scale = scale,
-                    source = describeSource(node, concept, contextRef, unitRef),
-                )
+                    XbrlFact(
+                            concept = concept,
+                            value = parsed,
+                            unitRef = unitRef,
+                            contextRef = contextRef,
+                            decimals = decimals,
+                            scale = scale,
+                            source = describeSource(node, concept, contextRef, unitRef),
+                    )
             )
         }
 
@@ -247,7 +280,10 @@ object InlineXbrlExtractor {
     private fun extractFactsFallback(doc: Document): List<XbrlFact> {
         val facts = mutableListOf<XbrlFact>()
 
-        val candidates = doc.select("*[contextref], *[contextRef], *[unitref], *[unitRef], ix\\:nonFraction, ix\\:nonNumeric")
+        val candidates =
+                doc.select(
+                        "*[contextref], *[contextRef], *[unitref], *[unitRef], ix\\:nonFraction, ix\\:nonNumeric"
+                )
 
         for (el in candidates) {
             val (concept, rawText) = extractConceptAndTextFallback(el) ?: continue
@@ -260,15 +296,15 @@ object InlineXbrlExtractor {
             val parsed = parseNumericFact(rawText, scale = scale, sign = sign) ?: continue
 
             facts.add(
-                XbrlFact(
-                    concept = concept,
-                    value = parsed,
-                    unitRef = unitRef,
-                    contextRef = contextRef,
-                    decimals = decimals,
-                    scale = scale,
-                    source = describeSourceFallback(el),
-                )
+                    XbrlFact(
+                            concept = concept,
+                            value = parsed,
+                            unitRef = unitRef,
+                            contextRef = contextRef,
+                            decimals = decimals,
+                            scale = scale,
+                            source = describeSourceFallback(el),
+                    )
             )
         }
 
@@ -277,9 +313,8 @@ object InlineXbrlExtractor {
 
     private fun extractConceptAndText(node: XdmNode): Pair<String, String>? {
         val concept =
-            node.attrAny("name")?.takeIf { it.isNotBlank() }
-                ?: node.nodeName?.localName?.takeIf { !it.isNullOrBlank() }
-                ?: return null
+                node.attrAny("name")?.takeIf { it.isNotBlank() }
+                        ?: node.nodeName?.localName?.takeIf { !it.isNullOrBlank() } ?: return null
 
         val text = node.stringValue.trim()
         if (text.isBlank()) return null
@@ -292,9 +327,8 @@ object InlineXbrlExtractor {
 
     private fun extractConceptAndTextFallback(el: org.jsoup.nodes.Element): Pair<String, String>? {
         val concept =
-            el.attrAnyCase("name")?.takeIf { it.isNotBlank() }
-                ?: el.tagName().takeIf { it.isNotBlank() }
-                ?: return null
+                el.attrAnyCase("name")?.takeIf { it.isNotBlank() }
+                        ?: el.tagName().takeIf { it.isNotBlank() } ?: return null
         val text = el.text().trim()
         if (text.isBlank()) return null
 
@@ -304,9 +338,7 @@ object InlineXbrlExtractor {
     }
 
     private fun parseNumericFact(text: String, scale: Int?, sign: String?): BigDecimal? {
-        val cleaned = text
-            .replace("\u00A0", " ")
-            .trim()
+        val cleaned = text.replace("\u00A0", " ").trim()
 
         // Skip non-numeric facts
         val hasDigit = cleaned.any { it.isDigit() }
@@ -315,21 +347,22 @@ object InlineXbrlExtractor {
         val isNegativeByParens = cleaned.startsWith("(") && cleaned.endsWith(")")
         val isNegativeBySign = sign == "-" || sign.equals("minus", ignoreCase = true)
 
-        val numberStr = cleaned
-            .replace("$", "")
-            .replace(",", "")
-            .replace("(", "")
-            .replace(")", "")
-            .replace(" ", "")
+        val numberStr =
+                cleaned.replace("$", "")
+                        .replace(",", "")
+                        .replace("(", "")
+                        .replace(")", "")
+                        .replace(" ", "")
 
         val base = numberStr.toBigDecimalOrNull() ?: return null
 
-        val scaled = if (scale != null) {
-            // iXBRL scale means multiply by 10^scale
-            base.multiply(BigDecimal.TEN.pow(scale))
-        } else {
-            base
-        }
+        val scaled =
+                if (scale != null) {
+                    // iXBRL scale means multiply by 10^scale
+                    base.multiply(BigDecimal.TEN.pow(scale))
+                } else {
+                    base
+                }
 
         val signed = if (isNegativeByParens || isNegativeBySign) scaled.negate() else scaled
 
@@ -351,14 +384,20 @@ object InlineXbrlExtractor {
         return when {
             concept.contains("earningspershare") -> MetricUnit.PER_SHARE
             unit == null -> MetricUnit.DOLLARS
-            unit.contains("usd") || unit.contains("us") || unit.contains("iso4217") -> MetricUnit.DOLLARS
+            unit.contains("usd") || unit.contains("us") || unit.contains("iso4217") ->
+                    MetricUnit.DOLLARS
             unit.contains("shares") -> MetricUnit.SHARES
             unit.contains("pure") -> MetricUnit.NONE
             else -> MetricUnit.DOLLARS
         }
     }
 
-    private fun describeSource(node: XdmNode, concept: String, contextRef: String?, unitRef: String?): String {
+    private fun describeSource(
+            node: XdmNode,
+            concept: String,
+            contextRef: String?,
+            unitRef: String?
+    ): String {
         return buildString {
             append("iXBRL:")
             append(concept)
@@ -385,7 +424,8 @@ object InlineXbrlExtractor {
         val lower = attr(name.lowercase())
         if (lower.isNotBlank()) return lower
 
-        val found = attributes().asList().firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
+        val found =
+                attributes().asList().firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
         return found?.takeIf { it.isNotBlank() }
     }
 
@@ -403,9 +443,7 @@ object InlineXbrlExtractor {
     }
 
     private fun stringChild(node: XdmNode, localName: String): String? {
-        return xpath
-            .evaluate("./*[local-name()='$localName']/text()", node)
-            .firstText()
+        return xpath.evaluate("./*[local-name()='$localName']/text()", node).firstText()
     }
 
     private fun XdmValue.firstText(): String? {
@@ -414,7 +452,8 @@ object InlineXbrlExtractor {
         return text.ifBlank { null }
     }
 
-    private fun XdmValue.nodes(): Sequence<XdmNode> = this.asIterable().asSequence().mapNotNull { it as? XdmNode }
+    private fun XdmValue.nodes(): Sequence<XdmNode> =
+            this.asIterable().asSequence().mapNotNull { it as? XdmNode }
 
     private fun normalizeId(id: String): String = id.trim().lowercase()
 
@@ -429,16 +468,18 @@ object InlineXbrlExtractor {
         (primary.keys + fallback.keys).forEach { key ->
             val p = primary[key]
             val f = fallback[key]
-            merged[key] = when {
-                p == null -> f!!
-                p.instant != null || p.startDate != null || p.endDate != null -> p
-                else -> f ?: p
-            }
+            merged[key] =
+                    when {
+                        p == null -> f!!
+                        p.instant != null || p.startDate != null || p.endDate != null -> p
+                        else -> f ?: p
+                    }
         }
         return merged
     }
 
-    private fun matchers(vararg predicates: (String) -> Boolean): List<(String) -> Boolean> = predicates.toList()
+    private fun matchers(vararg predicates: (String) -> Boolean): List<(String) -> Boolean> =
+            predicates.toList()
 
     private fun contains(token: String): (String) -> Boolean = { value -> value.contains(token) }
 

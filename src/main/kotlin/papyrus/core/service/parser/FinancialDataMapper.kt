@@ -90,7 +90,7 @@ object FinancialDataMapper {
             category: MetricCategory
     ): MonetaryValue? {
         return metrics.find { it.category == category }?.let { metric ->
-            metric.rawValue?.let { value -> MonetaryValue.fromDouble(value) }
+            metric.getRawValueBigDecimal()?.let { value -> MonetaryValue.fromBigDecimal(value) }
         }
     }
 
@@ -98,13 +98,13 @@ object FinancialDataMapper {
             metrics: List<ExtendedFinancialMetric>,
             category: MetricCategory
     ): Double? {
-        return metrics.find { it.category == category }?.rawValue
+        return metrics.find { it.category == category }?.getRawValueBigDecimal()?.toDouble()
     }
 
     private fun getLongValue(
             metrics: List<ExtendedFinancialMetric>,
             category: MetricCategory
     ): Long? {
-        return metrics.find { it.category == category }?.rawValue?.toLong()
+        return metrics.find { it.category == category }?.getRawValueBigDecimal()?.toLong()
     }
 }
