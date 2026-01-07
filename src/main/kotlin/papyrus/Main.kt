@@ -572,8 +572,8 @@ private fun CompanyFilingsPanel(
 
                 // Tab selection
 
-                // Report type filter state
-                var selectedReportTypes by remember { mutableStateOf(setOf<String>()) }
+                // Report type filter state (default: 10-Q for quarterly insights)
+                var selectedReportTypes by remember { mutableStateOf(setOf("10-Q")) }
 
                 // Filtered filings list
                 val filteredFilings =
