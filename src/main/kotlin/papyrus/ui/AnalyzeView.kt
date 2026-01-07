@@ -1675,12 +1675,6 @@ private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialM
                                 modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-                        if (showVisualization) {
-                                // Visual representation of ratios
-                                RatioVisualizationPanel(ratios)
-                                Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
-                        }
-
                         // Detailed ratio cards
                         ratios.forEach { ratio ->
                                 EnhancedRatioCard(ratio, showVisualization)
@@ -1829,8 +1823,7 @@ private fun EnhancedRatioCard(ratio: FinancialRatio, compact: Boolean = false) {
                 modifier = Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded },
                 elevation = AppDimens.CardElevation,
                 shape = AppShapes.Medium,
-                backgroundColor =
-                        if (compact) Color.Transparent else statusColor.copy(alpha = 0.05f)
+                backgroundColor = AppColors.Surface
         ) {
                 Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
                         Row(
