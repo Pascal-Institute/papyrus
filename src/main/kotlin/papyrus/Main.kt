@@ -693,6 +693,23 @@ private fun CompanyFilingsPanel(
 
                 // 탭 선택
                 var selectedTab by remember { mutableStateOf(0) }
+                
+                // 보고서 타입 필터 상태
+                var selectedReportTypes by remember { mutableStateOf(setOf<String>()) }
+                
+                // 필터링된 보고서 리스트
+                val filteredFilings = remember(filings, selectedReportTypes) {
+                    if (selectedReportTypes.isEmpty()) {
+                        filings
+                    } else {
+                        filings.filter { filing ->
+                            selectedReportTypes.any { type ->
+                                filing.form.contains(type, ignoreCase = true)
+                            }
+                        }
+                    }
+                }
+                
                 TabRow(
                         selectedTabIndex = selectedTab,
                         backgroundColor = AppColors.Surface,
@@ -701,7 +718,10 @@ private fun CompanyFilingsPanel(
                         Tab(
                                 selected = selectedTab == 0,
                                 onClick = { selectedTab = 0 },
-                                text = { Text("SEC Filings (${filings.size})") }
+                                text = { 
+                                    val displayCount = if (selectedReportTypes.isEmpty()) filings.size else filteredFilings.size
+                                    Text("SEC Filings ($displayCount)")
+                                }
                         )
                         Tab(
                                 selected = selectedTab == 1,
@@ -728,18 +748,36 @@ private fun CompanyFilingsPanel(
                                                         "This company has no recent SEC filings"
                                         )
                                 } else {
-                                        LazyColumn(
-                                                modifier =
-                                                        Modifier.fillMaxSize()
-                                                                .padding(
-                                                                        horizontal =
-                                                                                AppDimens
-                                                                                        .PaddingSmall
-                                                                ),
-                                                verticalArrangement =
-                                                        Arrangement.spacedBy(AppDimens.PaddingSmall)
-                                        ) {
-                                                items(filings) { filing ->
+                                        Column(modifier = Modifier.fillMaxSize()) {
+                                                // 보고서 타입 필터
+                                                ReportTypeFilter(
+                                                    availableTypes = filings.map { it.form }.distinct().sorted(),
+                                                    selectedTypes = selectedReportTypes,
+                                                    onTypesChanged = { selectedReportTypes = it }
+                                                )
+                                                
+                                                Divider(color = AppColors.Divider)
+                                                
+                                                // 필터링된 보고서가 없을 경우
+                                                if (filteredFilings.isEmpty()) {
+                                                    EmptyState(
+                                                        icon = Icons.Outlined.FilterAlt,
+                                                        title = "필터 결과 없음",
+                                                        description = "선택한 보고서 타입에 해당하는 파일이 없습니다"
+                                                    )
+                                                } else {
+                                                    LazyColumn(
+                                                        modifier =
+                                                                Modifier.fillMaxSize()
+                                                                        .padding(
+                                                                                horizontal =
+                                                                                        AppDimens
+                                                                                                .PaddingSmall
+                                                                        ),
+                                                        verticalArrangement =
+                                                                Arrangement.spacedBy(AppDimens.PaddingSmall)
+                                                    ) {
+                                                        items(filteredFilings) { filing ->
                                                         FilingCard(
                                                                 filing = filing,
                                                                 cik = ticker.cik.toString(),
@@ -758,7 +796,9 @@ private fun CompanyFilingsPanel(
                                                                         currentAnalyzingFiling ==
                                                                                 filing.accessionNumber
                                                         )
+                                                    }
                                                 }
+                                            }
                                         }
                                 }
                         }

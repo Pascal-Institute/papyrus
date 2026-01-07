@@ -1,6 +1,7 @@
 package papyrus.ui
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1215,4 +1216,119 @@ fun NewsArticleList(
                         }
                 }
         }
+}
+/** \ubcf4\uace0\uc11c \ud0c0\uc785 \ud544\ud130 */
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun ReportTypeFilter(
+    availableTypes: List<String>,
+    selectedTypes: Set<String>,
+    onTypesChanged: (Set<String>) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(AppColors.Surface)
+            .padding(AppDimens.PaddingMedium)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.FilterAlt,
+                    contentDescription = null,
+                    tint = AppColors.Primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "\ubcf4\uace0\uc11c \ud0c0\uc785 \ud544\ud130",
+                    style = AppTypography.Subtitle1,
+                    color = AppColors.OnSurface,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            // \uc804\uccb4 \uc120\ud0dd/\ud574\uc81c \ubc84\ud2bc
+            if (selectedTypes.isNotEmpty()) {
+                TextButton(
+                    onClick = { onTypesChanged(emptySet()) }
+                ) {
+                    Text(
+                        text = "\ubaa8\ub450 \ud574\uc81c",
+                        style = AppTypography.Caption,
+                        color = AppColors.Primary
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // \ubcf4\uace0\uc11c \ud0c0\uc785 \uce69\ub4e4
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            availableTypes.forEach { type ->
+                val isSelected = selectedTypes.contains(type)
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        val newTypes = if (isSelected) {
+                            selectedTypes - type
+                        } else {
+                            selectedTypes + type
+                        }
+                        onTypesChanged(newTypes)
+                    },
+                    content = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                text = type,
+                                style = AppTypography.Caption,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    },
+                    colors = ChipDefaults.filterChipColors(
+                        backgroundColor = if (isSelected) AppColors.Primary.copy(alpha = 0.1f) else AppColors.Surface,
+                        contentColor = if (isSelected) AppColors.Primary else AppColors.OnSurface,
+                        selectedBackgroundColor = AppColors.Primary.copy(alpha = 0.15f),
+                        selectedContentColor = AppColors.Primary
+                    ),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = if (isSelected) AppColors.Primary else AppColors.Divider
+                    )
+                )
+            }
+        }
+        
+        // \uc120\ud0dd\ub41c \ud544\ud130 \ud45c\uc2dc
+        if (selectedTypes.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "${selectedTypes.size}\uac1c \ud0c0\uc785 \uc120\ud0dd\ub428",
+                style = AppTypography.Caption,
+                color = AppColors.OnSurfaceSecondary
+            )
+        }
+    }
 }
