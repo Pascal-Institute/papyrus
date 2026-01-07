@@ -1,0 +1,49 @@
+# EditorConfig - Consistent Coding Styles
+# Following AGENTS.md principles: intuitive, concise, meaningful code
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Kotlin files
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 120
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# Keep functions concise (AGENTS.md: < 30 lines)
+# Use meaningful names (AGENTS.md: domain-specific naming)
+
+# Gradle files
+[*.gradle.kts]
+indent_size = 4
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# XML/HTML (SEC reports)
+[*.{xml,html,htm,xbrl,xsd}]
+indent_size = 2
+max_line_length = 180
+
+# Markdown documentation
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 100
+
+# YAML configuration
+[*.{yml,yaml}]
+indent_size = 2
+
+# Properties files
+[*.properties]
+end_of_line = lf

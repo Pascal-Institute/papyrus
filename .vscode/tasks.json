@@ -1,0 +1,95 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Gradle: Build",
+      "type": "shell",
+      "command": "${workspaceFolder}/gradlew.bat",
+      "args": ["build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Gradle: Clean Build",
+      "type": "shell",
+      "command": "${workspaceFolder}/gradlew.bat",
+      "args": ["clean", "build"],
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Gradle: Test",
+      "type": "shell",
+      "command": "${workspaceFolder}/gradlew.bat",
+      "args": ["test", "--info"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Gradle: Run Application",
+      "type": "shell",
+      "command": "${workspaceFolder}/gradlew.bat",
+      "args": ["run"],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Gradle: Run with Console",
+      "type": "shell",
+      "command": "${workspaceFolder}/gradlew.bat",
+      "args": ["run", "--console=plain"],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Gradle: Analyze SEC Report (Quick Test)",
+      "type": "shell",
+      "command": "${workspaceFolder}/gradlew.bat",
+      "args": ["test", "--tests", "*FinancialAnalyzer*", "--info"],
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Gradle: Refresh Dependencies",
+      "type": "shell",
+      "command": "${workspaceFolder}/gradlew.bat",
+      "args": ["build", "--refresh-dependencies"],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

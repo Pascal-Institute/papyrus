@@ -1,0 +1,36 @@
+{
+  "recommendations": [
+    // Kotlin Language Support
+    "mathiasfrohlich.kotlin",
+    "fwcd.kotlin",
+
+    // Java/Gradle Support
+    "vscjava.vscode-java-pack",
+    "vscjava.vscode-gradle",
+
+    // Git & Version Control
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+
+    // Code Quality & Formatting
+    "editorconfig.editorconfig",
+    "aaron-bond.better-comments",
+
+    // Productivity
+    "usernamehw.errorlens",
+    "gruntfuggly.todo-tree",
+    "wayou.vscode-todo-highlight",
+
+    // Financial Analysis Specific
+    "redhat.vscode-xml",
+    "mechatroner.rainbow-csv",
+
+    // Testing
+    "kavod-io.vscode-jest-test-adapter",
+
+    // Markdown & Documentation
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint"
+  ],
+  "unwantedRecommendations": []
+}

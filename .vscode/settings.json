@@ -1,0 +1,86 @@
+{
+  // Java/Kotlin Configuration
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic",
+
+  // Files & Encoding
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+
+  // Editor Settings
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.rulers": [120],
+  "editor.wordWrap": "off",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.inlineSuggest.enabled": true,
+
+  // Kotlin Specific
+  "kotlin.languageServer.enabled": true,
+  "kotlin.compiler.executable": "",
+
+  // Search & Files Exclusion
+  "search.exclude": {
+    "**/build": true,
+    "**/.gradle": true,
+    "**/.kotlin": true,
+    "**/bin": true,
+    "**/out": true,
+    "**/*.class": true
+  },
+  "files.exclude": {
+    "**/.git": false,
+    "**/.gradle": true,
+    "**/build": false,
+    "**/bin": false
+  },
+
+  // Financial Project Specific
+  "files.associations": {
+    "*.htm": "html",
+    "*.xbrl": "xml",
+    "*.xsd": "xml"
+  },
+
+  // Git
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+
+  // Terminal
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.fontSize": 12,
+
+  // Testing
+  "java.test.config": {},
+  "java.test.defaultConfig": "",
+
+  // Comments (following AGENTS.md - comments in English)
+  "better-comments.tags": [
+    {
+      "tag": "FINANCIAL",
+      "color": "#FFD700",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": true,
+      "italic": false
+    },
+    {
+      "tag": "SEC",
+      "color": "#00BFFF",
+      "strikethrough": false,
+      "underline": false,
+      "backgroundColor": "transparent",
+      "bold": true,
+      "italic": false
+    }
+  ]
+}

@@ -20,8 +20,9 @@ out/
 .settings/
 bin/
 
-# VSCode
-.vscode/
+# VSCode (Keep configuration for team consistency)
+# .vscode/
+.vscode/*.log
 
 # macOS
 .DS_Store
