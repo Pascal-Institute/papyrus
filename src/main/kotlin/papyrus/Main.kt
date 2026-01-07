@@ -27,8 +27,8 @@ import papyrus.core.model.TickerEntry
 import papyrus.core.network.SecApi
 import papyrus.core.service.analyzer.FinancialAnalyzer
 import papyrus.ui.*
-import papyrus.util.BookmarkManager
-import papyrus.util.FileUtils
+import papyrus.util.data.BookmarkManager
+import papyrus.util.file.FileUtils
 
 /** Main Application Entry Point */
 fun main() = application {

@@ -1,4 +1,4 @@
-package papyrus.util
+package papyrus.util.data
 
 import java.io.File
 import java.time.LocalDateTime

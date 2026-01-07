@@ -1,7 +1,8 @@
 package papyrus.core.service.parser
 
 import papyrus.core.model.*
-import papyrus.util.*
+import papyrus.util.file.*
+import papyrus.util.finance.*
 
 /** 향상된 재무 분석 파서 */
 object EnhancedFinancialParser {
@@ -163,8 +164,7 @@ object EnhancedFinancialParser {
                                 else -> "dollars"
                         }
 
-                val monetaryAmount =
-                        papyrus.util.FinancialPrecision.parseSecValue(valueStr, unitStr, "USD")
+                val monetaryAmount = FinancialPrecision.parseSecValue(valueStr, unitStr, "USD")
                 return monetaryAmount?.number?.numberValue(java.math.BigDecimal::class.java)
         }
 
@@ -1978,7 +1978,7 @@ object EnhancedFinancialParser {
                                 else -> "dollars"
                         }
 
-                val result = papyrus.util.FinancialPrecision.parseSecValue(value, unitStr, "USD")
+                val result = FinancialPrecision.parseSecValue(value, unitStr, "USD")
                 return result?.number?.numberValue(java.math.BigDecimal::class.java)?.let {
                         if (isNegative && it > java.math.BigDecimal.ZERO) it.negate() else it
                 }

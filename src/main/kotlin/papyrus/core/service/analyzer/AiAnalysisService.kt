@@ -13,7 +13,7 @@ import papyrus.core.model.AiAnalysisResult
 import papyrus.core.model.FinancialAnalysis
 import papyrus.core.model.FinancialMetric
 import papyrus.core.model.FinancialRatio
-import papyrus.util.SettingsManager
+import papyrus.util.data.SettingsManager
 
 /** OpenRouter AI 분석 서비스 무료 LLM API를 사용하여 재무 데이터 분석 */
 object AiAnalysisService {

@@ -1,15 +1,15 @@
-package papyrus.util
+package papyrus.util.data
 
+import java.io.File
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import papyrus.core.model.*
-import java.io.File
 
 /** Cache for storing and retrieving AI analysis results to avoid redundant API calls */
 object AnalysisCache {
     private val cacheDir = File(System.getProperty("user.home"), ".papyrus/cache")
-    private val json = Json { 
+    private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
     }
@@ -34,11 +34,12 @@ object AnalysisCache {
     fun saveAnalysis(documentContent: String, analysis: FinancialAnalysis) {
         try {
             val cacheFile = getCacheFile(documentContent)
-            val cacheData = CachedAnalysis(
-                documentHash = getCacheKey(documentContent),
-                timestamp = System.currentTimeMillis(),
-                analysis = analysis
-            )
+            val cacheData =
+                    CachedAnalysis(
+                            documentHash = getCacheKey(documentContent),
+                            timestamp = System.currentTimeMillis(),
+                            analysis = analysis
+                    )
             val jsonString = json.encodeToString(cacheData)
             cacheFile.writeText(jsonString)
             println("Analysis cached successfully")
@@ -94,7 +95,7 @@ object AnalysisCache {
         try {
             val now = System.currentTimeMillis()
             val maxAge = 7 * 24 * 60 * 60 * 1000L // 7 days
-            
+
             cacheDir.listFiles()?.forEach { file ->
                 val age = now - file.lastModified()
                 if (age > maxAge) {
@@ -109,7 +110,7 @@ object AnalysisCache {
 
 @Serializable
 private data class CachedAnalysis(
-    val documentHash: String,
-    val timestamp: Long,
-    val analysis: FinancialAnalysis
+        val documentHash: String,
+        val timestamp: Long,
+        val analysis: FinancialAnalysis
 )

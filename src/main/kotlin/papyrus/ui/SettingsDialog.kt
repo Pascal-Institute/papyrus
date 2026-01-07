@@ -20,7 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import papyrus.core.service.analyzer.AiAnalysisService
-import papyrus.util.SettingsManager
+import papyrus.util.data.SettingsManager
 
 /** API key settings dialog */
 @Composable

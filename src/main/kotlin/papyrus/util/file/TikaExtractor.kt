@@ -1,4 +1,4 @@
-package papyrus.util
+package papyrus.util.file
 
 import java.io.File
 import java.io.InputStream
@@ -14,9 +14,9 @@ import org.apache.tika.sax.BodyContentHandler
 object TikaExtractor {
 
     data class ExtractionResult(
-        val extractedText: String,
-        val mimeType: String? = null,
-        val metadata: Map<String, String> = emptyMap(),
+            val extractedText: String,
+            val mimeType: String? = null,
+            val metadata: Map<String, String> = emptyMap(),
     )
 
     fun extract(file: File): ExtractionResult {
@@ -28,11 +28,12 @@ object TikaExtractor {
     fun extract(input: InputStream, resourceName: String? = null): ExtractionResult {
         val parser = AutoDetectParser()
         val handler = BodyContentHandler(-1)
-        val metadata = Metadata().apply {
-            if (!resourceName.isNullOrBlank()) {
-                set(Metadata.RESOURCE_NAME_KEY, resourceName)
-            }
-        }
+        val metadata =
+                Metadata().apply {
+                    if (!resourceName.isNullOrBlank()) {
+                        set(Metadata.RESOURCE_NAME_KEY, resourceName)
+                    }
+                }
 
         parser.parse(input, handler, metadata)
 
@@ -40,9 +41,9 @@ object TikaExtractor {
         val metaMap = metadata.names().associateWith { name -> metadata.get(name).orEmpty() }
 
         return ExtractionResult(
-            extractedText = handler.toString().trim(),
-            mimeType = mimeType,
-            metadata = metaMap,
+                extractedText = handler.toString().trim(),
+                mimeType = mimeType,
+                metadata = metaMap,
         )
     }
 }

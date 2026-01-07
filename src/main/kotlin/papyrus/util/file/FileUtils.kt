@@ -1,18 +1,18 @@
-package papyrus.util
+package papyrus.util.file
 
 import java.io.File
 
 object FileUtils {
-    
+
     // Centralized file extension constants to avoid duplication
     private val SUPPORTED_EXTENSIONS = setOf("pdf", "html", "htm", "txt")
     private val HTML_EXTENSIONS = setOf("html", "htm")
-    
+
     data class ExtractedDocument(
-        val rawContent: String,
-        val extractedText: String,
-        val mimeType: String? = null,
-        val metadata: Map<String, String> = emptyMap(),
+            val rawContent: String,
+            val extractedText: String,
+            val mimeType: String? = null,
+            val metadata: Map<String, String> = emptyMap(),
     )
 
     /**
@@ -27,29 +27,29 @@ object FileUtils {
                 val raw = file.readText(Charsets.UTF_8)
                 val tika = runCatching { TikaExtractor.extract(file) }.getOrNull()
                 ExtractedDocument(
-                    rawContent = raw,
-                    extractedText = tika?.extractedText ?: raw,
-                    mimeType = tika?.mimeType,
-                    metadata = tika?.metadata ?: emptyMap(),
+                        rawContent = raw,
+                        extractedText = tika?.extractedText ?: raw,
+                        mimeType = tika?.mimeType,
+                        metadata = tika?.metadata ?: emptyMap(),
                 )
             }
             ext == "pdf" -> {
                 val tika = TikaExtractor.extract(file)
                 ExtractedDocument(
-                    rawContent = "",
-                    extractedText = tika.extractedText,
-                    mimeType = tika.mimeType,
-                    metadata = tika.metadata,
+                        rawContent = "",
+                        extractedText = tika.extractedText,
+                        mimeType = tika.mimeType,
+                        metadata = tika.metadata,
                 )
             }
             else -> {
                 val raw = runCatching { file.readText(Charsets.UTF_8) }.getOrElse { "" }
                 val tika = runCatching { TikaExtractor.extract(file) }.getOrNull()
                 ExtractedDocument(
-                    rawContent = raw,
-                    extractedText = tika?.extractedText ?: raw,
-                    mimeType = tika?.mimeType,
-                    metadata = tika?.metadata ?: emptyMap(),
+                        rawContent = raw,
+                        extractedText = tika?.extractedText ?: raw,
+                        mimeType = tika?.mimeType,
+                        metadata = tika?.metadata ?: emptyMap(),
                 )
             }
         }

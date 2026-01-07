@@ -1,4 +1,4 @@
-package papyrus.util
+package papyrus.util.data
 
 import java.io.File
 import java.util.Properties
@@ -35,7 +35,9 @@ object SettingsManager {
         }
     }
 
-    /** Get OpenRouter API key - Priority: environment variable -> system property -> saved settings */
+    /**
+     * Get OpenRouter API key - Priority: environment variable -> system property -> saved settings
+     */
     fun getApiKey(): String? {
         // 1. Check environment variable
         System.getenv("OPENROUTER_API_KEY")?.let {
