@@ -39,41 +39,43 @@ import papyrus.core.model.XbrlCompanyFact
 import papyrus.core.network.SecApi
 import papyrus.core.service.parser.XbrlCompanyFactsExtractor
 
-private val uiEmojiMarkers =
-        listOf(
-                "✅",
-                "⚠️",
-                "⚠",
-                "📌",
-                "📊",
-                "📈",
-                "📋",
-                "🔍",
-                "✨",
-                "🚀",
-                "⭐",
-                "💡",
-                "🏢",
-                "💰",
-                "⚖️",
-                "💵",
-                "💧",
-                "🏦",
-                "👤",
-                "⚙️",
-                "📜",
-                "🏃",
-                "💻",
-                "🌍",
-                "🌐"
-        )
-
-private fun sanitizeUiText(text: String): String {
-        var result = text
-        for (marker in uiEmojiMarkers) {
-                result = result.replace(marker, "")
+/** Map icon name to Material Icon ImageVector */
+private fun getIconForName(iconName: String): ImageVector {
+        return when (iconName) {
+                "Business" -> Icons.Filled.Business
+                "AttachMoney" -> Icons.Filled.AttachMoney
+                "Balance" -> Icons.Filled.Balance
+                "Payments" -> Icons.Filled.Payments
+                "Warning" -> Icons.Filled.Warning
+                "Description" -> Icons.Filled.Description
+                "TrendingUp" -> Icons.Filled.TrendingUp
+                "TrendingDown" -> Icons.Filled.TrendingDown
+                "AccountBalance" -> Icons.Filled.AccountBalance
+                "Assessment" -> Icons.Filled.Assessment
+                "CheckCircle" -> Icons.Filled.CheckCircle
+                "Error" -> Icons.Filled.Error
+                "Info" -> Icons.Filled.Info
+                "Search" -> Icons.Filled.Search
+                "Star" -> Icons.Filled.Star
+                "Lightbulb" -> Icons.Outlined.Lightbulb
+                "Analytics" -> Icons.Filled.Analytics
+                "MonetizationOn" -> Icons.Filled.MonetizationOn
+                "ShowChart" -> Icons.Filled.ShowChart
+                "BarChart" -> Icons.Filled.BarChart
+                "PieChart" -> Icons.Filled.PieChart
+                "Receipt" -> Icons.Filled.Receipt
+                "CreditCard" -> Icons.Filled.CreditCard
+                "Wallet" -> Icons.Filled.AccountBalanceWallet
+                "Person" -> Icons.Filled.Person
+                "Settings" -> Icons.Filled.Settings
+                "Article" -> Icons.Filled.Article
+                "Speed" -> Icons.Filled.Speed
+                "Computer" -> Icons.Filled.Computer
+                "Public" -> Icons.Filled.Public
+                "Language" -> Icons.Filled.Language
+                "PushPin" -> Icons.Filled.PushPin
+                else -> Icons.Filled.Info // Default fallback
         }
-        return result.replace("\uFE0F", "")
 }
 
 /** Helper function to format currency values */
@@ -1184,7 +1186,7 @@ private fun StrengthWeaknessCard(
                         } else {
                                 items.forEach { item ->
                                         Text(
-                                                text = sanitizeUiText(item).trim(),
+                                                text = item.trim(),
                                                 style = AppTypography.Body2,
                                                 color = AppColors.OnSurface,
                                                 modifier = Modifier.padding(vertical = 2.dp)
@@ -1210,7 +1212,7 @@ private fun RecommendationsCard(recommendations: List<String>) {
 
                         recommendations.forEach { recommendation ->
                                 Text(
-                                        text = sanitizeUiText(recommendation).trim(),
+                                        text = recommendation.trim(),
                                         style = AppTypography.Body2,
                                         color = AppColors.OnSurface,
                                         modifier = Modifier.padding(vertical = 4.dp)
@@ -1235,7 +1237,7 @@ private fun KeyTakeawaysCard(takeaways: List<String>) {
 
                         takeaways.forEach { takeaway ->
                                 Text(
-                                        text = sanitizeUiText(takeaway).trim(),
+                                        text = takeaway.trim(),
                                         style = AppTypography.Body2,
                                         color = AppColors.OnSurface,
                                         modifier = Modifier.padding(vertical = 4.dp),
@@ -1276,7 +1278,7 @@ private fun ReportTypeCard(reportType: String?, explanation: String?) {
                         Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
 
                         Text(
-                                text = sanitizeUiText(explanation).trim(),
+                                text = explanation.trim(),
                                 style = AppTypography.Body2,
                                 color = AppColors.OnSurface
                         )
@@ -1319,7 +1321,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
                         ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
-                                                imageVector = Icons.Outlined.Lightbulb,
+                                                imageVector = getIconForName(insight.icon),
                                                 contentDescription = null,
                                                 tint = AppColors.Primary,
                                                 modifier = Modifier.size(28.dp)
@@ -1334,7 +1336,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
                                                 )
                                                 Text(
                                                         text =
-                                                                sanitizeUiText(insight.summary)
+                                                                insight.summary
                                                                         .trim(),
                                                         style = AppTypography.Body2,
                                                         color = AppColors.OnSurface
@@ -1408,7 +1410,7 @@ private fun InsightSection(title: String, content: String, backgroundColor: Colo
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                                text = sanitizeUiText(content).trim(),
+                                text = content.trim(),
                                 style = AppTypography.Body2,
                                 color = AppColors.OnSurface
                         )

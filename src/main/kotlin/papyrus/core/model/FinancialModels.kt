@@ -42,7 +42,7 @@ enum class RatioCategory {
 @Serializable
 data class BeginnerInsight(
         val title: String,
-        val emoji: String,
+        val icon: String, // Material Icon name (e.g., "Business", "AttachMoney", "TrendingUp")
         val summary: String,
         val detailedExplanation: String,
         val whatItMeans: String,

@@ -897,8 +897,8 @@ object FinancialAnalyzer {
         private fun formatYoY(change: Double?): String {
                 if (change == null) return ""
                 val sign = if (change >= 0) "+" else ""
-                val emoji = if (change >= 0) "📈" else "📉"
-                return " $emoji ${sign}${String.format("%.1f", change)}% YoY"
+                val arrow = if (change >= 0) "↑" else "↓"
+                return " $arrow ${sign}${String.format("%.1f", change)}% YoY"
         }
 
         // ==========================================
@@ -1099,13 +1099,13 @@ object FinancialAnalyzer {
 
                 return BeginnerInsight(
                         title = "회사 규모 분석",
-                        emoji = "🏢",
+                        icon = "Business",
                         summary = "$sizeCategory (연매출 ${formatNumber(revenue)})",
                         detailedExplanation =
                                 """
                 이 회사의 연간 매출 규모는 ${formatNumber(revenue)}입니다.
                 ${comparisonText}에 해당합니다.
-                
+
                 📊 규모별 특징:
                 • 대기업: 안정적이지만 성장률은 낮을 수 있음
                 • 중형기업: 성장과 안정성의 균형
@@ -1144,13 +1144,13 @@ object FinancialAnalyzer {
 
                 return BeginnerInsight(
                         title = "수익성 분석",
-                        emoji = "💰",
+                        icon = "AttachMoney",
                         summary = "$status (${mainRatio?.formattedValue ?: "N/A"})",
                         detailedExplanation =
                                 """
                 이 회사의 수익성 지표입니다:
                 $ratioDetails
-                
+
                 📈 수익성 해석:
                 • 매출총이익률: 제품/서비스 자체의 수익성
                 • 영업이익률: 영업활동의 효율성
@@ -1159,7 +1159,7 @@ object FinancialAnalyzer {
                         whatItMeans =
                                 """
                 수익성 지표는 '100원 팔았을 때 실제로 얼마가 남는가'를 보여줍니다.
-                
+
                 예시: 순이익률 10% = 100원 매출 시 10원이 순이익
             """.trimIndent(),
                         whyItMatters =
@@ -1196,7 +1196,7 @@ object FinancialAnalyzer {
 
                 return BeginnerInsight(
                         title = "재무 안정성",
-                        emoji = "⚖️",
+                        icon = "Balance",
                         summary = "$status",
                         detailedExplanation =
                                 buildString {
@@ -1216,7 +1216,7 @@ object FinancialAnalyzer {
                                 """
                 • 부채비율: 자기 돈(자본) 대비 빌린 돈(부채)의 비율
                   예: 100% = 자기 돈만큼 빚이 있음
-                  
+
                 • 유동비율: 1년 내 갚아야 할 빚 대비 현금화 가능 자산
                   예: 2.0 = 단기 부채의 2배만큼 자산이 있음
             """.trimIndent(),
@@ -1253,7 +1253,7 @@ object FinancialAnalyzer {
 
                 return BeginnerInsight(
                         title = "현금 흐름 분석",
-                        emoji = "💵",
+                        icon = "Payments",
                         summary = status,
                         detailedExplanation =
                                 buildString {
@@ -1286,7 +1286,7 @@ object FinancialAnalyzer {
                 • 영업현금흐름: 본업에서 실제로 들어온 현금
                 • 잉여현금흐름(FCF): 투자 후 남는 현금 (배당, 자사주 매입에 사용 가능)
                 • 보유 현금: 지금 당장 쓸 수 있는 현금
-                
+
                 💡 순이익이 있어도 현금흐름이 마이너스면 위험할 수 있습니다!
             """.trimIndent(),
                         whyItMatters =
@@ -1330,14 +1330,14 @@ object FinancialAnalyzer {
 
                 return BeginnerInsight(
                         title = "주요 위험 요소",
-                        emoji = "⚠️",
+                        icon = "Warning",
                         summary = "${riskFactors.size}개 위험 요소 (고위험 ${highRisks.size}개)",
                         detailedExplanation =
                                 """
                 SEC 보고서에서 발견된 주요 위험 요소입니다:
-                
+
                 $mainRisks
-                
+
                 📊 카테고리별 분류:
                 ${riskByCategory.entries.take(5).joinToString("\n") { (cat, risks) ->
                     "• ${cat.name}: ${risks.size}개"
@@ -1347,7 +1347,7 @@ object FinancialAnalyzer {
                                 """
                 위험 요소(Risk Factors)는 회사가 직면한 잠재적 문제들입니다.
                 SEC는 모든 상장기업에 위험 요소 공시를 의무화하고 있습니다.
-                
+
                 💡 모든 회사에 위험 요소가 있는 것은 정상입니다!
             """.trimIndent(),
                         whyItMatters =
@@ -1364,7 +1364,7 @@ object FinancialAnalyzer {
         private fun createReportTypeInsight(reportType: String): BeginnerInsight {
                 return BeginnerInsight(
                         title = "이 보고서는?",
-                        emoji = "📋",
+                        icon = "Description",
                         summary = "SEC Form $reportType",
                         detailedExplanation = getReportTypeExplanation(reportType)
                                         ?: "SEC 공시 보고서입니다.",
@@ -1408,7 +1408,7 @@ object FinancialAnalyzer {
 
                 return BeginnerInsight(
                         title = "투자 효율성",
-                        emoji = "📈",
+                        icon = "TrendingUp",
                         summary = status,
                         detailedExplanation =
                                 buildString {
@@ -1428,7 +1428,7 @@ object FinancialAnalyzer {
                                 """
                 • ROE: 주주가 투자한 돈으로 얼마나 벌었는가
                   예: ROE 15% = 100만원 투자하면 15만원 수익 창출
-                  
+
                 • ROA: 회사의 모든 자산으로 얼마나 벌었는가
                   예: ROA 5% = 100억 자산으로 5억 수익 창출
             """.trimIndent(),
@@ -1953,55 +1953,55 @@ object FinancialAnalyzer {
                         "10-K" ->
                                 """
                 📚 10-K 연간 보고서 (Annual Report)
-                
+
                 미국 상장기업이 매년 회계연도 종료 후 60~90일 이내에 SEC에 제출하는 가장 포괄적인 재무 보고서입니다.
-                
+
                 🔍 주요 섹션:
                 • Part I - 사업 개요 (Business): 회사가 무슨 일을 하는지
                 • Part I - 위험 요소 (Risk Factors): 투자 위험 요인
                 • Part II - MD&A: 경영진이 설명하는 재무 상황
                 • Part II - 재무제표: 숫자로 된 성적표
-                
+
                 💡 팁: 처음이라면 'Business'와 'Risk Factors'부터 읽어보세요!
             """.trimIndent()
                         "10-Q" ->
                                 """
                 📊 10-Q 분기 보고서 (Quarterly Report)
-                
+
                 매 분기(3개월)마다 제출하는 보고서입니다. 10-K보다 간략하지만 최신 상황을 파악할 수 있습니다.
-                
+
                 🔍 특징:
                 • 감사받지 않은 재무제표 (검토만 받음)
                 • 분기별 실적 비교 가능
                 • 10-K 이후 변동사항 확인
-                
+
                 💡 팁: 전 분기, 전년 동기와 비교하면서 읽으면 트렌드를 파악할 수 있어요!
             """.trimIndent()
                         "8-K" ->
                                 """
                 ⚡ 8-K 수시 보고서 (Current Report)
-                
+
                 중요한 사건이 발생했을 때 4영업일 이내에 제출하는 긴급 보고서입니다.
-                
+
                 🔍 제출 사유 예시:
                 • 인수합병 발표
                 • CEO/CFO 교체
                 • 중요 계약 체결 또는 해지
                 • 파산 신청
                 • 실적 발표 (Earnings Release)
-                
+
                 💡 팁: 8-K가 자주 나온다면 회사에 변화가 많다는 신호일 수 있어요!
             """.trimIndent()
                         "20-F" ->
                                 """
                 🌏 20-F 해외기업 연간 보고서
-                
+
                 미국에 상장된 외국 기업이 제출하는 연간 보고서입니다. 10-K와 유사합니다.
-                
+
                 🔍 특징:
                 • 해당 국가의 회계 기준으로 작성될 수 있음
                 • 미국 GAAP과의 차이점 설명 포함
-                
+
                 💡 팁: 알리바바, TSMC 같은 외국 기업 분석 시 확인하세요!
             """.trimIndent()
                         else -> null
