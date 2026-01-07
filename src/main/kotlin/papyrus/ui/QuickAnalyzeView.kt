@@ -89,6 +89,29 @@ private fun formatCurrency(value: Double): String {
         }
 }
 
+/** Helper function to format number values (for shares, quantities, etc.) */
+private fun formatNumber(value: Double): String {
+        val absValue = kotlin.math.abs(value)
+        val sign = if (value < 0) "-" else ""
+
+        return when {
+                absValue >= 1_000_000_000 -> String.format("%s%.2fB", sign, absValue / 1_000_000_000)
+                absValue >= 1_000_000 -> String.format("%s%.2fM", sign, absValue / 1_000_000)
+                absValue >= 1_000 -> String.format("%s%.2fK", sign, absValue / 1_000)
+                else -> String.format("%s%.0f", sign, absValue)
+        }
+}
+
+/** Check if metric represents a quantity rather than currency */
+private fun isQuantityMetric(metricName: String): Boolean {
+        val lowerName = metricName.lowercase()
+        return lowerName.contains("shares") ||
+               lowerName.contains("outstanding") ||
+               lowerName.contains("quantity") ||
+               lowerName.contains("count") ||
+               lowerName.contains("number of")
+}
+
 /** Parse metric value string to double for formatting */
 private fun parseMetricValue(valueString: String): Double? {
         return try {
@@ -2155,9 +2178,17 @@ private fun SimpleMetricsCard(metrics: List<FinancialMetric>) {
                                                                 modifier = Modifier.weight(1f)
                                                         )
 
-                                                        val displayValue = metric.rawValue?.let { formatCurrency(it) }
-                                                                ?: parseMetricValue(metric.value)?.let { formatCurrency(it) }
-                                                                ?: metric.value
+                                                        val displayValue = if (isQuantityMetric(metric.name)) {
+                                                                // For shares and quantities, use number formatting without $
+                                                                metric.rawValue?.let { formatNumber(it) }
+                                                                        ?: parseMetricValue(metric.value)?.let { formatNumber(it) }
+                                                                        ?: metric.value
+                                                        } else {
+                                                                // For currency values, use currency formatting with $
+                                                                metric.rawValue?.let { formatCurrency(it) }
+                                                                        ?: parseMetricValue(metric.value)?.let { formatCurrency(it) }
+                                                                        ?: metric.value
+                                                        }
 
                                                         Text(
                                                                 text = displayValue,
