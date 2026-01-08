@@ -35,8 +35,8 @@ implementation("com.pascal.institute:ahmes:1.0.0")
 ### Parse HTML SEC Filing
 
 ```kotlin
-import io.ahmes.format.ParserFactory
-import io.ahmes.format.HtmlParser
+import com.pascal.institute.ahmes.format.ParserFactory
+import com.pascal.institute.ahmes.format.HtmlParser
 
 // Automatic format detection
 val result = ParserFactory.parseDocument(htmlContent, "apple-10k.htm")
@@ -53,8 +53,8 @@ val htmlResult = htmlParser.parse(htmlContent, "annual-report.htm")
 ### Parse by SEC Form Type
 
 ```kotlin
-import io.ahmes.parser.SecReportParserFactory
-import io.ahmes.model.SecReportType
+import com.pascal.institute.ahmes.parser.SecReportParserFactory
+import com.pascal.institute.ahmes.model.SecReportType
 
 // Get parser for 10-K form
 val parser = SecReportParserFactory.getParser(SecReportType.FORM_10K)
@@ -75,7 +75,7 @@ when (result) {
 ### Extract Financial Metrics
 
 ```kotlin
-import io.ahmes.parser.EnhancedFinancialParser
+import com.pascal.institute.ahmes.parser.EnhancedFinancialParser
 
 val metrics = EnhancedFinancialParser.parsePdfTextTable(textContent)
 metrics.forEach { metric ->
@@ -99,10 +99,23 @@ xbrlMetrics.forEach { metric ->
 }
 ```
 
+### Extract Inline XBRL Data
+
+```kotlin
+import com.pascal.institute.ahmes.parser.InlineXbrlExtractor
+import org.jsoup.Jsoup
+
+val document = Jsoup.parse(htmlContent)
+val xbrlMetrics = InlineXbrlExtractor.extractMetrics(document)
+xbrlMetrics.forEach { metric ->
+    println("${metric.name}: ${metric.value} (confidence: ${metric.confidence})")
+}
+```
+
 ### Calculate Financial Ratios
 
 ```kotlin
-import io.ahmes.parser.EnhancedFinancialParser
+import com.pascal.institute.ahmes.parser.EnhancedFinancialParser
 
 val ratios = EnhancedFinancialParser.calculateRatios(metrics)
 ratios.forEach { ratio ->
@@ -115,7 +128,7 @@ ratios.forEach { ratio ->
 ## Package Structure
 
 ```
-io.ahmes
+com.pascal.institute.ahmes
 ├── model               # Data models
 │   ├── FinancialModels.kt      # FinancialMetric, FinancialRatio, FinancialAnalysis
 │   ├── ParserModels.kt         # ExtendedFinancialMetric, MetricCategory
