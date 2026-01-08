@@ -6,8 +6,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import papyrus.core.network.SecApi
-import papyrus.core.service.parser.HtmlParser
-import papyrus.core.service.parser.ParserFactory
+import com.pascal.institute.ahmes.format.HtmlParser
+import com.pascal.institute.ahmes.format.ParserFactory
+import com.pascal.institute.ahmes.format.TxtParser
 
 /**
  * Test Jsoup-based HtmlParser with real SEC filings. Note: These are integration tests that require
@@ -146,23 +147,17 @@ class HtmlParserTest {
             ACCESSION NUMBER: 0001234567-24-000001
             SECURITIES AND EXCHANGE COMMISSION
              Washington, D.C. 20549
-            
+
             FINANCIAL REPORT
             ================
             Revenue: $1,000,000
             Net Income: $500,000
-            
+
             This is a sample text report that acts as a valid SEC submission stub.
         """.trimIndent()
 
         val textParser = ParserFactory.getParserByContent(textContent)
-        // Check simpleClassName because we might not have reference to TextParser class easily if
-        // it's internal
-        assertTrue(
-                textParser::class.simpleName?.contains("Text", ignoreCase = true) == true ||
-                        textParser::class.simpleName?.contains("Txt", ignoreCase = true) == true,
-                "Should detect Text parser, got ${textParser::class.simpleName}"
-        )
+        assertTrue(textParser is TxtParser, "Should detect TxtParser")
     }
 
     @Test

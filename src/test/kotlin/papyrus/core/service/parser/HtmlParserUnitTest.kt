@@ -1,5 +1,6 @@
 package papyrus.core.service.parser
 
+import com.pascal.institute.ahmes.format.HtmlParser
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -60,16 +61,17 @@ class HtmlParserUnitTest {
     @Test
     @DisplayName("Should detect XBRL data in document")
     fun testXbrlDetection() {
-        val htmlWithXbrl =
+        val htmlWithInlineXbrl =
                 """
-            <html xmlns:xbrl="http://www.xbrl.org/2003/instance">
+            <html xmlns:ix="http://www.xbrl.org/2013/inlineXBRL" xmlns:xbrli="http://www.xbrl.org/2003/instance">
             <body>
-                <us-gaap:Revenue contextRef="Q1_2023" unitRef="USD">1000000</us-gaap:Revenue>
+                <xbrli:context id="Q1_2023"><xbrli:period><xbrli:instant>2023-03-31</xbrli:instant></xbrli:period></xbrli:context>
+                <ix:nonFraction name="us-gaap:Revenues" contextRef="Q1_2023" unitRef="USD">1000000</ix:nonFraction>
             </body>
             </html>
         """.trimIndent()
 
-        val result = parser.parse(htmlWithXbrl, "xbrl-test.html")
+        val result = parser.parse(htmlWithInlineXbrl, "ixbrl-test.html")
 
         assertTrue(result.metadata["hasXbrl"]?.toBoolean() == true)
     }
@@ -178,14 +180,17 @@ class HtmlParserUnitTest {
 
         val result = parser.parse(html, "compression-test.html")
 
-        // Should have compression ratio
-        assertNotNull(result.metadata["compressionRatio"])
-        assertTrue(result.metadata["compressionRatio"]!!.contains("%"))
+        // ahmes HtmlParser exposes sizes but does not provide a derived compression ratio.
+        val originalSize =
+            result.metadata["originalSize"]?.substringBefore(" ")?.toIntOrNull()
+        val cleanedSize =
+            result.metadata["cleanedSize"]?.substringBefore(" ")?.toIntOrNull()
 
-        // Cleaned should be smaller than original
-        val originalSize = result.metadata["originalSize"]?.substringBefore(" ")?.toIntOrNull() ?: 0
-        val cleanedSize = result.metadata["cleanedSize"]?.substringBefore(" ")?.toIntOrNull() ?: 0
-        assertTrue(cleanedSize <= originalSize)
+        assertNotNull(originalSize)
+        assertNotNull(cleanedSize)
+
+        assertEquals(html.length, originalSize)
+        assertEquals(result.cleanedContent.length, cleanedSize)
     }
 
     @Test
@@ -213,7 +218,7 @@ class HtmlParserUnitTest {
         val html = "<html><body>Test</body></html>"
         val result = parser.parse(html, "type-test.html")
 
-        assertEquals("HTML (Jsoup + AI)", result.parserType)
+        assertEquals("HTML (Jsoup)", result.parserType)
     }
 
     @Test

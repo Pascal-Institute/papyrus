@@ -2480,9 +2480,9 @@ private fun MetricsSummaryGrid(metrics: List<FinancialMetric>) {
                                                 count = categoryMetrics.size,
                                                 topValue =
                                                         categoryMetrics.firstOrNull()?.let {
-                                                                if (it.rawValue != null)
-                                                                        formatCurrency(it.rawValue)
-                                                                else it.value
+                                                                it.rawValue?.let { raw ->
+                                                                        formatCurrency(raw)
+                                                                } ?: it.value
                                                         },
                                                 modifier = Modifier.weight(1f)
                                         )
@@ -2613,7 +2613,8 @@ private fun MetricDetailCard(metric: FinancialMetric) {
                                 )
                         }
 
-                        if (metric.rawValue != null) {
+                        val rawValue = metric.rawValue
+                        if (rawValue != null) {
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 Row(
@@ -2627,7 +2628,7 @@ private fun MetricDetailCard(metric: FinancialMetric) {
                                         )
 
                                         Text(
-                                                text = formatCurrency(metric.rawValue),
+                                                text = formatCurrency(rawValue),
                                                 style = AppTypography.Caption,
                                                 color = AppColors.Success,
                                                 fontWeight = FontWeight.Medium

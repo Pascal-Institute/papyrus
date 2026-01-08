@@ -3,9 +3,9 @@ package papyrus.core.service.analyzer
 import org.jsoup.Jsoup
 import papyrus.core.model.*
 import papyrus.core.resource.AppStrings
-import papyrus.core.service.parser.EnhancedFinancialParser
-import papyrus.core.service.parser.InlineXbrlExtractor
-import papyrus.core.service.parser.SecTableParser
+import com.pascal.institute.ahmes.parser.EnhancedFinancialParser
+import com.pascal.institute.ahmes.parser.InlineXbrlExtractor
+import com.pascal.institute.ahmes.parser.SecTableParser
 import papyrus.util.data.AnalysisCache
 import papyrus.util.finance.*
 
@@ -359,11 +359,8 @@ object FinancialAnalyzer {
                         sb.appendLine(category)
                         for (metric in metricsList.take(5)) { // Limit to 5 per category
                                 val formattedValue =
-                                        if (metric.rawValue != null) {
-                                                formatNumber(metric.rawValue)
-                                        } else {
-                                                metric.value
-                                        }
+                                        metric.rawValue?.let { raw -> formatNumber(raw) }
+                                                ?: metric.value
                                 sb.appendLine("  • ${metric.name}: $formattedValue")
                         }
                         sb.appendLine()
@@ -1754,13 +1751,9 @@ object FinancialAnalyzer {
         private fun findMetricValue(metrics: List<FinancialMetric>, terms: List<String>): Double? {
                 for (term in terms) {
                         val metric = metrics.find { it.name.contains(term, ignoreCase = true) }
-                        if (metric?.rawValue != null) {
-                                return try {
-                                        metric.rawValue.toDouble()
-                                } catch (e: NumberFormatException) {
-                                        null
-                                }
-                        }
+                        val rawValue = metric?.rawValue ?: continue
+                        val parsed = rawValue.toDoubleOrNull() ?: continue
+                        return parsed
                 }
                 return null
         }

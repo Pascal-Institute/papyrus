@@ -1,5 +1,7 @@
 package papyrus.core.service.parser
 
+import com.pascal.institute.ahmes.format.HtmlParser
+import com.pascal.institute.ahmes.parser.InlineXbrlExtractor
 import org.jsoup.Jsoup
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull

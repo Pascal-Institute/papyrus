@@ -1,5 +1,9 @@
 package papyrus.core.service.parser
 
+import com.pascal.institute.ahmes.format.HtmlParser
+import com.pascal.institute.ahmes.format.ParserFactory
+import com.pascal.institute.ahmes.format.PdfFormatParser
+import com.pascal.institute.ahmes.format.TxtParser
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -26,7 +30,7 @@ class ParserFactoryTest {
         val pdfMagicBytes = "%PDF-1.4\n"
         val parser = ParserFactory.getParserByContent(pdfMagicBytes)
 
-        assertTrue(parser is PdfParser)
+        assertTrue(parser is PdfFormatParser)
     }
 
     @Test
@@ -60,10 +64,10 @@ class ParserFactoryTest {
     @DisplayName("Should get parser by extension - pdf")
     fun testGetParserByExtensionPdf() {
         val parser = ParserFactory.getParserByExtension("pdf")
-        assertTrue(parser is PdfParser)
+        assertTrue(parser is PdfFormatParser)
 
         val parser2 = ParserFactory.getParserByExtension("PDF")
-        assertTrue(parser2 is PdfParser)
+        assertTrue(parser2 is PdfFormatParser)
     }
 
     @Test

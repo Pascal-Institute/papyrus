@@ -48,10 +48,11 @@ object FinancialCalculations {
     // Profitability Ratios
 
     private fun calculateGrossMargin(income: StructuredIncomeStatement?): Double? {
-        if (income?.grossProfit == null || income.totalRevenue == null) return null
+        val grossProfitValue = income?.grossProfit ?: return null
+        val revenueValue = income.totalRevenue ?: return null
 
-        val grossProfit = income.grossProfit.toBigDecimal()
-        val revenue = income.totalRevenue.toBigDecimal()
+        val grossProfit = grossProfitValue.toBigDecimal()
+        val revenue = revenueValue.toBigDecimal()
 
         if (revenue == BigDecimal.ZERO) return null
 
@@ -62,10 +63,11 @@ object FinancialCalculations {
     }
 
     private fun calculateOperatingMargin(income: StructuredIncomeStatement?): Double? {
-        if (income?.operatingIncome == null || income.totalRevenue == null) return null
+        val opIncomeValue = income?.operatingIncome ?: return null
+        val revenueValue = income.totalRevenue ?: return null
 
-        val opIncome = income.operatingIncome.toBigDecimal()
-        val revenue = income.totalRevenue.toBigDecimal()
+        val opIncome = opIncomeValue.toBigDecimal()
+        val revenue = revenueValue.toBigDecimal()
 
         if (revenue == BigDecimal.ZERO) return null
 
@@ -75,10 +77,11 @@ object FinancialCalculations {
     }
 
     private fun calculateNetProfitMargin(income: StructuredIncomeStatement?): Double? {
-        if (income?.netIncome == null || income.totalRevenue == null) return null
+        val netIncomeValue = income?.netIncome ?: return null
+        val revenueValue = income.totalRevenue ?: return null
 
-        val netIncome = income.netIncome.toBigDecimal()
-        val revenue = income.totalRevenue.toBigDecimal()
+        val netIncome = netIncomeValue.toBigDecimal()
+        val revenue = revenueValue.toBigDecimal()
 
         if (revenue == BigDecimal.ZERO) return null
 
@@ -92,10 +95,11 @@ object FinancialCalculations {
             income: StructuredIncomeStatement?,
             balance: StructuredBalanceSheet?
     ): Double? {
-        if (income?.netIncome == null || balance?.totalAssets == null) return null
+        val netIncomeValue = income?.netIncome ?: return null
+        val totalAssetsValue = balance?.totalAssets ?: return null
 
-        val netIncome = income.netIncome.toBigDecimal()
-        val totalAssets = balance.totalAssets.toBigDecimal()
+        val netIncome = netIncomeValue.toBigDecimal()
+        val totalAssets = totalAssetsValue.toBigDecimal()
 
         if (totalAssets == BigDecimal.ZERO) return null
 
@@ -109,10 +113,11 @@ object FinancialCalculations {
             income: StructuredIncomeStatement?,
             balance: StructuredBalanceSheet?
     ): Double? {
-        if (income?.netIncome == null || balance?.totalStockholdersEquity == null) return null
+        val netIncomeValue = income?.netIncome ?: return null
+        val equityValue = balance?.totalStockholdersEquity ?: return null
 
-        val netIncome = income.netIncome.toBigDecimal()
-        val equity = balance.totalStockholdersEquity.toBigDecimal()
+        val netIncome = netIncomeValue.toBigDecimal()
+        val equity = equityValue.toBigDecimal()
 
         if (equity == BigDecimal.ZERO) return null
 
@@ -125,11 +130,11 @@ object FinancialCalculations {
     // Liquidity Ratios
 
     private fun calculateCurrentRatio(balance: StructuredBalanceSheet?): Double? {
-        if (balance?.totalCurrentAssets == null || balance.totalCurrentLiabilities == null)
-                return null
+        val currentAssetsValue = balance?.totalCurrentAssets ?: return null
+        val currentLiabilitiesValue = balance.totalCurrentLiabilities ?: return null
 
-        val currentAssets = balance.totalCurrentAssets.toBigDecimal()
-        val currentLiabilities = balance.totalCurrentLiabilities.toBigDecimal()
+        val currentAssets = currentAssetsValue.toBigDecimal()
+        val currentLiabilities = currentLiabilitiesValue.toBigDecimal()
 
         if (currentLiabilities == BigDecimal.ZERO) return null
 
@@ -137,15 +142,13 @@ object FinancialCalculations {
     }
 
     private fun calculateQuickRatio(balance: StructuredBalanceSheet?): Double? {
-        if (balance?.totalCurrentAssets == null ||
-                        balance.inventory == null ||
-                        balance.totalCurrentLiabilities == null
-        )
-                return null
+        val currentAssetsValue = balance?.totalCurrentAssets ?: return null
+        val inventoryValue = balance.inventory ?: return null
+        val currentLiabilitiesValue = balance.totalCurrentLiabilities ?: return null
 
-        val currentAssets = balance.totalCurrentAssets.toBigDecimal()
-        val inventory = balance.inventory.toBigDecimal()
-        val currentLiabilities = balance.totalCurrentLiabilities.toBigDecimal()
+        val currentAssets = currentAssetsValue.toBigDecimal()
+        val inventory = inventoryValue.toBigDecimal()
+        val currentLiabilities = currentLiabilitiesValue.toBigDecimal()
 
         if (currentLiabilities == BigDecimal.ZERO) return null
 
@@ -154,11 +157,11 @@ object FinancialCalculations {
     }
 
     private fun calculateCashRatio(balance: StructuredBalanceSheet?): Double? {
-        if (balance?.cashAndEquivalents == null || balance.totalCurrentLiabilities == null)
-                return null
+        val cashValue = balance?.cashAndEquivalents ?: return null
+        val currentLiabilitiesValue = balance.totalCurrentLiabilities ?: return null
 
-        val cash = balance.cashAndEquivalents.toBigDecimal()
-        val currentLiabilities = balance.totalCurrentLiabilities.toBigDecimal()
+        val cash = cashValue.toBigDecimal()
+        val currentLiabilities = currentLiabilitiesValue.toBigDecimal()
 
         if (currentLiabilities == BigDecimal.ZERO) return null
 
@@ -168,11 +171,11 @@ object FinancialCalculations {
     // Solvency Ratios
 
     private fun calculateDebtToEquity(balance: StructuredBalanceSheet?): Double? {
-        if (balance?.totalLiabilities == null || balance.totalStockholdersEquity == null)
-                return null
+        val debtValue = balance?.totalLiabilities ?: return null
+        val equityValue = balance.totalStockholdersEquity ?: return null
 
-        val debt = balance.totalLiabilities.toBigDecimal()
-        val equity = balance.totalStockholdersEquity.toBigDecimal()
+        val debt = debtValue.toBigDecimal()
+        val equity = equityValue.toBigDecimal()
 
         if (equity == BigDecimal.ZERO) return null
 
@@ -180,10 +183,11 @@ object FinancialCalculations {
     }
 
     private fun calculateDebtRatio(balance: StructuredBalanceSheet?): Double? {
-        if (balance?.totalLiabilities == null || balance.totalAssets == null) return null
+        val debtValue = balance?.totalLiabilities ?: return null
+        val assetsValue = balance.totalAssets ?: return null
 
-        val debt = balance.totalLiabilities.toBigDecimal()
-        val assets = balance.totalAssets.toBigDecimal()
+        val debt = debtValue.toBigDecimal()
+        val assets = assetsValue.toBigDecimal()
 
         if (assets == BigDecimal.ZERO) return null
 
@@ -191,10 +195,11 @@ object FinancialCalculations {
     }
 
     private fun calculateInterestCoverage(income: StructuredIncomeStatement?): Double? {
-        if (income?.operatingIncome == null || income.interestExpense == null) return null
+        val opIncomeValue = income?.operatingIncome ?: return null
+        val interestValue = income.interestExpense ?: return null
 
-        val opIncome = income.operatingIncome.toBigDecimal()
-        val interest = income.interestExpense.toBigDecimal()
+        val opIncome = opIncomeValue.toBigDecimal()
+        val interest = interestValue.toBigDecimal()
 
         if (interest == BigDecimal.ZERO) return null
 
@@ -207,10 +212,11 @@ object FinancialCalculations {
             income: StructuredIncomeStatement?,
             balance: StructuredBalanceSheet?
     ): Double? {
-        if (income?.totalRevenue == null || balance?.totalAssets == null) return null
+        val revenueValue = income?.totalRevenue ?: return null
+        val assetsValue = balance?.totalAssets ?: return null
 
-        val revenue = income.totalRevenue.toBigDecimal()
-        val assets = balance.totalAssets.toBigDecimal()
+        val revenue = revenueValue.toBigDecimal()
+        val assets = assetsValue.toBigDecimal()
 
         if (assets == BigDecimal.ZERO) return null
 

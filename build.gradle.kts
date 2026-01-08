@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":ahmes"))
     implementation(compose.desktop.currentOs)
     implementation(compose.materialIconsExtended)
     implementation("io.ktor:ktor-client-core:2.3.13")
