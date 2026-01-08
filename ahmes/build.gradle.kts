@@ -38,6 +38,12 @@ dependencies {
     implementation("org.apache.tika:tika-core:1.28.5")
     implementation("org.apache.tika:tika-parsers:1.28.5")
 
+    // DJL (Deep Java Library) for local AI inference
+    implementation("ai.djl:api:0.25.0")
+    implementation("ai.djl.pytorch:pytorch-engine:0.25.0")
+    implementation("ai.djl.pytorch:pytorch-model-zoo:0.25.0")
+    implementation("ai.djl.huggingface:tokenizers:0.25.0")
+
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.16")
 

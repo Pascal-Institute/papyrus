@@ -29,6 +29,7 @@ implementation("com.pascal.institute:ahmes:1.0.0")
 -   **Financial Ratios**: Calculate profitability, liquidity, and solvency ratios
 -   **Risk Factor Analysis**: Extract and categorize risk factors
 -   **BigDecimal Precision**: All financial calculations use BigDecimal for accuracy
+-   **🤖 AI-Enhanced Parsing**: Deep learning powered sentiment analysis, entity extraction, and document summarization using DJL (Deep Java Library)
 
 ## Quick Start
 
@@ -125,10 +126,90 @@ ratios.forEach { ratio ->
 }
 ```
 
+## 🤖 AI-Enhanced Features (DJL)
+
+The library includes deep learning capabilities powered by DJL (Deep Java Library) with PyTorch backend.
+
+### AI-Enhanced Parsing
+
+```kotlin
+import com.pascal.institute.ahmes.ai.AiEnhancedSecParser
+import com.pascal.institute.ahmes.format.ParserFactory
+
+// Parse document first
+val parseResult = ParserFactory.parseDocument(content, "10k.htm")
+
+// Enhance with AI analysis
+val aiResult = AiEnhancedSecParser.enhance(parseResult)
+
+println("Overall Sentiment: ${aiResult.sentiment?.overallSentiment}")
+println("AI Confidence: ${aiResult.aiConfidence}")
+println("Entities found: ${aiResult.entities.size}")
+
+// Access document summary
+aiResult.documentSummary?.let { summary ->
+    println("Executive Summary: ${summary.executiveSummary}")
+    println("Key Findings: ${summary.keyFindings}")
+    println("Investment Implications: ${summary.investmentImplications}")
+}
+```
+
+### Sentiment Analysis
+
+```kotlin
+import com.pascal.institute.ahmes.ai.SecSentimentAnalyzer
+
+// Analyze single text
+val sentiment = SecSentimentAnalyzer.analyzeSentiment(riskFactorText)
+println("Sentiment: ${sentiment.sentiment} (${sentiment.confidence})")
+
+// Analyze risk factors
+val riskAnalysis = SecSentimentAnalyzer.analyzeRiskFactors(riskFactorList)
+riskAnalysis.forEach { risk ->
+    println("${risk.category}: ${risk.severity}")
+}
+```
+
+### Entity Extraction
+
+```kotlin
+import com.pascal.institute.ahmes.ai.SecEntityExtractor
+
+// Extract financial entities
+val entities = SecEntityExtractor.extractEntities(documentText)
+entities.forEach { entity ->
+    println("${entity.entityType}: ${entity.text}")
+    entity.value?.let { println("  Value: $it ${entity.unit}") }
+}
+
+// Ask questions about the document
+val answer = SecEntityExtractor.answerQuestion(
+    "What is the company's total revenue?",
+    documentText
+)
+println("Answer: ${answer.answer}")
+```
+
+### Section Classification
+
+```kotlin
+import com.pascal.institute.ahmes.ai.SecSectionClassifier
+
+val classification = SecSectionClassifier.classifySection(sectionText)
+println("Section Type: ${classification.sectionType}")
+println("Confidence: ${classification.confidence}")
+```
+
 ## Package Structure
 
 ```
 com.pascal.institute.ahmes
+├── ai                  # 🤖 AI-powered analysis (DJL)
+│   ├── AiEnhancedSecParser.kt     # Main AI enhancement entry point
+│   ├── DjlModelManager.kt         # Model loading and caching
+│   ├── SecSentimentAnalyzer.kt    # Sentiment and risk analysis
+│   ├── SecEntityExtractor.kt      # Entity and QA extraction
+│   └── SecSectionClassifier.kt    # Section classification
 ├── model               # Data models
 │   ├── FinancialModels.kt      # FinancialMetric, FinancialRatio, FinancialAnalysis
 │   ├── ParserModels.kt         # ExtendedFinancialMetric, MetricCategory
@@ -208,6 +289,21 @@ com.pascal.institute.ahmes
 -   Apache PDFBox 2.0.32 (PDF parsing)
 -   Apache Tika 1.28.5 (content extraction)
 -   JavaMoney Moneta 1.4.2 (financial precision)
+-   **DJL (Deep Java Library) 0.25.0** (AI inference)
+    -   PyTorch Engine
+    -   HuggingFace Tokenizers
+
+## AI Model Information
+
+The AI features use DJL (Deep Java Library) with PyTorch backend for local inference:
+
+| Feature            | Model            | Description                 |
+| ------------------ | ---------------- | --------------------------- |
+| Sentiment Analysis | DistilBERT SST-2 | Financial text sentiment    |
+| Question Answering | DistilBERT SQuAD | Extract answers from text   |
+| Entity Recognition | Rule-based + ML  | Financial entity extraction |
+
+**Note**: Models are downloaded automatically on first use. GPU acceleration is used when available.
 
 ## License
 
