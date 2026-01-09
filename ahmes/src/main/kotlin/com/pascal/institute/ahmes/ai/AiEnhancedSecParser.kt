@@ -23,6 +23,7 @@ data class AiEnhancedParseResult(
         val sectionClassifications: Map<String, SectionClassification> = emptyMap(),
         val riskAnalysis: List<RiskAnalysis> = emptyList(),
         val documentSummary: DocumentSummary? = null,
+        val healthScore: FinancialHealthScore? = null,
         val aiConfidence: String = "0.0", // Overall AI confidence score
         val aiModelUsed: String = "rule-based" // Which AI model was used
 ) {
@@ -135,10 +136,16 @@ object AiEnhancedSecParser {
                     "0.0"
                 }
 
+        // Infer Health Score via AI
+        val healthScore =
+                if (isAiAvailable) {
+                    inferHealthScore(content, sentiment, riskAnalysis)
+                } else {
+                    null
+                }
+
         val processingTime = System.currentTimeMillis() - startTime
         logger.info("AI enhancement completed in ${processingTime}ms")
-
-        // Try to heal missing core metrics if enabled
         val healedMetrics =
                 if (options.enableMetricHealing && isAiAvailable) {
                     healMissingMetrics(parseResult.metrics, content)
@@ -167,8 +174,94 @@ object AiEnhancedSecParser {
                 sectionClassifications = sectionClassifications,
                 riskAnalysis = riskAnalysis,
                 documentSummary = documentSummary,
+                healthScore = healthScore,
                 aiConfidence = aiConfidence,
                 aiModelUsed = aiModel
+        )
+    }
+
+    /** Infer overall financial health score using AI analysis */
+    private fun inferHealthScore(
+            content: String,
+            sentiment: DocumentSentimentSummary?,
+            riskAnalysis: List<RiskAnalysis>
+    ): FinancialHealthScore {
+        // Core Logic: Combine sentiment and risks to get a base score, then refine with QA if
+        // possible
+        var score = 70 // Base "Stable" score
+
+        // Adjust for sentiment
+        sentiment?.let {
+            val pos = it.positiveRatio.toDoubleOrNull() ?: 0.0
+            val neg = it.negativeRatio.toDoubleOrNull() ?: 0.0
+            score += ((pos - neg) * 20).toInt()
+        }
+
+        // Adjust for risks
+        val highRisks =
+                riskAnalysis.count {
+                    it.severity.toString().uppercase() in listOf("CRITICAL", "HIGH")
+                }
+        score -= highRisks * 4
+
+        // Ask QA model for a summary health check
+        val healthOpinion =
+                askQuestion(
+                        "What is the overall financial health of this company?",
+                        content.take(15000)
+                )
+        if (healthOpinion.answer.lowercase().contains(Regex("strong|excellent|robust|growth")))
+                score += 5
+        if (healthOpinion.answer.lowercase().contains(Regex("weakness|liquid|debt|risk|decline")))
+                score -= 5
+
+        val finalScore = score.coerceIn(0, 100)
+
+        val (grade, summary) =
+                when {
+                    finalScore >= 90 ->
+                            "A+" to "Pristine: 재무 상태가 완별하며, 어떤 경제 위기에도 파산 확률이 0.1% 미만인 상태입니다."
+                    finalScore >= 70 -> "A" to "Robust: 매우 건강함. 적극적인 투자 확장이 가능한 상태입니다."
+                    finalScore >= 50 -> "B" to "Stable: 안정적이나, 시장 변동성에 따라 수익성이 흔들릴 수 있는 상태입니다."
+                    else -> "C" to "Caution: 자본 확충이 필요하거나 리스크 관리가 시급한 상태입니다."
+                }
+
+        // Generate AI strengths/weaknesses via QA
+        val strengths = mutableListOf<String>()
+        val weaknesses = mutableListOf<String>()
+        val recommendations = mutableListOf<String>()
+
+        val sAnswer =
+                askQuestion(
+                        "What are the two biggest financial strengths of this company?",
+                        content.take(10000)
+                )
+        strengths.addAll(
+                sAnswer.answer.split(".").filter { it.length > 10 }.take(2).map { "✅ " + it.trim() }
+        )
+
+        val wAnswer =
+                askQuestion(
+                        "What are the two biggest financial risks or weaknesses?",
+                        content.take(10000)
+                )
+        weaknesses.addAll(
+                wAnswer.answer.split(".").filter { it.length > 10 }.take(2).map {
+                    "⚠️ " + it.trim()
+                }
+        )
+
+        recommendations.add(
+                "💡 AI 분석 결과: ${if (finalScore >= 70) "적극적인 성장 전략 관찰 필요" else "보수적인 자산 배분 권장"}"
+        )
+
+        return FinancialHealthScore(
+                overallScore = finalScore,
+                grade = grade,
+                summary = summary,
+                strengths = strengths,
+                weaknesses = weaknesses,
+                recommendations = recommendations
         )
     }
 

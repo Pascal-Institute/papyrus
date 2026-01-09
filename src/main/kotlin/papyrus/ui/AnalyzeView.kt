@@ -1052,52 +1052,101 @@ private fun HealthScoreTab(analysis: FinancialAnalysis) {
 private fun HealthScoreMainCard(healthScore: FinancialHealthScore) {
     val scoreColor =
             when {
-                healthScore.overallScore >= 80 -> AppColors.Success
-                healthScore.overallScore >= 60 -> AppColors.Warning
-                else -> AppColors.Error
+                healthScore.overallScore >= 90 -> Color(0xFF1B5E20) // Deep Green (Pristine)
+                healthScore.overallScore >= 70 -> Color(0xFF4CAF50) // Light Green (Robust)
+                healthScore.overallScore >= 50 -> Color(0xFFFBC02D) // Yellow (Stable)
+                else -> Color(0xFFD32F2F) // Red (Caution)
+            }
+
+    val healthLabel =
+            when {
+                healthScore.overallScore >= 90 -> "Pristine"
+                healthScore.overallScore >= 70 -> "Robust"
+                healthScore.overallScore >= 50 -> "Stable"
+                else -> "Caution"
             }
 
     Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = AppDimens.CardElevationHigh,
             shape = AppShapes.Large,
-            backgroundColor = scoreColor.copy(alpha = 0.1f)
+            backgroundColor = scoreColor.copy(alpha = 0.05f)
     ) {
         Column(
                 modifier = Modifier.padding(AppDimens.PaddingLarge),
                 horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                    text = "Financial Health Score",
-                    style = AppTypography.Headline3,
-                    color = AppColors.OnSurface,
-                    fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                        text = "Financial Health Assessment",
+                        style = AppTypography.Headline3,
+                        color = AppColors.OnSurface,
+                        fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                // AI Badge
+                Surface(
+                        color = Color(0xFF9C27B0).copy(alpha = 0.1f),
+                        shape = CircleShape,
+                ) {
+                    Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = Color(0xFF9C27B0),
+                                modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                                "AI Inferred",
+                                style = AppTypography.Caption,
+                                color = Color(0xFF9C27B0),
+                                fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
 
             // Large score display
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) {
-                Text(
-                        text = healthScore.grade,
-                        fontSize = 72.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = scoreColor
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                            text = healthScore.grade,
+                            fontSize = 72.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = scoreColor
+                    )
+                    Text(
+                            text = healthLabel,
+                            style = AppTypography.Subtitle1,
+                            color = scoreColor,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.offset(y = (-8).dp)
+                    )
+                }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(24.dp))
 
-                Column(horizontalAlignment = Alignment.Start) {
+                Column(
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                ) {
                     Text(
                             text = "${healthScore.overallScore}",
-                            fontSize = 36.sp,
+                            fontSize = 42.sp,
                             fontWeight = FontWeight.Bold,
                             color = scoreColor
                     )
                     Text(
-                            text = "/ 100 points",
+                            text = "HEALTH INDEX / 100",
                             style = AppTypography.Caption,
-                            color = AppColors.OnSurfaceSecondary
+                            color = AppColors.OnSurfaceSecondary,
+                            letterSpacing = 1.sp
                     )
                 }
             }
@@ -1107,9 +1156,9 @@ private fun HealthScoreMainCard(healthScore: FinancialHealthScore) {
             // Progress bar
             LinearProgressIndicator(
                     progress = healthScore.overallScore / 100f,
-                    modifier = Modifier.fillMaxWidth().height(12.dp).clip(AppShapes.Pill),
+                    modifier = Modifier.fillMaxWidth().height(16.dp).clip(AppShapes.Pill),
                     color = scoreColor,
-                    backgroundColor = scoreColor.copy(alpha = 0.2f)
+                    backgroundColor = scoreColor.copy(alpha = 0.15f)
             )
 
             Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))

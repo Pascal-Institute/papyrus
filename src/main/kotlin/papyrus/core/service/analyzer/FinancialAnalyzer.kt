@@ -1004,7 +1004,7 @@ object FinancialAnalyzer {
                                 ratios = ratios,
                                 beginnerInsights = insights,
                                 termExplanations = termExplanations,
-                                healthScore = healthScore,
+                                healthScore = aiEnhancedResult?.healthScore ?: healthScore,
                                 reportTypeExplanation = reportExplanation,
                                 keyTakeaways = keyTakeaways,
                                 extendedMetrics = extendedMetrics,
