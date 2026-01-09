@@ -1,7 +1,7 @@
 package papyrus.core.model
 
 import kotlinx.serialization.Serializable
-import papyrus.util.file.SecSectionType
+import com.pascal.institute.ahmes.util.SecSectionType
 
 /**
  * AI-powered financial sentiment analysis result

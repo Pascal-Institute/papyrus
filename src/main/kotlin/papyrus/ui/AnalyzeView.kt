@@ -2,8 +2,8 @@ package papyrus.ui
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pascal.institute.ahmes.model.XbrlCompanyFact
+import com.pascal.institute.ahmes.parser.XbrlCompanyFactsExtractor
 import papyrus.core.model.BeginnerInsight
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.FinancialAnalysis
@@ -35,9 +37,7 @@ import papyrus.core.model.FinancialTermExplanation
 import papyrus.core.model.HealthStatus
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
-import papyrus.core.model.XbrlCompanyFact
 import papyrus.core.network.SecApi
-import papyrus.core.service.parser.XbrlCompanyFactsExtractor
 
 /** Map icon name to Material Icon ImageVector */
 private fun getIconForName(iconName: String): ImageVector {
@@ -87,10 +87,33 @@ private fun formatCurrency(value: java.math.BigDecimal): String {
         val thousand = java.math.BigDecimal("1000")
 
         return when {
-                absValue >= billion -> String.format("%s$%.2fB", sign, absValue.divide(billion, 2, java.math.RoundingMode.HALF_UP).toDouble())
-                absValue >= million -> String.format("%s$%.2fM", sign, absValue.divide(million, 2, java.math.RoundingMode.HALF_UP).toDouble())
-                absValue >= thousand -> String.format("%s$%.2fK", sign, absValue.divide(thousand, 2, java.math.RoundingMode.HALF_UP).toDouble())
-                else -> String.format("%s$%.2f", sign, absValue.setScale(2, java.math.RoundingMode.HALF_UP).toDouble())
+                absValue >= billion ->
+                        String.format(
+                                "%s$%.2fB",
+                                sign,
+                                absValue.divide(billion, 2, java.math.RoundingMode.HALF_UP)
+                                        .toDouble()
+                        )
+                absValue >= million ->
+                        String.format(
+                                "%s$%.2fM",
+                                sign,
+                                absValue.divide(million, 2, java.math.RoundingMode.HALF_UP)
+                                        .toDouble()
+                        )
+                absValue >= thousand ->
+                        String.format(
+                                "%s$%.2fK",
+                                sign,
+                                absValue.divide(thousand, 2, java.math.RoundingMode.HALF_UP)
+                                        .toDouble()
+                        )
+                else ->
+                        String.format(
+                                "%s$%.2f",
+                                sign,
+                                absValue.setScale(2, java.math.RoundingMode.HALF_UP).toDouble()
+                        )
         }
 }
 
@@ -109,7 +132,9 @@ private fun formatCurrency(value: Double): String {
         return formatCurrency(java.math.BigDecimal(value.toString()))
 }
 
-/** Helper function to format number values (for shares, quantities, etc.) with BigDecimal precision */
+/**
+ * Helper function to format number values (for shares, quantities, etc.) with BigDecimal precision
+ */
 private fun formatNumber(value: java.math.BigDecimal): String {
         val absValue = value.abs()
         val sign = if (value.signum() < 0) "-" else ""
@@ -118,10 +143,33 @@ private fun formatNumber(value: java.math.BigDecimal): String {
         val thousand = java.math.BigDecimal("1000")
 
         return when {
-                absValue >= billion -> String.format("%s%.2fB", sign, absValue.divide(billion, 2, java.math.RoundingMode.HALF_UP).toDouble())
-                absValue >= million -> String.format("%s%.2fM", sign, absValue.divide(million, 2, java.math.RoundingMode.HALF_UP).toDouble())
-                absValue >= thousand -> String.format("%s%.2fK", sign, absValue.divide(thousand, 2, java.math.RoundingMode.HALF_UP).toDouble())
-                else -> String.format("%s%.0f", sign, absValue.setScale(0, java.math.RoundingMode.HALF_UP).toDouble())
+                absValue >= billion ->
+                        String.format(
+                                "%s%.2fB",
+                                sign,
+                                absValue.divide(billion, 2, java.math.RoundingMode.HALF_UP)
+                                        .toDouble()
+                        )
+                absValue >= million ->
+                        String.format(
+                                "%s%.2fM",
+                                sign,
+                                absValue.divide(million, 2, java.math.RoundingMode.HALF_UP)
+                                        .toDouble()
+                        )
+                absValue >= thousand ->
+                        String.format(
+                                "%s%.2fK",
+                                sign,
+                                absValue.divide(thousand, 2, java.math.RoundingMode.HALF_UP)
+                                        .toDouble()
+                        )
+                else ->
+                        String.format(
+                                "%s%.0f",
+                                sign,
+                                absValue.setScale(0, java.math.RoundingMode.HALF_UP).toDouble()
+                        )
         }
 }
 
@@ -144,10 +192,10 @@ private fun formatNumber(value: Double): String {
 private fun isQuantityMetric(metricName: String): Boolean {
         val lowerName = metricName.lowercase()
         return lowerName.contains("shares") ||
-               lowerName.contains("outstanding") ||
-               lowerName.contains("quantity") ||
-               lowerName.contains("count") ||
-               lowerName.contains("number of")
+                lowerName.contains("outstanding") ||
+                lowerName.contains("quantity") ||
+                lowerName.contains("count") ||
+                lowerName.contains("number of")
 }
 
 /** Parse metric value string to double for formatting */
@@ -160,15 +208,16 @@ private fun parseMetricValue(valueString: String): Double? {
                 val cleaned = valueString.replace("[$,\\s-]".toRegex(), "")
 
                 // Handle existing M/B/K suffixes
-                val parsedValue = when {
-                        cleaned.endsWith("B", ignoreCase = true) ->
-                                cleaned.dropLast(1).toDoubleOrNull()?.times(1_000_000_000)
-                        cleaned.endsWith("M", ignoreCase = true) ->
-                                cleaned.dropLast(1).toDoubleOrNull()?.times(1_000_000)
-                        cleaned.endsWith("K", ignoreCase = true) ->
-                                cleaned.dropLast(1).toDoubleOrNull()?.times(1_000)
-                        else -> cleaned.toDoubleOrNull()
-                }
+                val parsedValue =
+                        when {
+                                cleaned.endsWith("B", ignoreCase = true) ->
+                                        cleaned.dropLast(1).toDoubleOrNull()?.times(1_000_000_000)
+                                cleaned.endsWith("M", ignoreCase = true) ->
+                                        cleaned.dropLast(1).toDoubleOrNull()?.times(1_000_000)
+                                cleaned.endsWith("K", ignoreCase = true) ->
+                                        cleaned.dropLast(1).toDoubleOrNull()?.times(1_000)
+                                else -> cleaned.toDoubleOrNull()
+                        }
 
                 // Apply negative sign if present
                 parsedValue?.let { if (isNegative) -it else it }
@@ -229,18 +278,23 @@ private fun formatMetricName(name: String): String {
 private fun getFinancialTermExplanation(englishName: String): String? {
         return when (englishName.lowercase().trim()) {
                 "revenue", "revenues" -> "회사가 제품이나 서비스를 판매하여 벌어들인 총 수입입니다. 매출이 높을수록 사업 규모가 큽니다."
-                "net income", "net income (loss)" -> "모든 비용과 세금을 제외하고 남은 최종 이익입니다. 기업의 실제 수익성을 보여줍니다."
+                "net income", "net income (loss)" ->
+                        "모든 비용과 세금을 제외하고 남은 최종 이익입니다. 기업의 실제 수익성을 보여줍니다."
                 "net loss" -> "수익보다 비용이 더 많아 발생한 손실입니다. 적자 상태를 의미합니다."
                 "total assets" -> "회사가 보유한 모든 자산(현금, 재고, 부동산, 설비 등)의 총합입니다."
-                "current assets", "total current assets" -> "1년 내에 현금으로 바꿀 수 있는 자산입니다. 단기 지급 능력을 보여줍니다."
+                "current assets", "total current assets" ->
+                        "1년 내에 현금으로 바꿀 수 있는 자산입니다. 단기 지급 능력을 보여줍니다."
                 "total liabilities" -> "회사가 갚아야 할 모든 빚의 총합입니다. 부채가 많으면 재무 부담이 큽니다."
-                "current liabilities", "total current liabilities" -> "1년 내에 갚아야 하는 빚입니다. 단기 부채 상환 능력이 중요합니다."
-                "stockholders' equity", "total equity", "shareholders' equity" -> "자산에서 부채를 뺀 순자산입니다. 주주에게 귀속되는 회사의 실제 가치입니다."
+                "current liabilities", "total current liabilities" ->
+                        "1년 내에 갚아야 하는 빚입니다. 단기 부채 상환 능력이 중요합니다."
+                "stockholders' equity", "total equity", "shareholders' equity" ->
+                        "자산에서 부채를 뺀 순자산입니다. 주주에게 귀속되는 회사의 실제 가치입니다."
                 "cash and cash equivalents" -> "즉시 사용 가능한 현금과 현금성 자산입니다. 유동성이 가장 높은 자산입니다."
                 "operating income" -> "본업에서 벌어들인 이익입니다. 회사의 핵심 사업 수익성을 나타냅니다."
                 "operating expenses" -> "사업 운영에 필요한 비용(인건비, 마케팅비 등)입니다. 효율적 관리가 중요합니다."
                 "gross profit" -> "매출에서 제품 원가만 뺀 이익입니다. 제품의 수익성을 직접 보여줍니다."
-                "cost of revenue", "cost of goods sold" -> "제품 생산이나 서비스 제공에 직접 든 비용입니다. 낮을수록 수익성이 좋습니다."
+                "cost of revenue", "cost of goods sold" ->
+                        "제품 생산이나 서비스 제공에 직접 든 비용입니다. 낮을수록 수익성이 좋습니다."
                 "accounts receivable" -> "상품을 팔았지만 아직 받지 못한 돈입니다. 빨리 회수할수록 좋습니다."
                 "accounts payable" -> "상품을 받았지만 아직 지불하지 않은 돈입니다. 적절한 관리가 필요합니다."
                 "inventory" -> "판매를 위해 보유한 재고 상품입니다. 너무 많으면 현금이 묶입니다."
@@ -251,7 +305,8 @@ private fun getFinancialTermExplanation(englishName: String): String? {
                 "capital expenditures", "capex" -> "설비, 부동산 등 장기 자산 구매에 쓴 돈입니다. 미래 성장을 위한 투자입니다."
                 "total expenses" -> "회사가 지출한 모든 비용의 합계입니다. 효율적 관리가 수익성을 높입니다."
                 "research and development", "r&d" -> "신제품 개발과 연구에 투자한 비용입니다. 미래 경쟁력을 위한 투자입니다."
-                "selling, general and administrative", "sg&a" -> "판매, 관리, 일반 업무에 든 비용입니다. 인건비, 마케팅비 등이 포함됩니다."
+                "selling, general and administrative", "sg&a" ->
+                        "판매, 관리, 일반 업무에 든 비용입니다. 인건비, 마케팅비 등이 포함됩니다."
                 "depreciation" -> "시간이 지나면서 자산 가치가 줄어드는 것을 비용으로 인식한 것입니다."
                 "amortization" -> "무형자산(특허, 영업권 등)의 가치 감소를 비용으로 처리한 것입니다."
                 "interest expense" -> "빌린 돈에 대해 지급하는 이자입니다. 부채가 많으면 이자 부담도 큽니다."
@@ -1371,9 +1426,7 @@ private fun BeginnerInsightCard(insight: BeginnerInsight) {
                                                         color = AppColors.Primary
                                                 )
                                                 Text(
-                                                        text =
-                                                                insight.summary
-                                                                        .trim(),
+                                                        text = insight.summary.trim(),
                                                         style = AppTypography.Body2,
                                                         color = AppColors.OnSurface
                                                 )
@@ -1680,7 +1733,8 @@ private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialM
                         )
 
                         Text(
-                                text = "Extracted dollar amounts, quantities, and other absolute values from financial statements",
+                                text =
+                                        "Extracted dollar amounts, quantities, and other absolute values from financial statements",
                                 style = AppTypography.Body2,
                                 color = AppColors.OnSurfaceSecondary,
                                 modifier = Modifier.padding(bottom = 16.dp)
@@ -1705,7 +1759,8 @@ private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialM
                         )
 
                         Text(
-                                text = "Calculated financial ratios and percentages for analysis and benchmarking",
+                                text =
+                                        "Calculated financial ratios and percentages for analysis and benchmarking",
                                 style = AppTypography.Body2,
                                 color = AppColors.OnSurfaceSecondary,
                                 modifier = Modifier.padding(bottom = 16.dp)
@@ -1722,7 +1777,8 @@ private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialM
                         EmptyState(
                                 icon = Icons.Outlined.Analytics,
                                 title = "No Financial Data Found",
-                                description = "Unable to extract financial metrics or ratios from document."
+                                description =
+                                        "Unable to extract financial metrics or ratios from document."
                         )
                 }
         }
@@ -2183,43 +2239,76 @@ private fun SimpleMetricsCard(metrics: List<FinancialMetric>) {
 
                                 Box(modifier = Modifier.fillMaxWidth()) {
                                         Column(
-                                                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
-                                                        .hoverable(interactionSource)
+                                                modifier =
+                                                        Modifier.fillMaxWidth()
+                                                                .padding(vertical = 6.dp)
+                                                                .hoverable(interactionSource)
                                         ) {
                                                 // Track hover state
                                                 LaunchedEffect(interactionSource) {
-                                                        interactionSource.interactions.collect { interaction ->
+                                                        interactionSource.interactions.collect {
+                                                                interaction ->
                                                                 when (interaction) {
-                                                                        is HoverInteraction.Enter -> isHovered = true
-                                                                        is HoverInteraction.Exit -> isHovered = false
+                                                                        is HoverInteraction.Enter ->
+                                                                                isHovered = true
+                                                                        is HoverInteraction.Exit ->
+                                                                                isHovered = false
                                                                 }
                                                         }
                                                 }
 
                                                 Row(
                                                         modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                                        verticalAlignment = Alignment.CenterVertically
+                                                        horizontalArrangement =
+                                                                Arrangement.SpaceBetween,
+                                                        verticalAlignment =
+                                                                Alignment.CenterVertically
                                                 ) {
                                                         Text(
-                                                                text = formatMetricName(metric.name),
+                                                                text =
+                                                                        formatMetricName(
+                                                                                metric.name
+                                                                        ),
                                                                 style = AppTypography.Body1,
                                                                 fontWeight = FontWeight.Medium,
                                                                 color = AppColors.OnSurface,
                                                                 modifier = Modifier.weight(1f)
                                                         )
 
-                                                        val displayValue = if (isQuantityMetric(metric.name)) {
-                                                                // For shares and quantities, use number formatting without $
-                                                                metric.rawValue?.let { formatNumber(it) }
-                                                                        ?: parseMetricValue(metric.value)?.let { formatNumber(it) }
-                                                                        ?: metric.value
-                                                        } else {
-                                                                // For currency values, use currency formatting with $
-                                                                metric.rawValue?.let { formatCurrency(it) }
-                                                                        ?: parseMetricValue(metric.value)?.let { formatCurrency(it) }
-                                                                        ?: metric.value
-                                                        }
+                                                        val displayValue =
+                                                                if (isQuantityMetric(metric.name)) {
+                                                                        // For shares and
+                                                                        // quantities, use number
+                                                                        // formatting without $
+                                                                        metric.rawValue?.let {
+                                                                                formatNumber(it)
+                                                                        }
+                                                                                ?: parseMetricValue(
+                                                                                                metric.value
+                                                                                        )
+                                                                                        ?.let {
+                                                                                                formatNumber(
+                                                                                                        it
+                                                                                                )
+                                                                                        }
+                                                                                        ?: metric.value
+                                                                } else {
+                                                                        // For currency values, use
+                                                                        // currency formatting with
+                                                                        // $
+                                                                        metric.rawValue?.let {
+                                                                                formatCurrency(it)
+                                                                        }
+                                                                                ?: parseMetricValue(
+                                                                                                metric.value
+                                                                                        )
+                                                                                        ?.let {
+                                                                                                formatCurrency(
+                                                                                                        it
+                                                                                                )
+                                                                                        }
+                                                                                        ?: metric.value
+                                                                }
 
                                                         Text(
                                                                 text = displayValue,
@@ -2235,30 +2324,66 @@ private fun SimpleMetricsCard(metrics: List<FinancialMetric>) {
                                                         enter = fadeIn() + expandVertically(),
                                                         exit = fadeOut() + shrinkVertically()
                                                 ) {
-                                                        val explanation = getFinancialTermExplanation(metric.name)
+                                                        val explanation =
+                                                                getFinancialTermExplanation(
+                                                                        metric.name
+                                                                )
                                                         if (explanation != null) {
                                                                 Card(
-                                                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                                                        backgroundColor = AppColors.InfoLight,
+                                                                        modifier =
+                                                                                Modifier.fillMaxWidth()
+                                                                                        .padding(
+                                                                                                top =
+                                                                                                        8.dp
+                                                                                        ),
+                                                                        backgroundColor =
+                                                                                AppColors.InfoLight,
                                                                         elevation = 2.dp,
                                                                         shape = AppShapes.Small
                                                                 ) {
                                                                         Row(
-                                                                                modifier = Modifier.padding(12.dp),
-                                                                                verticalAlignment = Alignment.Top
+                                                                                modifier =
+                                                                                        Modifier.padding(
+                                                                                                12.dp
+                                                                                        ),
+                                                                                verticalAlignment =
+                                                                                        Alignment
+                                                                                                .Top
                                                                         ) {
                                                                                 Icon(
-                                                                                        Icons.Outlined.Info,
-                                                                                        contentDescription = null,
-                                                                                        tint = AppColors.Info,
-                                                                                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                                                                                        Icons.Outlined
+                                                                                                .Info,
+                                                                                        contentDescription =
+                                                                                                null,
+                                                                                        tint =
+                                                                                                AppColors
+                                                                                                        .Info,
+                                                                                        modifier =
+                                                                                                Modifier.size(
+                                                                                                                16.dp
+                                                                                                        )
+                                                                                                        .padding(
+                                                                                                                top =
+                                                                                                                        2.dp
+                                                                                                        )
                                                                                 )
-                                                                                Spacer(modifier = Modifier.width(8.dp))
+                                                                                Spacer(
+                                                                                        modifier =
+                                                                                                Modifier.width(
+                                                                                                        8.dp
+                                                                                                )
+                                                                                )
                                                                                 Text(
-                                                                                        text = explanation,
-                                                                                        style = AppTypography.Caption,
-                                                                                        color = AppColors.OnSurface,
-                                                                                        lineHeight = 16.sp
+                                                                                        text =
+                                                                                                explanation,
+                                                                                        style =
+                                                                                                AppTypography
+                                                                                                        .Caption,
+                                                                                        color =
+                                                                                                AppColors
+                                                                                                        .OnSurface,
+                                                                                        lineHeight =
+                                                                                                16.sp
                                                                                 )
                                                                         }
                                                                 }
@@ -2269,7 +2394,10 @@ private fun SimpleMetricsCard(metrics: List<FinancialMetric>) {
                                                 if (metric != metrics.last()) {
                                                         Spacer(modifier = Modifier.height(6.dp))
                                                         Divider(
-                                                                color = AppColors.Divider.copy(alpha = 0.3f),
+                                                                color =
+                                                                        AppColors.Divider.copy(
+                                                                                alpha = 0.3f
+                                                                        ),
                                                                 thickness = 0.5.dp
                                                         )
                                                 }
@@ -2482,7 +2610,8 @@ private fun MetricsSummaryGrid(metrics: List<FinancialMetric>) {
                                                         categoryMetrics.firstOrNull()?.let {
                                                                 it.rawValue?.let { raw ->
                                                                         formatCurrency(raw)
-                                                                } ?: it.value
+                                                                }
+                                                                        ?: it.value
                                                         },
                                                 modifier = Modifier.weight(1f)
                                         )

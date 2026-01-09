@@ -2,7 +2,7 @@ package papyrus.core.network
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.pascal.institute.ahmes.model.CompanyFacts
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -40,8 +40,8 @@ object SecApi {
     private const val CONTACT_EMAIL = "admin@example.com" // Replace with your actual email
 
     /**
-     * Configure a request with common SEC API headers.
-     * Centralizes header setup to reduce duplication and ensure consistency.
+     * Configure a request with common SEC API headers. Centralizes header setup to reduce
+     * duplication and ensure consistency.
      */
     private fun HttpRequestBuilder.applySecHeaders(hostOverride: String? = null) {
         header("User-Agent", "$USER_AGENT ($CONTACT_EMAIL)")
@@ -95,11 +95,7 @@ object SecApi {
         println("Fetching submissions from: $url")
         return try {
             kotlinx.coroutines.delay(100) // Respect rate limits
-            client
-                    .get(url) {
-                        applySecHeaders()
-                    }
-                    .body()
+            client.get(url) { applySecHeaders() }.body()
         } catch (e: Exception) {
             System.err.println("Failed to fetch submissions: ${e.message}")
             e.printStackTrace()
@@ -108,22 +104,16 @@ object SecApi {
     }
 
     /**
-     * Fetch SEC XBRL company facts (companyfacts JSON).
-     * Docs: https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json
+     * Fetch SEC XBRL company facts (companyfacts JSON). Docs:
+     * https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json
      */
     suspend fun getCompanyFacts(cik: Int): CompanyFacts? {
         val cikStr = cik.toString().padStart(10, '0')
         val url = "https://data.sec.gov/api/xbrl/companyfacts/CIK$cikStr.json"
         return try {
             kotlinx.coroutines.delay(100) // Respect rate limits
-            val jsonText: String =
-                    client
-                            .get(url) {
-                                applySecHeaders()
-                            }
-                            .bodyAsText()
-
-            mapper.readValue<CompanyFacts>(jsonText)
+            // Use kotlinx.serialization to match Ahmes model
+            client.get(url) { applySecHeaders() }.body()
         } catch (e: Exception) {
             System.err.println("Failed to fetch company facts: ${e.message}")
             null
@@ -195,18 +185,16 @@ object SecApi {
             if (url.isBlank()) {
                 return "Error: Invalid URL (empty)"
             }
-            
+
             // Check if URL contains problematic patterns
             if (url.contains("cgi-bin/viewer")) {
                 return "Error: SEC's cgi-bin/viewer service is no longer available. Please use HTML or TXT format instead."
             }
-            
+
             println("Fetching document from: $url")
             kotlinx.coroutines.delay(100) // Respect rate limits
-            val response = client.get(url) {
-                applySecHeaders()
-            }
-            
+            val response = client.get(url) { applySecHeaders() }
+
             // Check response status
             if (response.status.value in 200..299) {
                 response.body()
