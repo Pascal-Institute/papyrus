@@ -3,9 +3,22 @@ package papyrus.core.model
 import kotlinx.serialization.Serializable
 
 typealias FinancialMetric = com.pascal.institute.ahmes.model.FinancialMetric
+
 typealias FinancialRatio = com.pascal.institute.ahmes.model.FinancialRatio
+
 typealias HealthStatus = com.pascal.institute.ahmes.model.HealthStatus
+
 typealias RatioCategory = com.pascal.institute.ahmes.model.RatioCategory
+
+typealias DocumentSentimentSummary = com.pascal.institute.ahmes.ai.DocumentSentimentSummary
+
+typealias RiskAnalysis = com.pascal.institute.ahmes.ai.RiskAnalysis
+
+typealias DocumentSummary = com.pascal.institute.ahmes.ai.DocumentSummary
+
+typealias SectionClassification = com.pascal.institute.ahmes.ai.SectionClassification
+
+typealias FinancialEntityAi = com.pascal.institute.ahmes.ai.FinancialEntity
 
 @Serializable
 data class BeginnerInsight(
@@ -53,5 +66,14 @@ data class FinancialAnalysis(
                 null, // Management discussion and analysis
 
         // XBRL / iXBRL extracted metrics
-        val xbrlMetrics: List<ExtendedFinancialMetric> = emptyList()
+        val xbrlMetrics: List<ExtendedFinancialMetric> = emptyList(),
+
+        // AI-Enhanced Insights (NEW)
+        val aiSentiment: DocumentSentimentSummary? = null,
+        val aiEntities: List<FinancialEntityAi> = emptyList(),
+        val aiRiskAnalysis: List<RiskAnalysis> = emptyList(),
+        val aiDocumentSummary: DocumentSummary? = null,
+        val aiSectionClassifications: Map<String, SectionClassification> = emptyMap(),
+        val aiModelUsed: String? = null,
+        val aiProcessingTimeMs: Long? = null
 )

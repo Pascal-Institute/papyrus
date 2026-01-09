@@ -2,57 +2,69 @@ package com.pascal.institute.ahmes.ai
 
 import ai.djl.Application
 import ai.djl.Device
-import ai.djl.MalformedModelException
-import ai.djl.Model
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer
 import ai.djl.inference.Predictor
 import ai.djl.modality.Classifications
 import ai.djl.modality.nlp.qa.QAInput
 import ai.djl.repository.zoo.Criteria
-import ai.djl.repository.zoo.ModelNotFoundException
 import ai.djl.repository.zoo.ZooModel
-import ai.djl.translate.TranslateException
-import org.slf4j.LoggerFactory
-import java.io.IOException
-import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
+import org.slf4j.LoggerFactory
 
 /**
  * DJL Model Manager
  *
- * Manages deep learning models for SEC document analysis.
- * Provides lazy-loading, caching, and resource management for AI models.
+ * Manages deep learning models for SEC document analysis. Provides lazy-loading, caching, and
+ * resource management for AI models.
  */
 object DjlModelManager {
 
     private val logger = LoggerFactory.getLogger(DjlModelManager::class.java)
 
-    // Model cache to avoid repeated loading
+    // Model and Tokenizer cache
     private val modelCache = ConcurrentHashMap<String, ZooModel<*, *>>()
     private val tokenizerCache = ConcurrentHashMap<String, HuggingFaceTokenizer>()
+
+    // Predictor pools to reuse expensive predictor objects
+    private val sentimentPredictorPool =
+            java.util.concurrent.ConcurrentLinkedQueue<Predictor<String, Classifications>>()
+    private val qaPredictorPool =
+            java.util.concurrent.ConcurrentLinkedQueue<Predictor<QAInput, String>>()
 
     // Check if GPU is available
     private fun isGpuAvailable(): Boolean {
         return try {
-            val gpu = Device.gpu()
-            gpu.isGpu
+            val engine = ai.djl.engine.Engine.getInstance()
+            val hasGpu = Device.gpu().isGpu
+            val engineName = engine.engineName
+            logger.info("DJL Engine: $engineName, GPU available: $hasGpu")
+            hasGpu
         } catch (e: Exception) {
+            logger.warn("GPU detection failed: ${e.message}. Falling back to CPU.")
             false
         }
     }
 
     // Default device (CPU or GPU if available)
     val defaultDevice: Device by lazy {
-        try {
-            if (isGpuAvailable()) Device.gpu() else Device.cpu()
-        } catch (e: Exception) {
-            Device.cpu()
-        }
+        val device =
+                try {
+                    if (isGpuAvailable()) {
+                        val gpu = Device.gpu()
+                        logger.info("Using GPU: $gpu")
+                        gpu
+                    } else {
+                        logger.info("Using CPU")
+                        Device.cpu()
+                    }
+                } catch (e: Exception) {
+                    logger.warn("Error selecting device, defaulting to CPU: ${e.message}")
+                    Device.cpu()
+                }
+        device
     }
 
-    /**
-     * Model types available for SEC parsing
-     */
+    /** Model types available for SEC parsing */
     enum class ModelType(val modelName: String, val description: String) {
         SENTIMENT("distilbert-base-uncased-finetuned-sst-2-english", "Sentiment Analysis"),
         NER("dbmdz/bert-large-cased-finetuned-conll03-english", "Named Entity Recognition"),
@@ -60,69 +72,63 @@ object DjlModelManager {
         TEXT_CLASSIFICATION("facebook/bart-large-mnli", "Zero-shot Classification")
     }
 
-    /**
-     * Load or get cached sentiment analysis model
-     */
+    /** Load or get cached sentiment analysis model */
     @Suppress("UNCHECKED_CAST")
     fun getSentimentModel(): ZooModel<String, Classifications>? {
         return try {
             modelCache.getOrPut("sentiment") {
-                val criteria = Criteria.builder()
-                    .optApplication(Application.NLP.SENTIMENT_ANALYSIS)
-                    .setTypes(String::class.java, Classifications::class.java)
-                    .optEngine("PyTorch")
-                    .optDevice(defaultDevice)
-                    .optProgress(ai.djl.training.util.ProgressBar())
-                    .build()
+                val criteria =
+                        Criteria.builder()
+                                .optApplication(Application.NLP.SENTIMENT_ANALYSIS)
+                                .setTypes(String::class.java, Classifications::class.java)
+                                .optEngine("PyTorch")
+                                .optDevice(defaultDevice)
+                                .optProgress(ai.djl.training.util.ProgressBar())
+                                .build()
 
                 criteria.loadModel()
-            } as ZooModel<String, Classifications>
+            } as
+                    ZooModel<String, Classifications>
         } catch (e: Exception) {
             logger.warn("Failed to load sentiment model: ${e.message}")
             null
         }
     }
 
-    /**
-     * Load or get cached question answering model
-     */
+    /** Load or get cached question answering model */
     @Suppress("UNCHECKED_CAST")
     fun getQuestionAnsweringModel(): ZooModel<QAInput, String>? {
         return try {
             modelCache.getOrPut("qa") {
-                val criteria = Criteria.builder()
-                    .optApplication(Application.NLP.QUESTION_ANSWER)
-                    .setTypes(QAInput::class.java, String::class.java)
-                    .optEngine("PyTorch")
-                    .optDevice(defaultDevice)
-                    .optProgress(ai.djl.training.util.ProgressBar())
-                    .build()
+                val criteria =
+                        Criteria.builder()
+                                .optApplication(Application.NLP.QUESTION_ANSWER)
+                                .setTypes(QAInput::class.java, String::class.java)
+                                .optEngine("PyTorch")
+                                .optDevice(defaultDevice)
+                                .optProgress(ai.djl.training.util.ProgressBar())
+                                .build()
 
                 criteria.loadModel()
-            } as ZooModel<QAInput, String>
+            } as
+                    ZooModel<QAInput, String>
         } catch (e: Exception) {
             logger.warn("Failed to load QA model: ${e.message}")
             null
         }
     }
 
-    /**
-     * Get HuggingFace tokenizer for text processing
-     */
+    /** Get HuggingFace tokenizer for text processing */
     fun getTokenizer(modelName: String = "bert-base-uncased"): HuggingFaceTokenizer? {
         return try {
-            tokenizerCache.getOrPut(modelName) {
-                HuggingFaceTokenizer.newInstance(modelName)
-            }
+            tokenizerCache.getOrPut(modelName) { HuggingFaceTokenizer.newInstance(modelName) }
         } catch (e: Exception) {
             logger.warn("Failed to load tokenizer $modelName: ${e.message}")
             null
         }
     }
 
-    /**
-     * Check if AI capabilities are available
-     */
+    /** Check if AI capabilities are available */
     fun isAvailable(): Boolean {
         return try {
             // Try to load a simple tokenizer to check DJL availability
@@ -135,21 +141,57 @@ object DjlModelManager {
         }
     }
 
-    /**
-     * Get device information
-     */
+    /** Get device information */
     fun getDeviceInfo(): Map<String, Any> {
-        val isGpu = try { defaultDevice.isGpu } catch (e: Exception) { false }
-        return mapOf(
-            "defaultDevice" to defaultDevice.toString(),
-            "isGpuAvailable" to isGpu
-        )
+        val isGpu =
+                try {
+                    defaultDevice.isGpu
+                } catch (e: Exception) {
+                    false
+                }
+        return mapOf("defaultDevice" to defaultDevice.toString(), "isGpuAvailable" to isGpu)
     }
 
-    /**
-     * Release all cached models and resources
-     */
+    /** Executes a block of code using a reused Sentiment Predictor. */
+    fun <R> withSentimentPredictor(block: (Predictor<String, Classifications>) -> R): R {
+        val predictor =
+                sentimentPredictorPool.poll()
+                        ?: getSentimentModel()?.newPredictor()
+                                ?: throw IllegalStateException("Sentiment model not available")
+
+        return try {
+            block(predictor)
+        } finally {
+            sentimentPredictorPool.offer(predictor)
+        }
+    }
+
+    /** Executes a block of code using a reused QA Predictor. */
+    fun <R> withQaPredictor(block: (Predictor<QAInput, String>) -> R): R {
+        val predictor =
+                qaPredictorPool.poll()
+                        ?: getQuestionAnsweringModel()?.newPredictor()
+                                ?: throw IllegalStateException("QA model not available")
+
+        return try {
+            block(predictor)
+        } finally {
+            qaPredictorPool.offer(predictor)
+        }
+    }
+
+    /** Release all cached models, predictors and resources */
     fun shutdown() {
+        // Close and clear sentiment predictors
+        while (sentimentPredictorPool.isNotEmpty()) {
+            sentimentPredictorPool.poll()?.close()
+        }
+
+        // Close and clear QA predictors
+        while (qaPredictorPool.isNotEmpty()) {
+            qaPredictorPool.poll()?.close()
+        }
+
         modelCache.values.forEach { model ->
             try {
                 model.close()

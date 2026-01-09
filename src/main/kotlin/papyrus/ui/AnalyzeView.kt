@@ -748,18 +748,19 @@ fun FinancialAnalysisPanel(
     val hasXbrlTab = analysis.xbrlMetrics.isNotEmpty() || analysis.cik != null
 
     val tabs = buildList {
-        if (analysis.beginnerInsights.isNotEmpty() || analysis.healthScore != null) {
-            add("Health Score")
-            add("Insights")
-            add("Financials")
-            if (hasXbrlTab) add("XBRL")
-            add("Raw Data")
-        } else {
+        val hasInsights = analysis.beginnerInsights.isNotEmpty() || analysis.aiSentiment != null
+        val hasHealth = analysis.healthScore != null
+
+        if (hasHealth) add("Health Score")
+        if (hasInsights) add("Insights")
+
+        if (!hasHealth && !hasInsights) {
             add("Overview")
-            add("Financials")
-            if (hasXbrlTab) add("XBRL")
-            add("Raw Data")
         }
+
+        add("Financials")
+        if (hasXbrlTab) add("XBRL")
+        add("Raw Data")
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -781,7 +782,7 @@ fun FinancialAnalysisPanel(
         when (tabs.getOrNull(selectedTab)) {
             "Health Score" -> HealthScoreTab(analysis)
             "Overview" -> FinancialOverviewTab(analysis)
-            "Insights" -> BeginnerInsightsTab(analysis.beginnerInsights, analysis.keyTakeaways)
+            "Insights" -> BeginnerInsightsTab(analysis)
             "Financials" -> FinancialsTab(analysis.ratios, analysis.metrics)
             "XBRL" -> XbrlTab(analysis)
             "Raw Data" -> FinancialRawDataTab(analysis.rawContent, analysis)
@@ -1262,16 +1263,37 @@ private fun ReportTypeCard(reportType: String?, explanation: String?) {
 
 /** Beginner insights tab - easy explanations */
 @Composable
-private fun BeginnerInsightsTab(insights: List<BeginnerInsight>, keyTakeaways: List<String>) {
-    if (insights.isEmpty()) {
+private fun BeginnerInsightsTab(analysis: FinancialAnalysis) {
+    val insights = analysis.beginnerInsights
+
+    if (insights.isEmpty() && analysis.aiSentiment == null) {
         EmptyState(
                 icon = Icons.Outlined.Lightbulb,
                 title = "인사이트 분석 중",
                 description = "초보자용 인사이트를 생성하려면 더 많은 재무 데이터가 필요합니다."
         )
     } else {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(AppDimens.PaddingMedium)) {
-            items(insights) { insight -> BeginnerInsightCard(insight) }
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            // AI Analysis (Prioritized if available)
+            if (analysis.aiSentiment != null) {
+                AiAnalysisContent(analysis)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                if (insights.isNotEmpty()) {
+                    Text(
+                            text = "Rule-based Insights",
+                            style = AppTypography.Headline3,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            }
+
+            // Rule-based insights
+            insights.forEach { insight ->
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    BeginnerInsightCard(insight)
+                }
+            }
         }
     }
 }
@@ -3178,5 +3200,368 @@ private fun MetricItem(label: String, value: String, icon: ImageVector, color: C
                 fontWeight = FontWeight.Bold,
                 color = AppColors.OnSurface
         )
+    }
+}
+
+@Composable
+private fun AiAnalysisContent(analysis: FinancialAnalysis) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // AI Header with Model Info
+        Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                        imageVector = Icons.Default.Psychology,
+                        contentDescription = null,
+                        tint = AppColors.Primary,
+                        modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                            text = "AI 심층 분석",
+                            style = AppTypography.Headline2,
+                            color = AppColors.OnSurface,
+                            fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                            text = "딥러닝 모델을 활용한 자동 분석 결과입니다",
+                            style = AppTypography.Caption,
+                            color = AppColors.OnSurfaceSecondary
+                    )
+                }
+            }
+
+            // GPU Status Badge
+            Surface(
+                    color =
+                            if (analysis.aiModelUsed?.contains("GPU") == true) Color(0xFFE8F5E9)
+                            else AppColors.SurfaceVariant,
+                    shape = AppShapes.Pill
+            ) {
+                Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                            imageVector =
+                                    if (analysis.aiModelUsed?.contains("GPU") == true)
+                                            Icons.Default.Speed
+                                    else Icons.Default.Computer,
+                            contentDescription = null,
+                            tint =
+                                    if (analysis.aiModelUsed?.contains("GPU") == true)
+                                            Color(0xFF2E7D32)
+                                    else AppColors.OnSurfaceSecondary,
+                            modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                            text = analysis.aiModelUsed ?: "AI Ready",
+                            style = AppTypography.Caption,
+                            color =
+                                    if (analysis.aiModelUsed?.contains("GPU") == true)
+                                            Color(0xFF2E7D32)
+                                    else AppColors.OnSurfaceSecondary,
+                            fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Sentiment Analysis Section
+        analysis.aiSentiment?.let { sentiment ->
+            Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = AppDimens.CardElevation,
+                    shape = AppShapes.Large,
+                    backgroundColor = AppColors.Surface
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val icon =
+                                when (sentiment.overallSentiment.lowercase()) {
+                                    "positive" -> Icons.Default.SentimentVerySatisfied
+                                    "negative" -> Icons.Default.SentimentVeryDissatisfied
+                                    else -> Icons.Default.SentimentNeutral
+                                }
+                        val color =
+                                when (sentiment.overallSentiment.lowercase()) {
+                                    "positive" -> Color(0xFF4CAF50)
+                                    "negative" -> Color(0xFFF44336)
+                                    else -> Color(0xFF2196F3)
+                                }
+
+                        Icon(
+                                icon,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        val translatedSentiment =
+                                when (sentiment.overallSentiment.uppercase()) {
+                                    "POSITIVE" -> "긍정적"
+                                    "NEGATIVE" -> "부정적"
+                                    "NEUTRAL" -> "중립"
+                                    "MIXED" -> "혼조세"
+                                    else -> sentiment.overallSentiment
+                                }
+                        Text(
+                                text = "시장 감성 분석: $translatedSentiment",
+                                style = AppTypography.Headline3,
+                                color = color,
+                                fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Sentiment Meter (Simplified)
+                    Row(modifier = Modifier.fillMaxWidth().height(12.dp).clip(AppShapes.Pill)) {
+                        val posWeight = sentiment.positiveRatio.toFloatOrNull() ?: 0f
+                        val neuWeight = sentiment.neutralRatio.toFloatOrNull() ?: 0f
+                        val negWeight = sentiment.negativeRatio.toFloatOrNull() ?: 0f
+
+                        Box(
+                                modifier =
+                                        Modifier.weight(posWeight.coerceAtLeast(0.01f))
+                                                .fillMaxHeight()
+                                                .background(Color(0xFF4CAF50))
+                        )
+                        Box(
+                                modifier =
+                                        Modifier.weight(neuWeight.coerceAtLeast(0.01f))
+                                                .fillMaxHeight()
+                                                .background(Color(0xFF2196F3))
+                        )
+                        Box(
+                                modifier =
+                                        Modifier.weight(negWeight.coerceAtLeast(0.01f))
+                                                .fillMaxHeight()
+                                                .background(Color(0xFFF44336))
+                        )
+                    }
+
+                    Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("긍정", style = AppTypography.Caption, color = Color(0xFF4CAF50))
+                        Text("중립", style = AppTypography.Caption, color = Color(0xFF2196F3))
+                        Text("부정", style = AppTypography.Caption, color = Color(0xFFF44336))
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // AI Summary Section
+        analysis.aiDocumentSummary?.let { summary ->
+            Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = AppDimens.CardElevation,
+                    shape = AppShapes.Large
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    SectionHeader(title = "AI 핵심 요약", icon = Icons.Default.Insights)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                            text = translateAiText(summary.executiveSummary),
+                            style = AppTypography.Body1,
+                            color = AppColors.OnSurface,
+                            lineHeight = 24.sp
+                    )
+
+                    if (summary.keyFindings.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                                text = "주요 포인트",
+                                style = AppTypography.Subtitle1,
+                                fontWeight = FontWeight.Bold
+                        )
+                        summary.keyFindings.forEach { point ->
+                            Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                                Text("• ", color = AppColors.Primary)
+                                Text(text = translateAiText(point), style = AppTypography.Body2)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Risk Analysis section
+        if (analysis.aiRiskAnalysis.isNotEmpty()) {
+            Text(
+                    text = "AI 리스크 평가",
+                    style = AppTypography.Headline3,
+                    modifier = Modifier.padding(vertical = 12.dp)
+            )
+
+            analysis.aiRiskAnalysis.chunked(2).forEach { rowRisks ->
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowRisks.forEach { risk ->
+                        Card(
+                                modifier = Modifier.weight(1f),
+                                shape = AppShapes.Medium,
+                                backgroundColor = AppColors.SurfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val severityColor =
+                                            when (risk.severity.toString().lowercase()) {
+                                                "critical" -> Color(0xFFD32F2F)
+                                                "high" -> Color(0xFFF44336)
+                                                "medium" -> Color(0xFFFF9800)
+                                                else -> Color(0xFF4CAF50)
+                                            }
+                                    val severityText =
+                                            when (risk.severity.toString().uppercase()) {
+                                                "CRITICAL" -> "위험"
+                                                "HIGH" -> "높음"
+                                                "MEDIUM" -> "보통"
+                                                "LOW" -> "낮음"
+                                                else -> "정보"
+                                            }
+                                    Box(
+                                            modifier =
+                                                    Modifier.size(8.dp)
+                                                            .background(severityColor, CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                            text = translateRiskCategory(risk.category),
+                                            style = AppTypography.Caption,
+                                            fontWeight = FontWeight.Bold,
+                                            color = severityColor
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Text(
+                                            text = severityText,
+                                            style = AppTypography.Caption,
+                                            color = severityColor
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                        text = translateAiText(risk.riskFactor),
+                                        style = AppTypography.Subtitle2,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                val sentimentKor =
+                                        when (risk.sentiment.sentiment.uppercase()) {
+                                            "POSITIVE" -> "긍정"
+                                            "NEGATIVE" -> "부정"
+                                            else -> "중립"
+                                        }
+                                Text(
+                                        text = "감성: $sentimentKor",
+                                        style = AppTypography.Caption,
+                                        color = AppColors.OnSurfaceSecondary
+                                )
+                            }
+                        }
+                    }
+                    if (rowRisks.size < 2) Spacer(modifier = Modifier.weight(1f))
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+
+        // Processing Time Footer
+        analysis.aiProcessingTimeMs?.let { time ->
+            Text(
+                    text = "AI 분석 완료: ${time}ms",
+                    style = AppTypography.Caption,
+                    color = AppColors.OnSurfaceSecondary,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/** AI 추출 텍스트를 한글로 변환하는 간단한 헬퍼 함수 (실제 번역 모델을 사용하기 전까지 주요 패턴 기반으로 변환) */
+private fun translateAiText(text: String?): String {
+    if (text == null) return ""
+
+    // 주요 문구 및 패턴 변환
+    var result =
+            text.replace("The company", "당사는")
+                    .replace("filed this report", "보고서를 제출했습니다")
+                    .replace("management outlook", "경영진 전망")
+                    .replace("appears positive", "긍정적으로 보입니다")
+                    .replace("Key financial figures include", "주요 재무 지표는 다음과 같습니다:")
+                    .replace("monetary values disclosed", "개의 금액 지표가 공개되었습니다")
+                    .replace("percentage figures mentioned", "개의 퍼센트 지표가 언급되었습니다")
+                    .replace("Revenue growth mentioned", "매출 성장 언급")
+                    .replace("Cost reduction initiatives discussed", "비용 절감 대책 논의")
+                    .replace("M&A activity mentioned", "인수합병(M&A) 활동 언급")
+                    .replace("Dividend-related information included", "배당 관련 정보 포함")
+                    .replace("Stock repurchase program discussed", "자사주 매입 프로그램 논의")
+                    .replace(
+                            "Overall positive sentiment may indicate favorable conditions",
+                            "전반적인 긍정적 기조는 유리한 시장 여건을 나타낼 수 있습니다"
+                    )
+                    .replace(
+                            "Negative sentiment warrants careful due diligence",
+                            "부정적 기조가 감지되어 신중한 실사가 필요합니다"
+                    )
+                    .replace(
+                            "Mixed signals - detailed analysis recommended",
+                            "혼조세 신호 - 상세 분석을 권장합니다"
+                    )
+                    .replace(
+                            "Multiple risk factors disclosed - assess risk tolerance",
+                            "다수의 리스크 요인 노출 - 위험 감수 성향 평가 필요"
+                    )
+                    .replace(
+                            "Review disclosed financial figures against expectations",
+                            "공개된 재무 수치를 기대치와 비교 검토하십시오"
+                    )
+                    .replace(
+                            "Conduct thorough analysis before making investment decisions",
+                            "투자 결정 전 철저한 분석을 수행하십시오"
+                    )
+                    .replace("Market volatility", "시장 변동성")
+                    .replace("Supply chain disruption", "공급망 중단")
+                    .replace("Cybersecurity threats", "사이버 보안 위협")
+                    .replace("Regulatory changes", "규제 변화")
+                    .replace("Competition pressure", "경쟁 압력")
+                    .replace("Currency fluctuation", "환율 변동")
+                    .replace("Interest rate risk", "금리 리스크")
+                    .replace("Litigation risk", "소송 리스크")
+                    .replace("Environmental compliance", "환경 규제 준수")
+
+    return result
+}
+
+/** 리스크 카테고리 한글 변환 */
+private fun translateRiskCategory(category: String): String {
+    return when (category.uppercase()) {
+        "MARKET" -> "시장 리스크"
+        "REGULATORY" -> "규제/법률 리스크"
+        "OPERATIONAL" -> "운영 리스크"
+        "FINANCIAL" -> "재무 리스크"
+        "TECHNOLOGY" -> "기술/보안 리스크"
+        "ENVIRONMENTAL" -> "환경 리스크"
+        "GEOPOLITICAL" -> "지정학 리스크"
+        "GENERAL" -> "일반 리스크"
+        else -> category
     }
 }

@@ -1,11 +1,14 @@
 package papyrus.core.service.analyzer
 
+import com.pascal.institute.ahmes.ai.AiEnhancedSecParser
+import com.pascal.institute.ahmes.ai.AiEnhancementOptions
+import com.pascal.institute.ahmes.parser.EnhancedFinancialParser
+import com.pascal.institute.ahmes.parser.InlineXbrlExtractor
+import com.pascal.institute.ahmes.parser.ParseResult
+import com.pascal.institute.ahmes.parser.SecTableParser
 import org.jsoup.Jsoup
 import papyrus.core.model.*
 import papyrus.core.resource.AppStrings
-import com.pascal.institute.ahmes.parser.EnhancedFinancialParser
-import com.pascal.institute.ahmes.parser.InlineXbrlExtractor
-import com.pascal.institute.ahmes.parser.SecTableParser
 import papyrus.util.data.AnalysisCache
 import papyrus.util.finance.*
 
@@ -106,7 +109,8 @@ object FinancialAnalyzer {
                                         ExtendedFinancialMetric(
                                                 name = metric.name,
                                                 value = metric.value,
-                                                rawValue = metric.rawValue, // Already String representation
+                                                rawValue = metric.rawValue, // Already String
+                                                // representation
                                                 category = category,
                                                 source = "Pattern matching",
                                                 confidence = 0.7,
@@ -963,6 +967,37 @@ object FinancialAnalyzer {
                                 riskFactors
                         )
 
+                // SEC AI 연동: AI 강화 분석 수행 (내부적으로 모델 가용 여부에 따라 rule-based fallback 처리됨)
+                val aiEnhancedResult =
+                        try {
+                                val parseResult =
+                                        ParseResult(
+                                                metrics = allMetrics,
+                                                documentName = fileName,
+                                                parserType = "EnhancedFinancialParser",
+                                                rawContent = content,
+                                                cleanedContent = basicAnalysis.rawContent,
+                                                metadata =
+                                                        mapOf(
+                                                                "reportType" to
+                                                                        (basicAnalysis.reportType
+                                                                                ?: "Unknown")
+                                                        )
+                                        )
+                                val options =
+                                        AiEnhancementOptions(
+                                                enableSentimentAnalysis = true,
+                                                enableEntityExtraction = true,
+                                                enableSectionClassification = true,
+                                                enableRiskAnalysis = true,
+                                                enableDocumentSummary = true
+                                        )
+                                AiEnhancedSecParser.enhance(parseResult, options)
+                        } catch (e: Exception) {
+                                println("⚠ AI Enhancement failed: ${e.message}")
+                                null
+                        }
+
                 val result =
                         basicAnalysis.copy(
                                 metrics = allMetrics,
@@ -972,7 +1007,21 @@ object FinancialAnalyzer {
                                 healthScore = healthScore,
                                 reportTypeExplanation = reportExplanation,
                                 keyTakeaways = keyTakeaways,
-                                extendedMetrics = extendedMetrics
+                                extendedMetrics = extendedMetrics,
+
+                                // AI 결과 매핑
+                                aiSentiment = aiEnhancedResult?.sentiment,
+                                aiEntities = aiEnhancedResult?.entities ?: emptyList(),
+                                aiRiskAnalysis = aiEnhancedResult?.riskAnalysis ?: emptyList(),
+                                aiDocumentSummary = aiEnhancedResult?.documentSummary,
+                                aiSectionClassifications = aiEnhancedResult?.sectionClassifications
+                                                ?: emptyMap(),
+                                aiModelUsed = aiEnhancedResult?.aiModelUsed,
+                                aiProcessingTimeMs =
+                                        aiEnhancedResult
+                                                ?.metadata
+                                                ?.get("aiProcessingTimeMs")
+                                                ?.toLongOrNull()
                         )
 
                 // Save to cache
