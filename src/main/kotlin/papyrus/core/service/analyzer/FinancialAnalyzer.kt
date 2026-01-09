@@ -998,9 +998,11 @@ object FinancialAnalyzer {
                                 null
                         }
 
+                val finalMetrics = deduplicateMetrics(aiEnhancedResult?.metrics ?: allMetrics)
+
                 val result =
                         basicAnalysis.copy(
-                                metrics = aiEnhancedResult?.metrics ?: allMetrics,
+                                metrics = finalMetrics,
                                 ratios = ratios,
                                 beginnerInsights = insights,
                                 termExplanations = termExplanations,
@@ -1036,24 +1038,81 @@ object FinancialAnalyzer {
                 basic: List<FinancialMetric>,
                 extended: List<ExtendedFinancialMetric>
         ): List<FinancialMetric> {
-                val merged = basic.toMutableList()
+                val all = basic.toMutableList()
 
-                // 확장 메트릭 중 기존에 없는 것 추가
                 for (ext in extended) {
-                        val exists = basic.any { it.name.equals(ext.name, ignoreCase = true) }
-                        if (!exists && ext.rawValue != null) {
-                                merged.add(
-                                        FinancialMetric(
-                                                name = ext.name,
-                                                value = ext.value,
-                                                rawValue = ext.rawValue,
-                                                context = ext.context
-                                        )
+                        all.add(
+                                FinancialMetric(
+                                        name = ext.name,
+                                        value = ext.value,
+                                        rawValue = ext.rawValue,
+                                        context = ext.context
                                 )
+                        )
+                }
+
+                return deduplicateMetrics(all)
+        }
+
+        /** 재무 항목 이름 정규화 및 중복 제거 */
+        private fun deduplicateMetrics(metrics: List<FinancialMetric>): List<FinancialMetric> {
+                val normalizedMap = mutableMapOf<String, FinancialMetric>()
+
+                // 유사 지표 매핑 (중복 제거 기준)
+                val synonymMap =
+                        mapOf(
+                                "Total Revenue" to "Revenue",
+                                "Net Sales" to "Revenue",
+                                "Total Sales" to "Revenue",
+                                "Revenues" to "Revenue",
+                                "Net Earnings" to "Net Income",
+                                "Net Profit" to "Net Income",
+                                "Net Loss" to "Net Income",
+                                "Total Assets" to "Total Assets",
+                                "Assets" to "Total Assets",
+                                "Total Liabilities" to "Total Liabilities",
+                                "Liabilities" to "Total Liabilities",
+                                "Operating Profit" to "Operating Income",
+                                "Income from Operations" to "Operating Income",
+                                "Earnings Per Share" to "EPS",
+                                "Diluted EPS" to "EPS",
+                                "Diluted Earnings Per Share" to "EPS"
+                        )
+
+                for (metric in metrics) {
+                        val cleanName = metric.name.replace("(AI)", "").trim()
+                        val normalizedName =
+                                synonymMap.entries
+                                        .find {
+                                                it.key.equals(cleanName, ignoreCase = true) ||
+                                                        it.value.equals(
+                                                                cleanName,
+                                                                ignoreCase = true
+                                                        )
+                                        }
+                                        ?.value
+                                        ?: cleanName.lowercase()
+
+                        val existing = normalizedMap[normalizedName]
+                        if (existing == null) {
+                                normalizedMap[normalizedName] = metric
+                        } else {
+                                // 우선순위 결정: AI가 아닌 것 우선, rawValue가 있는 것 우선
+                                val existingIsAi = existing.name.contains("(AI)")
+                                val currentIsAi = metric.name.contains("(AI)")
+
+                                if (existingIsAi && !currentIsAi) {
+                                        normalizedMap[normalizedName] = metric
+                                } else if (existingIsAi == currentIsAi) {
+                                        // 둘 다 AI이거나 둘 다 AI가 아닌 경우, rawValue가 있는 쪽을 선호
+                                        if (existing.rawValue == null && metric.rawValue != null) {
+                                                normalizedMap[normalizedName] = metric
+                                        }
+                                }
                         }
                 }
 
-                return merged
+                return normalizedMap.values.toList()
         }
 
         /** 확장된 초보자 인사이트 생성 */
