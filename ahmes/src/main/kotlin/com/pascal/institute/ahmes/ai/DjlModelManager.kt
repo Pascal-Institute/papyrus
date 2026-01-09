@@ -82,17 +82,12 @@ object DjlModelManager {
     fun getSentimentModel(): ZooModel<String, Classifications>? {
         return try {
             modelCache.getOrPut("sentiment") {
+                val modelId = ModelType.SENTIMENT.modelId
                 val criteria =
                         Criteria.builder()
-                                .optApplication(Application.NLP.SENTIMENT_ANALYSIS)
+                                .optApplication(Application.NLP.TEXT_CLASSIFICATION)
                                 .setTypes(String::class.java, Classifications::class.java)
-                                // Only use filter if modelId is specified, otherwise use default
-                                // for application
-                                .apply {
-                                    if (ModelType.SENTIMENT.modelId.isNotEmpty()) {
-                                        optFilter("modelId", ModelType.SENTIMENT.modelId)
-                                    }
-                                }
+                                .optModelUrls("djl://ai.djl.huggingface.pytorch/$modelId")
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())
@@ -114,15 +109,12 @@ object DjlModelManager {
     fun getQuestionAnsweringModel(): ZooModel<QAInput, String>? {
         return try {
             modelCache.getOrPut("qa") {
+                val modelId = ModelType.QUESTION_ANSWERING.modelId
                 val criteria =
                         Criteria.builder()
                                 .optApplication(Application.NLP.QUESTION_ANSWER)
                                 .setTypes(QAInput::class.java, String::class.java)
-                                .apply {
-                                    if (ModelType.QUESTION_ANSWERING.modelId.isNotEmpty()) {
-                                        optFilter("modelId", ModelType.QUESTION_ANSWERING.modelId)
-                                    }
-                                }
+                                .optModelUrls("djl://ai.djl.huggingface.pytorch/$modelId")
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())
@@ -168,15 +160,12 @@ object DjlModelManager {
     fun getSummarizationModel(): ZooModel<String, String>? {
         return try {
             modelCache.getOrPut("summarization") {
+                val modelId = ModelType.SUMMARIZATION.modelId
                 val criteria =
                         Criteria.builder()
                                 .optApplication(Application.NLP.ANY)
                                 .setTypes(String::class.java, String::class.java)
-                                .apply {
-                                    if (ModelType.SUMMARIZATION.modelId.isNotEmpty()) {
-                                        optFilter("modelId", ModelType.SUMMARIZATION.modelId)
-                                    }
-                                }
+                                .optModelUrls("djl://ai.djl.huggingface.pytorch/$modelId")
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())
