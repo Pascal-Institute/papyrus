@@ -30,6 +30,8 @@ object DjlModelManager {
             java.util.concurrent.ConcurrentLinkedQueue<Predictor<String, Classifications>>()
     private val qaPredictorPool =
             java.util.concurrent.ConcurrentLinkedQueue<Predictor<QAInput, String>>()
+    private val summarizationPredictorPool =
+            java.util.concurrent.ConcurrentLinkedQueue<Predictor<String, String>>()
 
     // Check if GPU is available
     private fun isGpuAvailable(): Boolean {
@@ -66,9 +68,10 @@ object DjlModelManager {
 
     /** Model types available for SEC parsing */
     enum class ModelType(val modelId: String, val description: String) {
-        SENTIMENT("ProsusAI/finbert", "Financial Sentiment Analysis"),
+        SENTIMENT("yiyanghkust/finbert-tone", "Advanced Financial Tone Analysis"),
         NER("dbmdz/bert-large-cased-finetuned-conll03-english", "Named Entity Recognition"),
-        QUESTION_ANSWERING("deepset/roberta-base-squad2", "Robust Question Answering"),
+        QUESTION_ANSWERING("deepset/roberta-large-squad2", "High-Precision Question Answering"),
+        SUMMARIZATION("sshleifer/distilbart-cnn-12-6", "AI Document Summarization"),
         TEXT_CLASSIFICATION("facebook/bart-large-mnli", "Zero-shot Classification")
     }
 
@@ -143,6 +146,30 @@ object DjlModelManager {
         }
     }
 
+    /** Load or get cached summarization model */
+    @Suppress("UNCHECKED_CAST")
+    fun getSummarizationModel(): ZooModel<String, String>? {
+        return try {
+            modelCache.getOrPut("summarization") {
+                val criteria =
+                        Criteria.builder()
+                                .optApplication(Application.NLP.ANY)
+                                .setTypes(String::class.java, String::class.java)
+                                .optFilter("modelId", ModelType.SUMMARIZATION.modelId)
+                                .optEngine("PyTorch")
+                                .optDevice(defaultDevice)
+                                .optProgress(ai.djl.training.util.ProgressBar())
+                                .build()
+
+                criteria.loadModel()
+            } as
+                    ZooModel<String, String>
+        } catch (e: Exception) {
+            logger.warn("Failed to load summarization model: ${e.message}")
+            null
+        }
+    }
+
     /** Get device information */
     fun getDeviceInfo(): Map<String, Any> {
         val isGpu =
@@ -182,6 +209,20 @@ object DjlModelManager {
         }
     }
 
+    /** Executes a block of code using a reused Summarization Predictor. */
+    fun <R> withSummarizationPredictor(block: (Predictor<String, String>) -> R): R {
+        val predictor =
+                summarizationPredictorPool.poll()
+                        ?: getSummarizationModel()?.newPredictor()
+                                ?: throw IllegalStateException("Summarization model not available")
+
+        return try {
+            block(predictor)
+        } finally {
+            summarizationPredictorPool.offer(predictor)
+        }
+    }
+
     /** Release all cached models, predictors and resources */
     fun shutdown() {
         // Close and clear sentiment predictors
@@ -192,6 +233,11 @@ object DjlModelManager {
         // Close and clear QA predictors
         while (qaPredictorPool.isNotEmpty()) {
             qaPredictorPool.poll()?.close()
+        }
+
+        // Close and clear summarization predictors
+        while (summarizationPredictorPool.isNotEmpty()) {
+            summarizationPredictorPool.poll()?.close()
         }
 
         modelCache.values.forEach { model ->

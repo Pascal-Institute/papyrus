@@ -8,7 +8,7 @@ import papyrus.core.model.*
 
 /** Cache for storing and retrieving financial analysis results to avoid redundant calculations */
 object AnalysisCache {
-    private val cacheDir = File(System.getProperty("user.home"), ".papyrus/cache/v3")
+    private val cacheDir = File(System.getProperty("user.home"), ".papyrus/cache/v4")
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
