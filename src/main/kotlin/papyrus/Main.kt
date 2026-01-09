@@ -56,7 +56,8 @@ fun PapyrusApp() {
                                         onSearchTextChange = mainViewModel::onSearchTextChange,
                                         onTickerSelected = mainViewModel::onTickerSelected,
                                         onBookmarkClick = mainViewModel::onBookmarkClick,
-                                        onBookmarkedTickerClick = mainViewModel::onBookmarkedTickerClick,
+                                        onBookmarkedTickerClick =
+                                                mainViewModel::onBookmarkedTickerClick,
                                         onRemoveBookmark = mainViewModel::onRemoveBookmark,
                                         onBackToSearch = {
                                                 mainViewModel.onBackToSearch()
@@ -74,14 +75,16 @@ fun PapyrusApp() {
                                         onOpenInBrowser = { filing ->
                                                 appState.selectedTicker?.let { ticker ->
                                                         val url =
-                                                                papyrus.core.network.SecApi
+                                                                papyrus.core.secApiClient
                                                                         .getDocumentUrl(
-                                                                                ticker.cik.toString(),
+                                                                                ticker.cik
+                                                                                        .toString(),
                                                                                 filing.accessionNumber,
                                                                                 filing.primaryDocument
                                                                         )
                                                         if (Desktop.isDesktopSupported()) {
-                                                                Desktop.getDesktop().browse(URI(url))
+                                                                Desktop.getDesktop()
+                                                                        .browse(URI(url))
                                                         }
                                                 }
                                         }
@@ -101,43 +104,72 @@ fun PapyrusApp() {
                                                         // Immediately show loading state
                                                         analysisViewModel.analysisState =
                                                                 AnalysisState.Loading(
-                                                                        AppStrings.FileProcessing.readingFile(file.name)
+                                                                        AppStrings.FileProcessing
+                                                                                .readingFile(
+                                                                                        file.name
+                                                                                )
                                                                 )
 
                                                         try {
-                                                                if (!FileUtils.isSupportedFile(file)) {
-                                                                        analysisViewModel.analysisState =
+                                                                if (!FileUtils.isSupportedFile(file)
+                                                                ) {
+                                                                        analysisViewModel
+                                                                                .analysisState =
                                                                                 AnalysisState.Error(
-                                                                                        message = AppStrings.FileProcessing.unsupportedFileType(file.extension),
-                                                                                        retryAction = null
+                                                                                        message =
+                                                                                                AppStrings
+                                                                                                        .FileProcessing
+                                                                                                        .unsupportedFileType(
+                                                                                                                file.extension
+                                                                                                        ),
+                                                                                        retryAction =
+                                                                                                null
                                                                                 )
                                                                         return@launch
                                                                 }
 
-                                                                // Update loading message for content extraction
+                                                                // Update loading message for
+                                                                // content extraction
                                                                 analysisViewModel.analysisState =
                                                                         AnalysisState.Loading(
-                                                                                AppStrings.FileProcessing.EXTRACTING_CONTENT
+                                                                                AppStrings
+                                                                                        .FileProcessing
+                                                                                        .EXTRACTING_CONTENT
                                                                         )
 
-                                                                val extracted = FileUtils.extractDocument(file)
+                                                                val extracted =
+                                                                        FileUtils.extractDocument(
+                                                                                file
+                                                                        )
 
                                                                 val content =
-                                                                        when (file.extension.lowercase()) {
-                                                                                "html", "htm" -> extracted.rawContent
-                                                                                else -> extracted.extractedText
+                                                                        when (file.extension
+                                                                                        .lowercase()
+                                                                        ) {
+                                                                                "html", "htm" ->
+                                                                                        extracted
+                                                                                                .rawContent
+                                                                                else ->
+                                                                                        extracted
+                                                                                                .extractedText
                                                                         }
 
-                                                                // Update loading message for analysis
+                                                                // Update loading message for
+                                                                // analysis
                                                                 analysisViewModel.analysisState =
                                                                         AnalysisState.Loading(
-                                                                                AppStrings.FileProcessing.ANALYZING_DATA
+                                                                                AppStrings
+                                                                                        .FileProcessing
+                                                                                        .ANALYZING_DATA
                                                                         )
 
                                                                 // Use beginner-friendly analysis
                                                                 val analysis =
-                                                                        withContext(Dispatchers.IO) {
-                                                                                papyrus.core.service.analyzer
+                                                                        withContext(
+                                                                                Dispatchers.IO
+                                                                        ) {
+                                                                                papyrus.core.service
+                                                                                        .analyzer
                                                                                         .FinancialAnalyzer
                                                                                         .analyzeForBeginners(
                                                                                                 file.name,
@@ -146,11 +178,19 @@ fun PapyrusApp() {
                                                                         }
 
                                                                 analysisViewModel.analysisState =
-                                                                        AnalysisState.FinancialAnalysisResult(analysis)
+                                                                        AnalysisState
+                                                                                .FinancialAnalysisResult(
+                                                                                        analysis
+                                                                                )
                                                         } catch (e: Exception) {
                                                                 analysisViewModel.analysisState =
                                                                         AnalysisState.Error(
-                                                                                message = AppStrings.FileProcessing.errorReadingFile(e.message),
+                                                                                message =
+                                                                                        AppStrings
+                                                                                                .FileProcessing
+                                                                                                .errorReadingFile(
+                                                                                                        e.message
+                                                                                                ),
                                                                                 retryAction = null
                                                                         )
                                                         }
@@ -173,9 +213,11 @@ fun PapyrusApp() {
 private fun buildAnalysisSummary(rawHtml: String, cleanText: String): String {
         val hasRevenue = cleanText.contains(AppStrings.Analysis.TERM_REVENUE, ignoreCase = true)
         val hasRisk = cleanText.contains(AppStrings.Analysis.TERM_RISK_FACTORS, ignoreCase = true)
-        val hasNetIncome = cleanText.contains(AppStrings.Analysis.TERM_NET_INCOME, ignoreCase = true)
+        val hasNetIncome =
+                cleanText.contains(AppStrings.Analysis.TERM_NET_INCOME, ignoreCase = true)
         val hasAssets = cleanText.contains(AppStrings.Analysis.TERM_TOTAL_ASSETS, ignoreCase = true)
-        val hasLiabilities = cleanText.contains(AppStrings.Analysis.TERM_LIABILITIES, ignoreCase = true)
+        val hasLiabilities =
+                cleanText.contains(AppStrings.Analysis.TERM_LIABILITIES, ignoreCase = true)
 
         return buildString {
                 appendLine(AppStrings.Analysis.SUMMARY_TITLE)
@@ -184,11 +226,21 @@ private fun buildAnalysisSummary(rawHtml: String, cleanText: String): String {
                 appendLine(AppStrings.Analysis.documentSize(rawHtml.length.formatWithCommas()))
                 appendLine()
                 appendLine(AppStrings.Analysis.KEY_TERMS_HEADER)
-                appendLine("  ${if (hasRevenue) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_REVENUE}")
-                appendLine("  ${if (hasNetIncome) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_NET_INCOME}")
-                appendLine("  ${if (hasAssets) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_TOTAL_ASSETS}")
-                appendLine("  ${if (hasLiabilities) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_LIABILITIES}")
-                appendLine("  ${if (hasRisk) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_RISK_FACTORS}")
+                appendLine(
+                        "  ${if (hasRevenue) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_REVENUE}"
+                )
+                appendLine(
+                        "  ${if (hasNetIncome) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_NET_INCOME}"
+                )
+                appendLine(
+                        "  ${if (hasAssets) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_TOTAL_ASSETS}"
+                )
+                appendLine(
+                        "  ${if (hasLiabilities) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_LIABILITIES}"
+                )
+                appendLine(
+                        "  ${if (hasRisk) AppStrings.Analysis.MARKER_FOUND else AppStrings.Analysis.MARKER_NOT_FOUND} ${AppStrings.Analysis.TERM_RISK_FACTORS}"
+                )
                 appendLine()
                 appendLine(AppStrings.Analysis.SUMMARY_TIP)
         }

@@ -1,14 +1,14 @@
 package papyrus
 
+import com.pascal.institute.ahmes.format.HtmlParser
+import com.pascal.institute.ahmes.format.ParserFactory
+import com.pascal.institute.ahmes.format.TxtParser
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import papyrus.core.network.SecApi
-import com.pascal.institute.ahmes.format.HtmlParser
-import com.pascal.institute.ahmes.format.ParserFactory
-import com.pascal.institute.ahmes.format.TxtParser
+import papyrus.core.secApiClient
 
 /**
  * Test Jsoup-based HtmlParser with real SEC filings. Note: These are integration tests that require
@@ -30,23 +30,23 @@ class HtmlParserTest {
         println("📊 Test Case 1: Apple Inc. 10-Q (Quarterly Report)")
 
         // Download Apple's latest 10-Q filing
-        val submissions = SecApi.getSubmissions(320193) // Apple CIK
+        val submissions = secApiClient.getSubmissions(320193) // Apple CIK
         assertNotNull(submissions, "Failed to fetch Apple submissions")
 
-        val filings = SecApi.transformFilings(submissions!!.filings.recent)
+        val filings = secApiClient.transformFilings(submissions!!.filings.recent)
         val latest10Q = filings.firstOrNull { it.form == "10-Q" }
         assertNotNull(latest10Q, "No 10-Q filing found")
 
         println("📄 Filing: ${latest10Q!!.form} - ${latest10Q.filingDate}")
 
         val url =
-                SecApi.getDocumentUrl(
+                secApiClient.getDocumentUrl(
                         cik = "320193",
                         accessionNumber = latest10Q.accessionNumber,
                         primaryDocument = latest10Q.primaryDocument
                 )
 
-        val content = SecApi.fetchDocumentContent(url)
+        val content = secApiClient.fetchDocumentContent(url)
         assertFalse(content.startsWith("Error"), "Failed to download document: $content")
 
         println("✅ Downloaded: ${content.length} characters")
@@ -66,21 +66,21 @@ class HtmlParserTest {
     fun testTesla10K() = runBlocking {
         println("📊 Test Case 2: Tesla Inc. 10-K (Annual Report)")
 
-        val submissions = SecApi.getSubmissions(1318605) // Tesla CIK
+        val submissions = secApiClient.getSubmissions(1318605) // Tesla CIK
         assertNotNull(submissions, "Failed to fetch Tesla submissions")
 
-        val filings = SecApi.transformFilings(submissions!!.filings.recent)
+        val filings = secApiClient.transformFilings(submissions!!.filings.recent)
         val latest10K = filings.firstOrNull { it.form == "10-K" }
         assertNotNull(latest10K, "No 10-K filing found")
 
         val url =
-                SecApi.getDocumentUrl(
+                secApiClient.getDocumentUrl(
                         cik = "1318605",
                         accessionNumber = latest10K!!.accessionNumber,
                         primaryDocument = latest10K.primaryDocument
                 )
 
-        val content = SecApi.fetchDocumentContent(url)
+        val content = secApiClient.fetchDocumentContent(url)
         assertFalse(content.startsWith("Error"), "Failed to download document: $content")
 
         val parser = ParserFactory.getParserByContent(content)
@@ -97,21 +97,21 @@ class HtmlParserTest {
     fun testMicrosoft10K() = runBlocking {
         println("📊 Test Case 3: Microsoft Corporation 10-K (Annual Report)")
 
-        val submissions = SecApi.getSubmissions(789019)
+        val submissions = secApiClient.getSubmissions(789019)
         assertNotNull(submissions)
 
-        val filings = SecApi.transformFilings(submissions!!.filings.recent)
+        val filings = secApiClient.transformFilings(submissions!!.filings.recent)
         val latest10K = filings.firstOrNull { it.form == "10-K" }
         assertNotNull(latest10K)
 
         val url =
-                SecApi.getDocumentUrl(
+                secApiClient.getDocumentUrl(
                         cik = "789019",
                         accessionNumber = latest10K!!.accessionNumber,
                         primaryDocument = latest10K.primaryDocument
                 )
 
-        val content = SecApi.fetchDocumentContent(url)
+        val content = secApiClient.fetchDocumentContent(url)
         assertFalse(content.startsWith("Error"))
 
         val htmlParser = HtmlParser()

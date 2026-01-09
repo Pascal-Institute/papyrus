@@ -4,12 +4,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import papyrus.core.model.BookmarkedTicker
 import papyrus.core.model.FilingItem
 import papyrus.core.model.TickerEntry
-import papyrus.core.network.SecApi
+import papyrus.core.secApiClient
 import papyrus.core.state.AnalysisState
 import papyrus.core.state.AppState
 import papyrus.util.data.BookmarkManager
@@ -23,8 +22,8 @@ import papyrus.util.data.BookmarkManager
  * - Recent view history
  * - Filing submissions fetching
  *
- * Follows MVVM pattern to separate UI logic from business logic.
- * All network calls and state updates are managed here.
+ * Follows MVVM pattern to separate UI logic from business logic. All network calls and state
+ * updates are managed here.
  */
 class MainViewModel(private val scope: CoroutineScope) {
     /** Main application state - exposed as mutable for Compose */
@@ -47,7 +46,7 @@ class MainViewModel(private val scope: CoroutineScope) {
     private fun loadInitialData() {
         scope.launch {
             appState = appState.copy(isLoading = true)
-            SecApi.loadTickers()
+            secApiClient.loadTickers()
             bookmarks = BookmarkManager.getAllBookmarks()
             recentlyViewedCiks = BookmarkManager.getRecentlyViewed()
             appState = appState.copy(isLoading = false)
@@ -57,7 +56,7 @@ class MainViewModel(private val scope: CoroutineScope) {
     /** Update search text and perform search */
     fun onSearchTextChange(query: String) {
         appState =
-                appState.copy(searchText = query, searchResults = SecApi.searchTicker(query))
+                appState.copy(searchText = query, searchResults = secApiClient.searchTicker(query))
     }
 
     /** Handle ticker selection from search results */
@@ -88,7 +87,7 @@ class MainViewModel(private val scope: CoroutineScope) {
         scope.launch {
             // Find ticker info by CIK
             val ticker =
-                    SecApi.searchTicker("").find { it.cik == cik }
+                    secApiClient.searchTicker("").find { it.cik == cik }
                             ?: bookmarks.find { it.cik == cik }?.let {
                                 TickerEntry(it.cik, it.ticker, it.companyName)
                             }
@@ -147,8 +146,9 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     /** Fetch filings for a CIK */
     private suspend fun fetchSubmissions(cik: Int): List<FilingItem> {
-        val submissions = SecApi.getSubmissions(cik)
-        return submissions?.filings?.recent?.let { SecApi.transformFilings(it) } ?: emptyList()
+        val submissions = secApiClient.getSubmissions(cik)
+        return submissions?.filings?.recent?.let { secApiClient.transformFilings(it) }
+                ?: emptyList()
     }
 
     /** Refresh bookmarks from storage */

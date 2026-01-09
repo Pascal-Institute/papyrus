@@ -8,11 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import papyrus.core.model.FilingItem
-import papyrus.ui.FileFormatType
-import papyrus.core.network.SecApi
 import papyrus.core.resource.AppStrings
+import papyrus.core.secApiClient
 import papyrus.core.service.analyzer.FinancialAnalyzer
 import papyrus.core.state.AnalysisState
+import papyrus.ui.FileFormatType
 
 /**
  * AnalysisViewModel - handles document analysis and XBRL data fetching
@@ -23,8 +23,7 @@ import papyrus.core.state.AnalysisState
  * - XBRL company facts retrieval
  * - Error handling and retry logic
  *
- * Separates analysis logic from UI, enabling background processing
- * and better testability.
+ * Separates analysis logic from UI, enabling background processing and better testability.
  */
 class AnalysisViewModel(private val scope: CoroutineScope) {
     /** Current analysis state - exposed for UI consumption */
@@ -44,7 +43,7 @@ class AnalysisViewModel(private val scope: CoroutineScope) {
     fun analyzeFiling(filing: FilingItem, cik: Int, fileFormat: FileFormatType) {
         scope.launch {
             val url =
-                    SecApi.getDocumentUrlWithFormat(
+                    secApiClient.getDocumentUrlWithFormat(
                             cik.toString(),
                             filing.accessionNumber,
                             filing.primaryDocument,
@@ -52,11 +51,13 @@ class AnalysisViewModel(private val scope: CoroutineScope) {
                     )
 
             analysisState =
-                    AnalysisState.Loading(AppStrings.Analysis.analyzingDocument(fileFormat.displayName))
+                    AnalysisState.Loading(
+                            AppStrings.Analysis.analyzingDocument(fileFormat.displayName)
+                    )
             currentAnalyzingFiling = filing.accessionNumber
 
             try {
-                val rawHtml = SecApi.fetchDocumentContent(url)
+                val rawHtml = secApiClient.fetchDocumentContent(url)
 
                 // Perform financial analysis on IO dispatcher
                 val analysis =
