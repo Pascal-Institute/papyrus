@@ -25,7 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pascal.institute.ahmes.model.XbrlCompanyFact
 import com.pascal.institute.ahmes.parser.XbrlCompanyFactsExtractor
 import papyrus.core.model.BeginnerInsight
 import papyrus.core.model.ExtendedFinancialMetric
@@ -37,6 +36,7 @@ import papyrus.core.model.FinancialTermExplanation
 import papyrus.core.model.HealthStatus
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
+import papyrus.core.model.XbrlCompanyFact
 import papyrus.core.secApiClient
 
 /** Map icon name to Material Icon ImageVector */
@@ -818,7 +818,15 @@ private fun XbrlTab(analysis: FinancialAnalysis) {
             val facts = secApiClient.getCompanyFacts(cik)
             companyFacts =
                     if (facts != null) {
-                        XbrlCompanyFactsExtractor.extractKeyFacts(facts)
+                        XbrlCompanyFactsExtractor.extractKeyFacts(facts).map { fact ->
+                            papyrus.core.model.XbrlCompanyFact(
+                                    concept = fact.concept,
+                                    label = fact.label,
+                                    unit = fact.unit ?: "",
+                                    periodEnd = fact.periodEnd,
+                                    value = fact.value?.toString() ?: ""
+                            )
+                        }
                     } else {
                         emptyList()
                     }
@@ -949,7 +957,7 @@ private fun XbrlTab(analysis: FinancialAnalysis) {
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                        text = fact.value?.toString() ?: "—",
+                                        text = fact.value.ifEmpty { "—" },
                                         style = AppTypography.Body2,
                                         color = AppColors.OnSurface,
                                         textAlign = TextAlign.End
