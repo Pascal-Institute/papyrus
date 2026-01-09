@@ -48,8 +48,8 @@ private fun getIconForName(iconName: String): ImageVector {
         "Payments" -> Icons.Filled.Payments
         "Warning" -> Icons.Filled.Warning
         "Description" -> Icons.Filled.Description
-        "TrendingUp" -> Icons.Filled.TrendingUp
-        "TrendingDown" -> Icons.Filled.TrendingDown
+        "TrendingUp" -> Icons.AutoMirrored.Filled.TrendingUp
+        "TrendingDown" -> Icons.AutoMirrored.Filled.TrendingDown
         "AccountBalance" -> Icons.Filled.AccountBalance
         "Assessment" -> Icons.Filled.Assessment
         "CheckCircle" -> Icons.Filled.CheckCircle
@@ -60,7 +60,7 @@ private fun getIconForName(iconName: String): ImageVector {
         "Lightbulb" -> Icons.Outlined.Lightbulb
         "Analytics" -> Icons.Filled.Analytics
         "MonetizationOn" -> Icons.Filled.MonetizationOn
-        "ShowChart" -> Icons.Filled.ShowChart
+        "ShowChart" -> Icons.AutoMirrored.Filled.ShowChart
         "BarChart" -> Icons.Filled.BarChart
         "PieChart" -> Icons.Filled.PieChart
         "Receipt" -> Icons.Filled.Receipt
@@ -68,7 +68,7 @@ private fun getIconForName(iconName: String): ImageVector {
         "Wallet" -> Icons.Filled.AccountBalanceWallet
         "Person" -> Icons.Filled.Person
         "Settings" -> Icons.Filled.Settings
-        "Article" -> Icons.Filled.Article
+        "Article" -> Icons.AutoMirrored.Filled.Article
         "Speed" -> Icons.Filled.Speed
         "Computer" -> Icons.Filled.Computer
         "Public" -> Icons.Filled.Public
@@ -966,8 +966,7 @@ private fun XbrlTab(analysis: FinancialAnalysis) {
                                                         append(" · ")
                                                 if (!fact.unit.isNullOrBlank())
                                                         append("Unit: ${fact.unit}")
-                                                if ((fact.periodEnd != null || fact.unit != null))
-                                                        append(" · ")
+                                                append(" · ")
                                                 append(fact.concept)
                                             },
                                     style = AppTypography.Caption,

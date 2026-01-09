@@ -68,14 +68,16 @@ object DjlModelManager {
 
     /** Model types available for SEC parsing */
     enum class ModelType(val modelId: String, val description: String) {
-        SENTIMENT("yiyanghkust/finbert-tone", "Advanced Financial Tone Analysis"),
+        SENTIMENT("ProsusAI/finbert", "Financial Sentiment Analysis"),
         NER("dbmdz/bert-large-cased-finetuned-conll03-english", "Named Entity Recognition"),
-        QUESTION_ANSWERING("deepset/roberta-large-squad2", "High-Precision Question Answering"),
+        QUESTION_ANSWERING(
+                "deepset/bert-large-uncased-whole-word-masking-squad2",
+                "High-Precision Question Answering"
+        ),
         SUMMARIZATION("sshleifer/distilbart-cnn-12-6", "AI Document Summarization"),
         TEXT_CLASSIFICATION("facebook/bart-large-mnli", "Zero-shot Classification")
     }
 
-    /** Load or get cached sentiment analysis model */
     @Suppress("UNCHECKED_CAST")
     fun getSentimentModel(): ZooModel<String, Classifications>? {
         return try {
@@ -84,7 +86,13 @@ object DjlModelManager {
                         Criteria.builder()
                                 .optApplication(Application.NLP.SENTIMENT_ANALYSIS)
                                 .setTypes(String::class.java, Classifications::class.java)
-                                .optFilter("modelId", ModelType.SENTIMENT.modelId)
+                                // Only use filter if modelId is specified, otherwise use default
+                                // for application
+                                .apply {
+                                    if (ModelType.SENTIMENT.modelId.isNotEmpty()) {
+                                        optFilter("modelId", ModelType.SENTIMENT.modelId)
+                                    }
+                                }
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())
@@ -94,12 +102,14 @@ object DjlModelManager {
             } as
                     ZooModel<String, Classifications>
         } catch (e: Exception) {
-            logger.warn("Failed to load sentiment model: ${e.message}")
+            logger.error(
+                    "Failed to load sentiment model (${ModelType.SENTIMENT.modelId}): ${e.message}",
+                    e
+            )
             null
         }
     }
 
-    /** Load or get cached question answering model */
     @Suppress("UNCHECKED_CAST")
     fun getQuestionAnsweringModel(): ZooModel<QAInput, String>? {
         return try {
@@ -108,7 +118,11 @@ object DjlModelManager {
                         Criteria.builder()
                                 .optApplication(Application.NLP.QUESTION_ANSWER)
                                 .setTypes(QAInput::class.java, String::class.java)
-                                .optFilter("modelId", ModelType.QUESTION_ANSWERING.modelId)
+                                .apply {
+                                    if (ModelType.QUESTION_ANSWERING.modelId.isNotEmpty()) {
+                                        optFilter("modelId", ModelType.QUESTION_ANSWERING.modelId)
+                                    }
+                                }
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())
@@ -118,7 +132,10 @@ object DjlModelManager {
             } as
                     ZooModel<QAInput, String>
         } catch (e: Exception) {
-            logger.warn("Failed to load QA model: ${e.message}")
+            logger.error(
+                    "Failed to load QA model (${ModelType.QUESTION_ANSWERING.modelId}): ${e.message}",
+                    e
+            )
             null
         }
     }
@@ -155,7 +172,11 @@ object DjlModelManager {
                         Criteria.builder()
                                 .optApplication(Application.NLP.ANY)
                                 .setTypes(String::class.java, String::class.java)
-                                .optFilter("modelId", ModelType.SUMMARIZATION.modelId)
+                                .apply {
+                                    if (ModelType.SUMMARIZATION.modelId.isNotEmpty()) {
+                                        optFilter("modelId", ModelType.SUMMARIZATION.modelId)
+                                    }
+                                }
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())
@@ -165,7 +186,10 @@ object DjlModelManager {
             } as
                     ZooModel<String, String>
         } catch (e: Exception) {
-            logger.warn("Failed to load summarization model: ${e.message}")
+            logger.error(
+                    "Failed to load summarization model (${ModelType.SUMMARIZATION.modelId}): ${e.message}",
+                    e
+            )
             null
         }
     }
