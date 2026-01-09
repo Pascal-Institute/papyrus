@@ -3190,28 +3190,28 @@ fun FinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = Modif
                     horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 MetricItem(
-                        label = "Revenue",
+                        label = revenue?.name ?: "Revenue",
                         value = revenue?.value ?: "N/A",
                         icon = Icons.Outlined.AttachMoney,
                         color = AppColors.Revenue
                 )
 
                 MetricItem(
-                        label = "Net Income",
+                        label = netIncome?.name ?: "Net Income",
                         value = netIncome?.value ?: "N/A",
                         icon = Icons.AutoMirrored.Outlined.TrendingUp,
                         color = AppColors.Income
                 )
 
                 MetricItem(
-                        label = "Total Assets",
+                        label = totalAssets?.name ?: "Total Assets",
                         value = totalAssets?.value ?: "N/A",
                         icon = Icons.Outlined.AccountBalance,
                         color = AppColors.Primary
                 )
 
                 MetricItem(
-                        label = "EPS",
+                        label = eps?.name ?: "EPS",
                         value = eps?.value ?: "N/A",
                         icon = Icons.Outlined.BarChart,
                         color = AppColors.Secondary
@@ -3450,6 +3450,81 @@ private fun AiAnalysisContent(analysis: FinancialAnalysis) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // AI Recovered Metrics Section
+        val aiHealedMetrics = analysis.metrics.filter { it.name.contains("(AI)") }
+        if (aiHealedMetrics.isNotEmpty()) {
+            Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = AppDimens.CardElevation,
+                    shape = AppShapes.Large,
+                    backgroundColor = Color(0xFF9C27B0).copy(alpha = 0.05f)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = Color(0xFF9C27B0),
+                                modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                                text = "AI 재무 데이터 복구",
+                                style = AppTypography.Headline3,
+                                color = Color(0xFF9C27B0),
+                                fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                            text = "표준 파싱에서 누락된 데이터를 AI가 문맥에서 추출했습니다",
+                            style = AppTypography.Caption,
+                            color = AppColors.OnSurfaceSecondary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    aiHealedMetrics.forEach { metric ->
+                        Row(
+                                modifier =
+                                        Modifier.fillMaxWidth()
+                                                .padding(vertical = 8.dp)
+                                                .background(
+                                                        Color.White.copy(alpha = 0.5f),
+                                                        AppShapes.Small
+                                                )
+                                                .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                        text = metric.name.replace("(AI)", "").trim(),
+                                        style = AppTypography.Body2,
+                                        fontWeight = FontWeight.Bold
+                                )
+                                if (metric.context.isNotBlank()) {
+                                    Text(
+                                            text = metric.context,
+                                            style = AppTypography.Caption,
+                                            color = AppColors.OnSurfaceSecondary,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            Text(
+                                    text = metric.value,
+                                    style = AppTypography.Headline3,
+                                    color = Color(0xFF9C27B0),
+                                    fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // Risk Analysis section
         if (analysis.aiRiskAnalysis.isNotEmpty()) {

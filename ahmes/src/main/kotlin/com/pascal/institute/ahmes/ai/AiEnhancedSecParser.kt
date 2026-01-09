@@ -317,6 +317,26 @@ object AiEnhancedSecParser {
                                         "What are the total liabilities?",
                                         "How much are the total liabilities?"
                                 ),
+                        "Operating Income" to
+                                listOf(
+                                        "What is the operating income?",
+                                        "What was the operating profit?"
+                                ),
+                        "Cash" to
+                                listOf(
+                                        "What is the cash and cash equivalents?",
+                                        "How much cash did the company have?"
+                                ),
+                        "Total Equity" to
+                                listOf(
+                                        "What is the total stockholders' equity?",
+                                        "What is the total equity?"
+                                ),
+                        "Operating Cash Flow" to
+                                listOf(
+                                        "What is the net cash provided by operating activities?",
+                                        "What was the operating cash flow?"
+                                ),
                         "EPS" to
                                 listOf(
                                         "What is the earnings per share (EPS)?",
