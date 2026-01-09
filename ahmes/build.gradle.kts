@@ -27,6 +27,12 @@ dependencies {
     // JSON mapping (companyfacts, submissions)
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
 
+    // HTTP Client (Ktor) for SEC API
+    implementation("io.ktor:ktor-client-core:2.3.7")
+    implementation("io.ktor:ktor-client-cio:2.3.7")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
+
     // JavaMoney for precise financial calculations (AGENTS.md Principle 4)
     implementation("org.javamoney:moneta:1.4.2")
     implementation("javax.money:money-api:1.1")

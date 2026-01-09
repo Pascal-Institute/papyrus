@@ -1,39 +1,15 @@
 package papyrus.core.model
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+// Re-export Ahmes models for backward compatibility
+// This allows existing Papyrus code to continue using papyrus.core.model imports
+// while the actual implementations live in the Ahmes library
 
-@Serializable
-data class TickerEntry(@SerialName("cik_str") val cik: Int, val ticker: String, val title: String)
+typealias TickerEntry = com.pascal.institute.ahmes.model.TickerEntry
 
-@Serializable
-data class SubmissionsRoot(
-        val cik: String,
-        val entityType: String? = null,
-        val sic: String? = null,
-        val sicDescription: String? = null,
-        val name: String,
-        val tickers: List<String> = emptyList(),
-        val filings: Filings
-)
+typealias SubmissionsRoot = com.pascal.institute.ahmes.model.SubmissionsRoot
 
-@Serializable data class Filings(val recent: RecentFilings)
+typealias Filings = com.pascal.institute.ahmes.model.Filings
 
-@Serializable
-data class RecentFilings(
-        val accessionNumber: List<String> = emptyList(),
-        val filingDate: List<String> = emptyList(),
-        val reportDate: List<String>? = null,
-        val acceptanceDateTime: List<String> = emptyList(),
-        val form: List<String> = emptyList(),
-        val primaryDocument: List<String> = emptyList(),
-        val primaryDocumentDescription: List<String>? = null
-)
+typealias RecentFilings = com.pascal.institute.ahmes.model.RecentFilings
 
-data class FilingItem(
-        val accessionNumber: String,
-        val filingDate: String,
-        val form: String,
-        val primaryDocument: String,
-        val description: String
-)
+typealias FilingItem = com.pascal.institute.ahmes.model.FilingItem
