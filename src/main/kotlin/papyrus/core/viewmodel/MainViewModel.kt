@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import papyrus.core.model.BookmarkedTicker
 import papyrus.core.model.FilingItem
 import papyrus.core.model.TickerEntry
+import papyrus.core.model.toPapyrus
 import papyrus.core.secApiClient
 import papyrus.core.state.AnalysisState
 import papyrus.core.state.AppState
@@ -56,7 +57,10 @@ class MainViewModel(private val scope: CoroutineScope) {
     /** Update search text and perform search */
     fun onSearchTextChange(query: String) {
         appState =
-                appState.copy(searchText = query, searchResults = secApiClient.searchTicker(query))
+                appState.copy(
+                        searchText = query,
+                        searchResults = secApiClient.searchTicker(query).map { it.toPapyrus() }
+                )
     }
 
     /** Handle ticker selection from search results */
@@ -87,7 +91,7 @@ class MainViewModel(private val scope: CoroutineScope) {
         scope.launch {
             // Find ticker info by CIK
             val ticker =
-                    secApiClient.searchTicker("").find { it.cik == cik }
+                    secApiClient.searchTicker("").map { it.toPapyrus() }.find { it.cik == cik }
                             ?: bookmarks.find { it.cik == cik }?.let {
                                 TickerEntry(it.cik, it.ticker, it.companyName)
                             }
@@ -147,7 +151,9 @@ class MainViewModel(private val scope: CoroutineScope) {
     /** Fetch filings for a CIK */
     private suspend fun fetchSubmissions(cik: Int): List<FilingItem> {
         val submissions = secApiClient.getSubmissions(cik)
-        return submissions?.filings?.recent?.let { secApiClient.transformFilings(it) }
+        return submissions?.filings?.recent?.let {
+            secApiClient.transformFilings(it).map { item -> item.toPapyrus() }
+        }
                 ?: emptyList()
     }
 
