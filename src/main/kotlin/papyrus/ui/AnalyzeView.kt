@@ -3089,14 +3089,53 @@ private fun NoMetricsFoundCard() {
 fun FinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = Modifier) {
     val metrics = analysis.extendedMetrics
 
-    // Extract key metrics
-    val revenue = metrics.find { it.category == MetricCategory.REVENUE }
-    val netIncome = metrics.find { it.category == MetricCategory.NET_INCOME }
-    val totalAssets = metrics.find { it.category == MetricCategory.TOTAL_ASSETS }
+    // Extract key metrics (prefer extended metrics, fallback to AI healed metrics)
+    val revenue =
+            metrics.find { it.category == MetricCategory.REVENUE }
+                    ?: analysis.metrics.find { it.name.contains("Revenue (AI)") }?.let {
+                        ExtendedFinancialMetric(
+                                name = it.name,
+                                value = it.value,
+                                rawValue = it.rawValue,
+                                context = it.context,
+                                category = MetricCategory.REVENUE
+                        )
+                    }
+    val netIncome =
+            metrics.find { it.category == MetricCategory.NET_INCOME }
+                    ?: analysis.metrics.find { it.name.contains("Net Income (AI)") }?.let {
+                        ExtendedFinancialMetric(
+                                name = it.name,
+                                value = it.value,
+                                rawValue = it.rawValue,
+                                context = it.context,
+                                category = MetricCategory.NET_INCOME
+                        )
+                    }
+    val totalAssets =
+            metrics.find { it.category == MetricCategory.TOTAL_ASSETS }
+                    ?: analysis.metrics.find { it.name.contains("Total Assets (AI)") }?.let {
+                        ExtendedFinancialMetric(
+                                name = it.name,
+                                value = it.value,
+                                rawValue = it.rawValue,
+                                context = it.context,
+                                category = MetricCategory.TOTAL_ASSETS
+                        )
+                    }
     val eps =
             metrics.find {
                 it.category == MetricCategory.EPS_BASIC || it.category == MetricCategory.EPS_DILUTED
             }
+                    ?: analysis.metrics.find { it.name.contains("EPS (AI)") }?.let {
+                        ExtendedFinancialMetric(
+                                name = it.name,
+                                value = it.value,
+                                rawValue = it.rawValue,
+                                context = it.context,
+                                category = MetricCategory.EPS_DILUTED
+                        )
+                    }
 
     Card(
             modifier = modifier.fillMaxWidth(),
@@ -3112,7 +3151,7 @@ fun FinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = Modif
                     verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                        text = "Quick Financial Summary",
+                        text = "주요 재무 요약",
                         style = AppTypography.Subtitle1,
                         fontWeight = FontWeight.Bold,
                         color = AppColors.OnSurface
@@ -3185,20 +3224,34 @@ fun FinancialSummaryCard(analysis: FinancialAnalysis, modifier: Modifier = Modif
 
 @Composable
 private fun MetricItem(label: String, value: String, icon: ImageVector, color: Color) {
+    val isAi = label.contains("(AI)")
+    val cleanLabel = label.replace("(AI)", "").trim()
+    val displayColor = if (isAi) Color(0xFF9C27B0) else color // Purple for AI metrics
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(24.dp)
-        )
+        Box(contentAlignment = Alignment.TopEnd) {
+            Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = displayColor,
+                    modifier = Modifier.size(24.dp)
+            )
+            if (isAi) {
+                Icon(
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = "AI Recovered",
+                        tint = Color(0xFF9C27B0),
+                        modifier = Modifier.size(10.dp).offset(x = 4.dp, y = (-4).dp)
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = label, style = AppTypography.Caption, color = AppColors.OnSurfaceSecondary)
+        Text(text = cleanLabel, style = AppTypography.Caption, color = AppColors.OnSurfaceSecondary)
         Text(
                 text = value,
                 style = AppTypography.Body2,
                 fontWeight = FontWeight.Bold,
-                color = AppColors.OnSurface
+                color = displayColor
         )
     }
 }

@@ -65,10 +65,10 @@ object DjlModelManager {
     }
 
     /** Model types available for SEC parsing */
-    enum class ModelType(val modelName: String, val description: String) {
-        SENTIMENT("distilbert-base-uncased-finetuned-sst-2-english", "Sentiment Analysis"),
+    enum class ModelType(val modelId: String, val description: String) {
+        SENTIMENT("ProsusAI/finbert", "Financial Sentiment Analysis"),
         NER("dbmdz/bert-large-cased-finetuned-conll03-english", "Named Entity Recognition"),
-        QUESTION_ANSWERING("distilbert-base-cased-distilled-squad", "Question Answering"),
+        QUESTION_ANSWERING("deepset/roberta-base-squad2", "Robust Question Answering"),
         TEXT_CLASSIFICATION("facebook/bart-large-mnli", "Zero-shot Classification")
     }
 
@@ -81,6 +81,7 @@ object DjlModelManager {
                         Criteria.builder()
                                 .optApplication(Application.NLP.SENTIMENT_ANALYSIS)
                                 .setTypes(String::class.java, Classifications::class.java)
+                                .optFilter("modelId", ModelType.SENTIMENT.modelId)
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())
@@ -104,6 +105,7 @@ object DjlModelManager {
                         Criteria.builder()
                                 .optApplication(Application.NLP.QUESTION_ANSWER)
                                 .setTypes(QAInput::class.java, String::class.java)
+                                .optFilter("modelId", ModelType.QUESTION_ANSWERING.modelId)
                                 .optEngine("PyTorch")
                                 .optDevice(defaultDevice)
                                 .optProgress(ai.djl.training.util.ProgressBar())

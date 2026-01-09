@@ -1000,7 +1000,7 @@ object FinancialAnalyzer {
 
                 val result =
                         basicAnalysis.copy(
-                                metrics = allMetrics,
+                                metrics = aiEnhancedResult?.metrics ?: allMetrics,
                                 ratios = ratios,
                                 beginnerInsights = insights,
                                 termExplanations = termExplanations,
