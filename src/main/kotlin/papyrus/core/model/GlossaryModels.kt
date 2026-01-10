@@ -348,6 +348,34 @@ object FinancialGlossary {
                             idealRange = "N/A"
                     ),
                     FinancialGlossaryTerm(
+                            term = "EBITDA",
+                            category = GlossaryCategory.PROFITABILITY,
+                            simpleDefinition = "이자, 세금, 감가상각비를 빼기 전 영업이익",
+                            technicalDefinition =
+                                    "Earnings Before Interest, Taxes, Depreciation, and Amortization",
+                            realWorldAnalogy =
+                                    "가게 운영으로 번 돈에서 이자, 세금, 건물/기계 가치 하락을 빼기 전 순수 영업 현금. 진짜 벌이를 보여줍니다.",
+                            whyItMatters =
+                                    "회계상 비용이지만 현금 유출이 없는 감가상각을 제외해 실제 현금 창출력에 가깝습니다. 업종간 비교에 유용합니다.",
+                            investmentRelevance =
+                                    "EBITDA margin이 높고 증가하면 강력한 수익성을 의미합니다. 단, Free Cash Flow와 차이가 크면 주의해야 합니다.",
+                            example = "Netflix EBITDA $6.9B는 콘텐츠 상각 전 강력한 현금 창출력을 보여줍니다.",
+                            relatedTerms =
+                                    listOf(
+                                            "Adjusted EBITDA",
+                                            "Operating Income",
+                                            "Free Cash Flow",
+                                            "EV/EBITDA"
+                                    ),
+                            warningSignals =
+                                    listOf(
+                                            "EBITDA는 흑자인데 FCF 적자",
+                                            "CapEx가 감가상각비의 2배 초과",
+                                            "이자비용이 EBITDA의 30% 초과"
+                                    ),
+                            idealRange = "매출의 15-25%"
+                    ),
+                    FinancialGlossaryTerm(
                             term = "Adjusted EBITDA",
                             category = GlossaryCategory.PROFITABILITY,
                             simpleDefinition = "이자, 세금, 감가상각비, 특별 항목을 빼기 전 이익",
