@@ -229,7 +229,7 @@ class BenchmarkRunner {
 
     /** Validate financial metrics. */
     private fun validateMetrics(
-            actualStatements: FinancialStatements?,
+            actualStatements: StructuredFinancialData?,
             expectedMetrics: List<ExpectedMetric>,
             warnings: MutableList<String>
     ): MetricValidation {
@@ -247,11 +247,11 @@ class BenchmarkRunner {
         val missingMetrics = mutableListOf<String>()
         val incorrectMetrics = mutableListOf<MetricMismatch>()
 
-        // For simplicity, just count if we have financial statements
+        // For simplicity, just count presence of financial data
         // In a real implementation, you'd compare individual metric values
-        if (actualStatements.incomeStatement != null) correctCount++
-        if (actualStatements.balanceSheet != null) correctCount++
-        if (actualStatements.cashFlowStatement != null) correctCount++
+        if (actualStatements.reportType.isNotEmpty()) correctCount++
+        if (actualStatements.fiscalYear != null) correctCount++
+        if (actualStatements.fiscalPeriod != null) correctCount++
 
         val accuracy =
                 if (expectedMetrics.isNotEmpty()) {
