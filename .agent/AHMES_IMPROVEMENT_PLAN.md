@@ -308,51 +308,27 @@
 - AI 추론 시간 50% 단축
 - GPU/CPU 성능 비교 문서
 
-#### Week 11: 플러그인 아키텍처 설계
-
-**목표:** 확장 가능한 아키텍처
-
-**작업 항목:**
-- [ ] SPI (Service Provider Interface) 설계
-```kotlin
-interface CustomFormParser {
-    fun canParse(formType: String): Boolean
-    fun parse(content: String, metadata: SecReportMetadata): ParseResult
-}
-
-// 사용자 정의 파서 등록
-SecReportParserFactory.registerParser(MyCustomParser())
-```
-
-- [ ] 플러그인 로딩 메커니즘
-  - [ ] Java ServiceLoader 활용
-  - [ ] 동적 파서 등록
-  - [ ] 우선순위 지원
-
-- [ ] 플러그인 예제 작성
-
-**결과물:**
-- Plugin API 문서
-- 예제 플러그인
-- 플러그인 개발 가이드
-
 ---
 
-### Phase 4: 고급 기능 (4주) 🟢 Low Priority
+### Phase 4: 고급 기능 및 국제화 (4주) 🟢 Low Priority
 
-#### Week 12: 국제화 지원
+#### Week 11: 국제화 지원
 
 **작업 항목:**
-- [ ] 다국어 재무 용어 사전
-- [ ] i18n 메시지 번들
-- [ ] 20-F 파서 한국어/일본어/중국어 지원
+- [ ] 다국어 재무 용어 사전 구축
+  - [ ] 한국어(KR), 영어(EN) 기본 지원
+  - [ ] 용어 매핑 (Revenue -> 매출액)
+- [ ] i18n 메시지 번들 시스템
+  - [ ] ResourceBundle 적용
+- [ ] 20-F (외국법인) 파서 기초 작업
 
-#### Week 13: 추가 SEC Form 지원
+#### Week 12: 추가 SEC Form 지원
 
 **작업 항목:**
 - [ ] Form 4 (Insider Trading)
 - [ ] Form 13F (Institutional Holdings)
 - [ ] Form 424B (Prospectus)
+
 
 #### Week 14-15: 고급 AI 기능
 
