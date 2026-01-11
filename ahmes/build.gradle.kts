@@ -44,11 +44,13 @@ dependencies {
     implementation("org.apache.tika:tika-core:1.28.5")
     implementation("org.apache.tika:tika-parsers:1.28.5")
 
-    // DJL (Deep Java Library) for local AI inference
-    implementation("ai.djl:api:0.25.0")
-    implementation("ai.djl.pytorch:pytorch-engine:0.25.0")
-    implementation("ai.djl.pytorch:pytorch-model-zoo:0.25.0")
-    implementation("ai.djl.huggingface:tokenizers:0.25.0")
+    // DJL (Deep Java Library) for local AI inference - v0.36.0 with CUDA 12.4 support
+    implementation("ai.djl:api:0.36.0")
+    implementation("ai.djl.pytorch:pytorch-engine:0.36.0")
+    implementation("ai.djl.pytorch:pytorch-model-zoo:0.36.0")
+    implementation("ai.djl.huggingface:tokenizers:0.36.0")
+    // CUDA 12.4 native library (compatible with CUDA 12.2)
+    runtimeOnly("ai.djl.pytorch:pytorch-native-cu124:2.5.1:win-x86_64")
 
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.16")
