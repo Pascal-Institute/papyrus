@@ -315,9 +315,13 @@
 #### Week 11: 추가 SEC Form 지원
 
 **작업 항목:**
-- [ ] Form 20-F (Foreign Private Issuer) 파서 고도화
-- [ ] Form 4 (Insider Trading)
-- [ ] Form 13F (Institutional Holdings)
+- [x] Form 20-F (Foreign Private Issuer) 파서 고도화 ✅ (기존 구현 활용)
+- [x] Form 4 (Insider Trading) ✅
+  - [x] 모델 정의 (InsiderTransaction, ReportingOwner)
+  - [x] Form4Parser 구현 (HTML 테이블 파싱)
+- [x] Form 13F (Institutional Holdings) ✅
+  - [x] 모델 정의 (HoldingEntry, Form13FReportInfo)
+  - [x] Form13FParser 구현 (Information Table 파싱)
 - [ ] Form 424B (Prospectus)
 
 #### Week 12-13: 고급 AI 기능

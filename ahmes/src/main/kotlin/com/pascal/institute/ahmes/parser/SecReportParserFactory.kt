@@ -1,7 +1,7 @@
 ﻿package com.pascal.institute.ahmes.parser
 
-import com.pascal.institute.ahmes.model.*
 import com.pascal.institute.ahmes.form.*
+import com.pascal.institute.ahmes.model.*
 
 /**
  * SEC Report Parser Factory
@@ -19,6 +19,8 @@ object SecReportParserFactory {
             SecReportType.FORM_S1 -> FormS1Parser()
             SecReportType.FORM_DEF14A -> FormDEF14AParser()
             SecReportType.FORM_20F -> Form20FParser()
+            SecReportType.FORM_4 -> Form4Parser()
+            SecReportType.FORM_13F -> Form13FParser()
             else -> GenericSecReportParser(reportType)
         }
     }
@@ -32,12 +34,12 @@ object SecReportParserFactory {
     /** Get all supported form types */
     fun getSupportedFormTypes(): List<SecReportType> {
         return listOf(
-            SecReportType.FORM_10K,
-            SecReportType.FORM_10Q,
-            SecReportType.FORM_8K,
-            SecReportType.FORM_S1,
-            SecReportType.FORM_DEF14A,
-            SecReportType.FORM_20F
+                SecReportType.FORM_10K,
+                SecReportType.FORM_10Q,
+                SecReportType.FORM_8K,
+                SecReportType.FORM_S1,
+                SecReportType.FORM_DEF14A,
+                SecReportType.FORM_20F
         )
     }
 
@@ -49,42 +51,56 @@ object SecReportParserFactory {
 
 /** Generic SEC Report Parser for types without specialized parsers */
 class GenericSecReportParser(reportType: SecReportType) :
-    BaseSecReportParser<GenericSecReportParseResult>(reportType) {
+        BaseSecReportParser<GenericSecReportParseResult>(reportType) {
 
-    override fun parseHtml(htmlContent: String, metadata: SecReportMetadata): GenericSecReportParseResult {
+    override fun parseHtml(
+            htmlContent: String,
+            metadata: SecReportMetadata
+    ): GenericSecReportParseResult {
         val cleanedContent = cleanHtml(htmlContent)
         return GenericSecReportParseResult(
-            metadata = metadata,
-            rawContent = htmlContent,
-            sections = extractSections(cleanedContent)
+                metadata = metadata,
+                rawContent = htmlContent,
+                sections = extractSections(cleanedContent)
         )
     }
 
-    override fun parseText(textContent: String, metadata: SecReportMetadata): GenericSecReportParseResult {
+    override fun parseText(
+            textContent: String,
+            metadata: SecReportMetadata
+    ): GenericSecReportParseResult {
         return GenericSecReportParseResult(
-            metadata = metadata,
-            rawContent = textContent,
-            sections = extractSections(textContent)
+                metadata = metadata,
+                rawContent = textContent,
+                sections = extractSections(textContent)
         )
     }
 
     override fun extractSections(content: String): Map<String, String> {
         val sections = mutableMapOf<String, String>()
 
-        val sectionPatterns = listOf(
-            Regex("(?i)(item|section|part)\\s+([\\dA-Z]+)[.:\\-\\s]+([^\n]+)", RegexOption.IGNORE_CASE),
-            Regex("(?i)(introduction|summary|risk|business|financial)[.:\\-\\s]*", RegexOption.IGNORE_CASE)
-        )
+        val sectionPatterns =
+                listOf(
+                        Regex(
+                                "(?i)(item|section|part)\\s+([\\dA-Z]+)[.:\\-\\s]+([^\n]+)",
+                                RegexOption.IGNORE_CASE
+                        ),
+                        Regex(
+                                "(?i)(introduction|summary|risk|business|financial)[.:\\-\\s]*",
+                                RegexOption.IGNORE_CASE
+                        )
+                )
 
         val headerMatches = findSectionHeader(content, sectionPatterns)
 
         for (i in headerMatches.indices) {
             val (startIndex, headerText) = headerMatches[i]
-            val endIndex = if (i < headerMatches.size - 1) {
-                headerMatches[i + 1].first
-            } else {
-                null
-            }
+            val endIndex =
+                    if (i < headerMatches.size - 1) {
+                        headerMatches[i + 1].first
+                    } else {
+                        null
+                    }
 
             val sectionContent = extractSection(content, startIndex, endIndex)
             sections["Section $i: ${headerText.take(50)}"] = sectionContent
@@ -98,7 +114,11 @@ class GenericSecReportParser(reportType: SecReportType) :
 object SecReportParsingUtils {
 
     /** Parse report with automatic content type detection */
-    fun parseReport(content: String, formType: String, metadata: SecReportMetadata): SecReportParseResult {
+    fun parseReport(
+            content: String,
+            formType: String,
+            metadata: SecReportMetadata
+    ): SecReportParseResult {
         val parser = SecReportParserFactory.getParserByFormType(formType)
 
         return if (isHtmlContent(content)) {
@@ -111,8 +131,8 @@ object SecReportParsingUtils {
     /** Check if content is HTML */
     private fun isHtmlContent(content: String): Boolean {
         return content.trim().startsWith("<", ignoreCase = true) ||
-            content.contains("<html", ignoreCase = true) ||
-            content.contains("<!DOCTYPE", ignoreCase = true)
+                content.contains("<html", ignoreCase = true) ||
+                content.contains("<!DOCTYPE", ignoreCase = true)
     }
 
     /** Get report importance score */
@@ -122,31 +142,32 @@ object SecReportParsingUtils {
 
     /** Check if report contains financial statements */
     fun hasFinancialStatements(reportType: SecReportType): Boolean {
-        return reportType in listOf(
-            SecReportType.FORM_10K,
-            SecReportType.FORM_10Q,
-            SecReportType.FORM_20F,
-            SecReportType.FORM_S1
-        )
+        return reportType in
+                listOf(
+                        SecReportType.FORM_10K,
+                        SecReportType.FORM_10Q,
+                        SecReportType.FORM_20F,
+                        SecReportType.FORM_S1
+                )
     }
 
     /** Check if report contains audited financial statements */
     fun hasAuditedFinancials(reportType: SecReportType): Boolean {
-        return reportType in listOf(
-            SecReportType.FORM_10K,
-            SecReportType.FORM_20F,
-            SecReportType.FORM_S1
-        )
+        return reportType in
+                listOf(SecReportType.FORM_10K, SecReportType.FORM_20F, SecReportType.FORM_S1)
     }
 
     /** Get description for report type */
     fun getReportDescription(reportType: SecReportType): String {
         return when (reportType) {
-            SecReportType.FORM_10K -> "Annual report with comprehensive financial information and audited statements"
+            SecReportType.FORM_10K ->
+                    "Annual report with comprehensive financial information and audited statements"
             SecReportType.FORM_10Q -> "Quarterly report with unaudited financial statements"
             SecReportType.FORM_8K -> "Current report for material events and significant changes"
-            SecReportType.FORM_S1 -> "IPO registration statement with detailed business and financial history"
-            SecReportType.FORM_DEF14A -> "Proxy statement with executive compensation and governance information"
+            SecReportType.FORM_S1 ->
+                    "IPO registration statement with detailed business and financial history"
+            SecReportType.FORM_DEF14A ->
+                    "Proxy statement with executive compensation and governance information"
             SecReportType.FORM_20F -> "Annual report for foreign companies (similar to 10-K)"
             SecReportType.FORM_6K -> "Current report for foreign companies (similar to 8-K)"
             else -> "SEC filing: ${reportType.displayName}"

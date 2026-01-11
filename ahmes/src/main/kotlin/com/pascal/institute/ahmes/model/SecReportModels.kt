@@ -27,8 +27,10 @@ enum class SecReportType(val displayName: String, val importance: Int) {
     FORM_NT_10Q("NT 10-Q Late Filing Notice", 2),
 
     // Others
-    FORM_4("Form 4 Insider Trading", 4),
     FORM_3("Form 3 Initial Ownership", 3),
+    FORM_4("Form 4 Insider Trading", 4),
+    FORM_13F("13F Institutional Holdings", 4),
+    FORM_424B("424B Prospectus", 6),
     FORM_SC_13G("SC 13G Ownership Report", 4),
     UNKNOWN("Unknown Form", 0);
 
@@ -73,21 +75,21 @@ interface SecReportParseResult {
 /** 10-K annual report parse result */
 @Serializable
 data class Form10KParseResult(
-    override val metadata: SecReportMetadata,
-    override val rawContent: String,
-    override val sections: Map<String, String>,
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>,
 
-    // 10-K specialized sections
-    val businessDescription: String? = null,
-    val riskFactors: List<RiskFactor> = emptyList(),
-    val properties: String? = null,
-    val legalProceedings: String? = null,
-    val mdAndA: ManagementDiscussion? = null,
-    val financialStatements: StructuredFinancialData? = null,
-    val controlsAndProcedures: String? = null,
-    val executiveCompensation: String? = null,
-    val directorInfo: String? = null,
-    val exhibits: List<String> = emptyList()
+        // 10-K specialized sections
+        val businessDescription: String? = null,
+        val riskFactors: List<RiskFactor> = emptyList(),
+        val properties: String? = null,
+        val legalProceedings: String? = null,
+        val mdAndA: ManagementDiscussion? = null,
+        val financialStatements: StructuredFinancialData? = null,
+        val controlsAndProcedures: String? = null,
+        val executiveCompensation: String? = null,
+        val directorInfo: String? = null,
+        val exhibits: List<String> = emptyList()
 ) : SecReportParseResult
 
 /** 10-K report Item (section) definition */
@@ -121,22 +123,22 @@ enum class Form10KItem(val itemNumber: String, val title: String) {
 /** 10-Q quarterly report parse result */
 @Serializable
 data class Form10QParseResult(
-    override val metadata: SecReportMetadata,
-    override val rawContent: String,
-    override val sections: Map<String, String>,
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>,
 
-    // 10-Q specialized sections
-    val financialStatements: StructuredFinancialData? = null,
-    val mdAndA: ManagementDiscussion? = null,
-    val marketRiskDisclosures: String? = null,
-    val controlsAndProcedures: String? = null,
-    val legalProceedings: String? = null,
-    val riskFactors: List<RiskFactor> = emptyList(),
-    val exhibits: List<String> = emptyList(),
+        // 10-Q specialized sections
+        val financialStatements: StructuredFinancialData? = null,
+        val mdAndA: ManagementDiscussion? = null,
+        val marketRiskDisclosures: String? = null,
+        val controlsAndProcedures: String? = null,
+        val legalProceedings: String? = null,
+        val riskFactors: List<RiskFactor> = emptyList(),
+        val exhibits: List<String> = emptyList(),
 
-    // Quarterly information
-    val quarter: String? = null,
-    val fiscalYear: String? = null
+        // Quarterly information
+        val quarter: String? = null,
+        val fiscalYear: String? = null
 ) : SecReportParseResult
 
 /** 10-Q report Item (section) definition */
@@ -161,22 +163,22 @@ enum class Form10QItem(val part: String, val itemNumber: String, val title: Stri
 /** 8-K current report parse result */
 @Serializable
 data class Form8KParseResult(
-    override val metadata: SecReportMetadata,
-    override val rawContent: String,
-    override val sections: Map<String, String>,
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>,
 
-    // 8-K specialized information
-    val eventDate: String? = null,
-    val eventItems: List<String> = emptyList(),
-    val eventDescriptions: Map<String, String> = emptyMap(),
+        // 8-K specialized information
+        val eventDate: String? = null,
+        val eventItems: List<String> = emptyList(),
+        val eventDescriptions: Map<String, String> = emptyMap(),
 
-    // Major events by category
-    val financialResults: String? = null,
-    val acquisitions: String? = null,
-    val dispositions: String? = null,
-    val executiveChanges: String? = null,
-    val bankruptcy: String? = null,
-    val exhibits: List<String> = emptyList()
+        // Major events by category
+        val financialResults: String? = null,
+        val acquisitions: String? = null,
+        val dispositions: String? = null,
+        val executiveChanges: String? = null,
+        val bankruptcy: String? = null,
+        val exhibits: List<String> = emptyList()
 ) : SecReportParseResult
 
 /** 8-K report Item (event) definition */
@@ -219,21 +221,21 @@ enum class Form8KItem(val itemNumber: String, val title: String, val category: S
 /** S-1 IPO registration statement parse result */
 @Serializable
 data class FormS1ParseResult(
-    override val metadata: SecReportMetadata,
-    override val rawContent: String,
-    override val sections: Map<String, String>,
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>,
 
-    // S-1 specialized sections
-    val prospectus: String? = null,
-    val businessDescription: String? = null,
-    val riskFactors: List<RiskFactor> = emptyList(),
-    val useOfProceeds: String? = null,
-    val dilution: String? = null,
-    val financialStatements: StructuredFinancialData? = null,
-    val mdAndA: ManagementDiscussion? = null,
-    val underwriting: String? = null,
-    val offeringPrice: String? = null,
-    val sharesOffered: String? = null
+        // S-1 specialized sections
+        val prospectus: String? = null,
+        val businessDescription: String? = null,
+        val riskFactors: List<RiskFactor> = emptyList(),
+        val useOfProceeds: String? = null,
+        val dilution: String? = null,
+        val financialStatements: StructuredFinancialData? = null,
+        val mdAndA: ManagementDiscussion? = null,
+        val underwriting: String? = null,
+        val offeringPrice: String? = null,
+        val sharesOffered: String? = null
 ) : SecReportParseResult
 
 // ========================================
@@ -243,18 +245,18 @@ data class FormS1ParseResult(
 /** DEF 14A Proxy Statement parse result */
 @Serializable
 data class FormDEF14AParseResult(
-    override val metadata: SecReportMetadata,
-    override val rawContent: String,
-    override val sections: Map<String, String>,
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>,
 
-    // DEF 14A specialized sections
-    val meetingDate: String? = null,
-    val votingMatters: List<String> = emptyList(),
-    val executiveCompensation: String? = null,
-    val compensationTables: String? = null,
-    val directorInfo: String? = null,
-    val corporateGovernance: String? = null,
-    val auditInfo: String? = null
+        // DEF 14A specialized sections
+        val meetingDate: String? = null,
+        val votingMatters: List<String> = emptyList(),
+        val executiveCompensation: String? = null,
+        val compensationTables: String? = null,
+        val directorInfo: String? = null,
+        val corporateGovernance: String? = null,
+        val auditInfo: String? = null
 ) : SecReportParseResult
 
 // ========================================
@@ -264,20 +266,20 @@ data class FormDEF14AParseResult(
 /** 20-F foreign company annual report parse result */
 @Serializable
 data class Form20FParseResult(
-    override val metadata: SecReportMetadata,
-    override val rawContent: String,
-    override val sections: Map<String, String>,
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>,
 
-    // 20-F specialized sections
-    val businessDescription: String? = null,
-    val riskFactors: List<RiskFactor> = emptyList(),
-    val financialStatements: StructuredFinancialData? = null,
-    val mdAndA: ManagementDiscussion? = null,
-    val corporateGovernance: String? = null,
+        // 20-F specialized sections
+        val businessDescription: String? = null,
+        val riskFactors: List<RiskFactor> = emptyList(),
+        val financialStatements: StructuredFinancialData? = null,
+        val mdAndA: ManagementDiscussion? = null,
+        val corporateGovernance: String? = null,
 
-    // Foreign company specialized information
-    val countryOfIncorporation: String? = null,
-    val accountingStandard: String? = null
+        // Foreign company specialized information
+        val countryOfIncorporation: String? = null,
+        val accountingStandard: String? = null
 ) : SecReportParseResult
 
 // ========================================
@@ -287,9 +289,9 @@ data class Form20FParseResult(
 /** Generic SEC report parse result (unknown format) */
 @Serializable
 data class GenericSecReportParseResult(
-    override val metadata: SecReportMetadata,
-    override val rawContent: String,
-    override val sections: Map<String, String>
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>
 ) : SecReportParseResult
 
 // ========================================
@@ -297,57 +299,53 @@ data class GenericSecReportParseResult(
 // ========================================
 
 /**
- * Root model for SEC company facts JSON format.
- * This is the format returned by SEC's companyfacts API.
+ * Root model for SEC company facts JSON format. This is the format returned by SEC's companyfacts
+ * API.
  */
 @Serializable
 data class CompanyFacts(
-    val cik: Int = 0,
-    val entityName: String = "",
-    val facts: Map<String, Map<String, ConceptData>> = emptyMap()
+        val cik: Int = 0,
+        val entityName: String = "",
+        val facts: Map<String, Map<String, ConceptData>> = emptyMap()
 )
 
-/**
- * Data for a single XBRL concept (e.g., "Assets", "Revenues")
- */
+/** Data for a single XBRL concept (e.g., "Assets", "Revenues") */
 @Serializable
 data class ConceptData(
-    val label: String = "",
-    val description: String = "",
-    val units: Map<String, List<FactValue>> = emptyMap()
+        val label: String = "",
+        val description: String = "",
+        val units: Map<String, List<FactValue>> = emptyMap()
 )
 
-/**
- * Individual fact value with period and filing information
- */
+/** Individual fact value with period and filing information */
 @Serializable
 data class FactValue(
-    val start: String? = null,
-    val end: String? = null,
-    val `val`: Double = 0.0,
-    val accn: String? = null,
-    val fy: Int? = null,
-    val fp: String? = null,
-    val form: String? = null,
-    val filed: String? = null,
-    val frame: String? = null
+        val start: String? = null,
+        val end: String? = null,
+        val `val`: Double = 0.0,
+        val accn: String? = null,
+        val fy: Int? = null,
+        val fp: String? = null,
+        val form: String? = null,
+        val filed: String? = null,
+        val frame: String? = null
 ) {
     /** Get amount as BigDecimal for precision */
-    val amount: java.math.BigDecimal get() = java.math.BigDecimal.valueOf(`val`)
+    val amount: java.math.BigDecimal
+        get() = java.math.BigDecimal.valueOf(`val`)
     /** Fiscal year as string */
-    val fiscalYear: String? get() = fy?.toString()
+    val fiscalYear: String?
+        get() = fy?.toString()
 }
 
-/**
- * Extracted XBRL company fact (simplified output format)
- */
+/** Extracted XBRL company fact (simplified output format) */
 @Serializable
 data class XbrlCompanyFact(
-    val concept: String,
-    val label: String,
-    val unit: String,
-    val periodEnd: String?,
-    val value: String // BigDecimal stored as String for serialization
+        val concept: String,
+        val label: String,
+        val unit: String,
+        val periodEnd: String?,
+        val value: String // BigDecimal stored as String for serialization
 ) {
     /** Get value as BigDecimal for calculations */
     fun getValueBigDecimal(): java.math.BigDecimal = java.math.BigDecimal(value)
