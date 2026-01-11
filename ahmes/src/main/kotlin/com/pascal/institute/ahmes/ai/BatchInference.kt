@@ -1,17 +1,16 @@
 package com.pascal.institute.ahmes.ai
 
-import ai.djl.inference.Predictor
 import ai.djl.modality.Classifications
 import ai.djl.modality.nlp.qa.QAInput
-import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.system.measureTimeMillis
+import kotlinx.coroutines.*
 
 /**
  * Batch processing utilities for AI model inference.
  *
- * Provides batch processing capabilities to maximize GPU utilization
- * and improve throughput for multiple inference requests.
+ * Provides batch processing capabilities to maximize GPU utilization and improve throughput for
+ * multiple inference requests.
  *
  * ## Features
  *
@@ -39,15 +38,13 @@ import kotlin.system.measureTimeMillis
  */
 object BatchInference {
 
-    /**
-     * Statistics for batch inference performance.
-     */
+    /** Statistics for batch inference performance. */
     data class BatchStats(
-        val totalItems: Int,
-        val batchSize: Int,
-        val totalTimeMs: Long,
-        val avgTimePerItem: Double,
-        val throughput: Double // items per second
+            val totalItems: Int,
+            val batchSize: Int,
+            val totalTimeMs: Long,
+            val avgTimePerItem: Double,
+            val throughput: Double // items per second
     ) {
         override fun toString(): String {
             return """
@@ -72,8 +69,8 @@ object BatchInference {
      * @return List of sentiment classifications
      */
     fun batchSentiment(
-        texts: List<String>,
-        batchSize: Int = 4
+            texts: List<String>,
+            batchSize: Int = 4
     ): Pair<List<Classifications>, BatchStats> {
         if (texts.isEmpty()) {
             return emptyList<Classifications>() to BatchStats(0, batchSize, 0, 0.0, 0.0)
@@ -96,13 +93,14 @@ object BatchInference {
         // Sort by original index and extract results
         val sortedResults = results.sortedBy { it.first }.map { it.second }
 
-        val stats = BatchStats(
-            totalItems = texts.size,
-            batchSize = batchSize,
-            totalTimeMs = totalTime,
-            avgTimePerItem = totalTime.toDouble() / texts.size,
-            throughput = (texts.size * 1000.0) / totalTime
-        )
+        val stats =
+                BatchStats(
+                        totalItems = texts.size,
+                        batchSize = batchSize,
+                        totalTimeMs = totalTime,
+                        avgTimePerItem = totalTime.toDouble() / texts.size,
+                        throughput = (texts.size * 1000.0) / totalTime
+                )
 
         return sortedResults to stats
     }
@@ -117,39 +115,41 @@ object BatchInference {
      * @return List of sentiment classifications
      */
     suspend fun batchSentimentAsync(
-        texts: List<String>,
-        parallelism: Int = Runtime.getRuntime().availableProcessors()
+            texts: List<String>,
+            parallelism: Int = Runtime.getRuntime().availableProcessors()
     ): Pair<List<Classifications>, BatchStats> = coroutineScope {
         if (texts.isEmpty()) {
             return@coroutineScope emptyList<Classifications>() to BatchStats(0, 0, 0, 0.0, 0.0)
         }
 
         val totalTime = measureTimeMillis {
-            val deferredResults = texts.mapIndexed { index, text ->
-                async(Dispatchers.Default) {
-                    index to DjlModelManager.withSentimentPredictor { predictor ->
-                        predictor.predict(text)
+            val deferredResults =
+                    texts.mapIndexed { index, text ->
+                        async(Dispatchers.Default) {
+                            index to
+                                    DjlModelManager.withSentimentPredictor { predictor ->
+                                        predictor.predict(text)
+                                    }
+                        }
                     }
-                }
-            }
 
             // Await all results
             deferredResults.awaitAll()
         }
 
-        val results = texts.map { text ->
-            DjlModelManager.withSentimentPredictor { predictor ->
-                predictor.predict(text)
-            }
-        }
+        val results =
+                texts.map { text ->
+                    DjlModelManager.withSentimentPredictor { predictor -> predictor.predict(text) }
+                }
 
-        val stats = BatchStats(
-            totalItems = texts.size,
-            batchSize = parallelism,
-            totalTimeMs = totalTime,
-            avgTimePerItem = totalTime.toDouble() / texts.size,
-            throughput = (texts.size * 1000.0) / totalTime
-        )
+        val stats =
+                BatchStats(
+                        totalItems = texts.size,
+                        batchSize = parallelism,
+                        totalTimeMs = totalTime,
+                        avgTimePerItem = totalTime.toDouble() / texts.size,
+                        throughput = (texts.size * 1000.0) / totalTime
+                )
 
         results to stats
     }
@@ -162,8 +162,8 @@ object BatchInference {
      * @return List of answers
      */
     fun batchQuestionAnswering(
-        qaInputs: List<QAInput>,
-        batchSize: Int = 4
+            qaInputs: List<QAInput>,
+            batchSize: Int = 4
     ): Pair<List<String>, BatchStats> {
         if (qaInputs.isEmpty()) {
             return emptyList<String>() to BatchStats(0, batchSize, 0, 0.0, 0.0)
@@ -185,13 +185,14 @@ object BatchInference {
 
         val sortedResults = results.sortedBy { it.first }.map { it.second }
 
-        val stats = BatchStats(
-            totalItems = qaInputs.size,
-            batchSize = batchSize,
-            totalTimeMs = totalTime,
-            avgTimePerItem = totalTime.toDouble() / qaInputs.size,
-            throughput = (qaInputs.size * 1000.0) / totalTime
-        }
+        val stats =
+                BatchStats(
+                        totalItems = qaInputs.size,
+                        batchSize = batchSize,
+                        totalTimeMs = totalTime,
+                        avgTimePerItem = totalTime.toDouble() / qaInputs.size,
+                        throughput = (qaInputs.size * 1000.0) / totalTime
+                )
 
         return sortedResults to stats
     }
@@ -204,8 +205,8 @@ object BatchInference {
      * @return List of summaries
      */
     fun batchSummarization(
-        texts: List<String>,
-        batchSize: Int = 4
+            texts: List<String>,
+            batchSize: Int = 4
     ): Pair<List<String>, BatchStats> {
         if (texts.isEmpty()) {
             return emptyList<String>() to BatchStats(0, batchSize, 0, 0.0, 0.0)
@@ -227,13 +228,14 @@ object BatchInference {
 
         val sortedResults = results.sortedBy { it.first }.map { it.second }
 
-        val stats = BatchStats(
-            totalItems = texts.size,
-            batchSize = batchSize,
-            totalTimeMs = totalTime,
-            avgTimePerItem = totalTime.toDouble() / texts.size,
-            throughput = (texts.size * 1000.0) / totalTime
-        )
+        val stats =
+                BatchStats(
+                        totalItems = texts.size,
+                        batchSize = batchSize,
+                        totalTimeMs = totalTime,
+                        avgTimePerItem = totalTime.toDouble() / texts.size,
+                        throughput = (texts.size * 1000.0) / totalTime
+                )
 
         return sortedResults to stats
     }
@@ -249,9 +251,9 @@ object BatchInference {
 
         return when {
             isGpuAvailable -> 16 // GPU can handle larger batches
-            cpuCores >= 8 -> 8  // High-end CPU
-            cpuCores >= 4 -> 4  // Mid-range CPU
-            else -> 2           // Low-end CPU
+            cpuCores >= 8 -> 8 // High-end CPU
+            cpuCores >= 4 -> 4 // Mid-range CPU
+            else -> 2 // Low-end CPU
         }
     }
 }

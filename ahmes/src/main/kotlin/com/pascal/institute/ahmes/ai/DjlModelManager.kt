@@ -34,7 +34,8 @@ object DjlModelManager {
             java.util.concurrent.ConcurrentLinkedQueue<Predictor<String, String>>()
 
     // Check if GPU is available
-    private fun isGpuAvailable(): Boolean {
+    // Check if GPU is available
+    fun isGpuAvailable(): Boolean {
         return try {
             val engine = ai.djl.engine.Engine.getInstance()
             val hasGpu = Device.gpu().isGpu

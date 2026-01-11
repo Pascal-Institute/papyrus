@@ -295,9 +295,10 @@
   - [ ] FP32 → FP16 변환
   - [ ] INT8 양자화 테스트
 
-- [ ] 배치 처리 지원
-  - [ ] 여러 텍스트 동시 처리
-  - [ ] GPU 활용 극대화
+- [x] 배치 처리 지원 ✅
+  - [x] BatchInference.kt 구현 (Sentiment, QA, Summarization)
+  - [x] Async batch processing (Coroutines)
+  - [x] GPU 활용 지원 (DjlModelManager 연동)
 
 - [ ] 모델 경량화
   - [ ] DistilBERT → MobileBERT 마이그레이션 검토
