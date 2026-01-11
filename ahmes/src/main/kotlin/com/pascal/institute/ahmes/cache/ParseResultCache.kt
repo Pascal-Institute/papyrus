@@ -132,7 +132,7 @@ class ParseResultCache(
                         .minByOrNull { (_, entry) ->
                             // Combine access count and age for LRU decision
                             // Use access count as primary, timestamp as secondary
-                            entry.accessCount * 1000000 + entry.timestamp.toEpochMilli()
+                            entry.accessCount * 1000000L + entry.timestamp.toEpochMilli()
                         }
                         ?.key
 

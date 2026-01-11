@@ -249,7 +249,7 @@ class BenchmarkRunner {
 
         // For simplicity, just count presence of financial data
         // In a real implementation, you'd compare individual metric values
-        if (actualStatements.reportType?.isNotEmpty() == true) correctCount++
+        if (actualStatements.reportType.isNotEmpty()) correctCount++
         if (actualStatements.fiscalYear != null) correctCount++
         if (actualStatements.fiscalPeriod != null) correctCount++
 
