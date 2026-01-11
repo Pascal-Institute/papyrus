@@ -1,0 +1,136 @@
+{
+    "document": {
+        "company": "Apple Inc.",
+        "ticker": "AAPL",
+        "cik": "0000320193",
+        "formType": "10-K",
+        "filingDate": "2023-11-03",
+        "fiscalPeriod": "2023-09-30",
+        "fileName": "aapl-20230930-10k.html",
+        "fileSize": 2500000,
+        "accessionNumber": "0000320193-23-000077"
+    },
+    "expectedMetrics": [
+        {
+            "name": "Total Revenue",
+            "category": "REVENUE",
+            "value": "$383.3B",
+            "rawValue": "383285000000",
+            "unit": "DOLLARS",
+            "period": "FY 2023",
+            "confidence": 1.0,
+            "sourceSection": "Item 8"
+        },
+        {
+            "name": "Net Income",
+            "category": "NET_INCOME",
+            "value": "$97.0B",
+            "rawValue": "96995000000",
+            "unit": "DOLLARS",
+            "period": "FY 2023",
+            "confidence": 1.0
+        },
+        {
+            "name": "Total Assets",
+            "category": "TOTAL_ASSETS",
+            "value": "$352.8B",
+            "rawValue": "352755000000",
+            "unit": "DOLLARS",
+            "period": "2023-09-30",
+            "confidence": 1.0
+        }
+    ],
+    "expectedRiskFactors": [
+        {
+            "title": "Competition",
+            "category": "OPERATIONAL",
+            "severity": "HIGH",
+            "summary": "We face intense competition in all aspects of our business",
+            "minLength": 100,
+            "mustContainKeywords": [
+                "competition",
+                "competitive",
+                "market"
+            ]
+        },
+        {
+            "title": "Supply Chain",
+            "category": "OPERATIONAL",
+            "severity": "MEDIUM",
+            "summary": "Global supply chain disruptions may impact product availability",
+            "minLength": 80,
+            "mustContainKeywords": [
+                "supply",
+                "disruption",
+                "availability"
+            ]
+        },
+        {
+            "title": "Cybersecurity",
+            "category": "TECHNOLOGY",
+            "severity": "HIGH",
+            "summary": "Cybersecurity threats and data breaches pose significant risks",
+            "minLength": 100,
+            "mustContainKeywords": [
+                "cyber",
+                "security",
+                "breach",
+                "data"
+            ]
+        }
+    ],
+    "expectedSections": {
+        "Item 1": {
+            "title": "Business",
+            "type": "Item",
+            "minLength": 1000,
+            "mustContain": [
+                "Apple",
+                "products",
+                "services"
+            ],
+            "hasSubsections": false
+        },
+        "Item 1A": {
+            "title": "Risk Factors",
+            "type": "Item",
+            "minLength": 5000,
+            "mustContain": [
+                "risk",
+                "may",
+                "could"
+            ],
+            "hasSubsections": true,
+            "subsectionCount": 3
+        },
+        "Item 7": {
+            "title": "Management's Discussion and Analysis",
+            "type": "Item",
+            "minLength": 3000,
+            "mustContain": [
+                "revenue",
+                "fiscal",
+                "results"
+            ],
+            "hasSubsections": true
+        },
+        "Item 8": {
+            "title": "Financial Statements",
+            "type": "Item",
+            "minLength": 2000,
+            "mustContain": [
+                "statement",
+                "balance",
+                "income"
+            ],
+            "hasSubsections": true
+        }
+    },
+    "benchmarks": {
+        "maxParseTimeMs": 5000,
+        "maxMemoryMB": 500,
+        "minMetricAccuracy": 0.95,
+        "minSectionAccuracy": 0.90,
+        "minRiskFactorAccuracy": 0.85
+    }
+}
