@@ -310,27 +310,17 @@
 
 ---
 
-### Phase 4: 고급 기능 및 국제화 (4주) 🟢 Low Priority
+### Phase 4: 고급 기능 (4주) 🟢 Low Priority
 
-#### Week 11: 국제화 지원
-
-**작업 항목:**
-- [ ] 다국어 재무 용어 사전 구축
-  - [ ] 한국어(KR), 영어(EN) 기본 지원
-  - [ ] 용어 매핑 (Revenue -> 매출액)
-- [ ] i18n 메시지 번들 시스템
-  - [ ] ResourceBundle 적용
-- [ ] 20-F (외국법인) 파서 기초 작업
-
-#### Week 12: 추가 SEC Form 지원
+#### Week 11: 추가 SEC Form 지원
 
 **작업 항목:**
+- [ ] Form 20-F (Foreign Private Issuer) 파서 고도화
 - [ ] Form 4 (Insider Trading)
 - [ ] Form 13F (Institutional Holdings)
 - [ ] Form 424B (Prospectus)
 
-
-#### Week 14-15: 고급 AI 기능
+#### Week 12-13: 고급 AI 기능
 
 **작업 항목:**
 - [ ] 재무제표 이상 탐지
