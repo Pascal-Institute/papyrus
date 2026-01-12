@@ -26,7 +26,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pascal.institute.ahmes.parser.XbrlCompanyFactsExtractor
 import papyrus.core.model.BeginnerInsight
 import papyrus.core.model.ExtendedFinancialMetric
 import papyrus.core.model.FinancialAnalysis
@@ -42,7 +41,6 @@ import papyrus.core.model.InsiderTradingInfo
 import papyrus.core.model.InsiderTransactionSummary
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
-import papyrus.core.model.XbrlCompanyFact
 import papyrus.core.secApiClient
 
 /** Map icon name to Material Icon ImageVector */
@@ -802,8 +800,6 @@ fun FinancialAnalysisPanel(
         var selectedTab by remember { mutableStateOf(0) }
         var showGlossaryDialog by remember { mutableStateOf(false) }
 
-        val hasXbrlTab = analysis.xbrlMetrics.isNotEmpty() || analysis.cik != null
-
         val tabs = buildList {
                 val hasInsights =
                         analysis.beginnerInsights.isNotEmpty() || analysis.aiSentiment != null
@@ -817,7 +813,6 @@ fun FinancialAnalysisPanel(
                 }
 
                 add("Financials")
-                if (hasXbrlTab) add("XBRL")
                 add("Raw Data")
         }
 
@@ -846,7 +841,6 @@ fun FinancialAnalysisPanel(
                         "Overview" -> FinancialOverviewTab(analysis)
                         "Insights" -> BeginnerInsightsTab(analysis)
                         "Financials" -> FinancialsTab(analysis)
-                        "XBRL" -> XbrlTab(analysis)
                         "Raw Data" -> FinancialRawDataTab(analysis.rawContent, analysis)
                         else -> FinancialRawDataTab(analysis.rawContent, analysis)
                 }
@@ -855,251 +849,6 @@ fun FinancialAnalysisPanel(
                         GlossaryDialog(
                                 terms = analysis.termExplanations,
                                 onDismiss = { showGlossaryDialog = false }
-                        )
-                }
-        }
-}
-
-@Composable
-private fun XbrlTab(analysis: FinancialAnalysis) {
-        val scrollState = rememberScrollState()
-        val cik = analysis.cik
-
-        var isLoadingFacts by remember { mutableStateOf(false) }
-        var factsError by remember { mutableStateOf<String?>(null) }
-        var companyFacts by remember { mutableStateOf<List<XbrlCompanyFact>>(emptyList()) }
-
-        LaunchedEffect(cik) {
-                companyFacts = emptyList()
-                factsError = null
-
-                if (cik == null) return@LaunchedEffect
-
-                isLoadingFacts = true
-                try {
-                        val facts = secApiClient.getCompanyFacts(cik)
-                        companyFacts =
-                                if (facts != null) {
-                                        XbrlCompanyFactsExtractor.extractKeyFacts(facts).map { fact
-                                                ->
-                                                papyrus.core.model.XbrlCompanyFact(
-                                                        concept = fact.concept,
-                                                        label = fact.label,
-                                                        unit = fact.unit ?: "",
-                                                        periodEnd = fact.periodEnd,
-                                                        value = fact.value?.toString() ?: ""
-                                                )
-                                        }
-                                } else {
-                                        emptyList()
-                                }
-                } catch (e: Exception) {
-                        factsError = e.message ?: "Failed to load company facts"
-                } finally {
-                        isLoadingFacts = false
-                }
-        }
-
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
-                if (analysis.xbrlMetrics.isNotEmpty()) {
-                        Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = AppDimens.CardElevationHigh,
-                                shape = AppShapes.Large,
-                        ) {
-                                Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
-                                        Text(
-                                                text = "Inline XBRL (from document)",
-                                                style = AppTypography.Headline3,
-                                                color = AppColors.OnSurface,
-                                                fontWeight = FontWeight.Bold
-                                        )
-                                        Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
-
-                                        analysis.xbrlMetrics.take(50).forEach { metric ->
-                                                Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement =
-                                                                Arrangement.SpaceBetween
-                                                ) {
-                                                        Text(
-                                                                text = metric.name,
-                                                                style = AppTypography.Body2,
-                                                                color = AppColors.OnSurface,
-                                                                modifier = Modifier.weight(1f)
-                                                        )
-                                                        Spacer(modifier = Modifier.width(12.dp))
-                                                        Text(
-                                                                text = metric.value,
-                                                                style = AppTypography.Body2,
-                                                                color = AppColors.OnSurface,
-                                                                textAlign = TextAlign.End
-                                                        )
-                                                }
-
-                                                if (!metric.period.isNullOrBlank() ||
-                                                                metric.source.isNotBlank()
-                                                ) {
-                                                        Text(
-                                                                text =
-                                                                        buildString {
-                                                                                if (!metric.period
-                                                                                                .isNullOrBlank()
-                                                                                )
-                                                                                        append(
-                                                                                                "Period: ${metric.period}"
-                                                                                        )
-                                                                                if (!metric.period
-                                                                                                .isNullOrBlank() &&
-                                                                                                metric.source
-                                                                                                        .isNotBlank()
-                                                                                )
-                                                                                        append(
-                                                                                                " · "
-                                                                                        )
-                                                                                if (metric.source
-                                                                                                .isNotBlank()
-                                                                                )
-                                                                                        append(
-                                                                                                metric.source
-                                                                                        )
-                                                                        },
-                                                                style = AppTypography.Caption,
-                                                                color = AppColors.OnSurfaceSecondary
-                                                        )
-                                                }
-
-                                                Divider(
-                                                        color = AppColors.Divider,
-                                                        modifier = Modifier.padding(vertical = 8.dp)
-                                                )
-                                        }
-                                }
-                        }
-
-                        Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
-                }
-
-                if (cik != null) {
-                        Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = AppDimens.CardElevationHigh,
-                                shape = AppShapes.Large,
-                        ) {
-                                Column(modifier = Modifier.padding(AppDimens.PaddingLarge)) {
-                                        Text(
-                                                text = "SEC Company Facts (XBRL)",
-                                                style = AppTypography.Headline3,
-                                                color = AppColors.OnSurface,
-                                                fontWeight = FontWeight.Bold
-                                        )
-                                        Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
-
-                                        if (isLoadingFacts) {
-                                                Row(
-                                                        verticalAlignment =
-                                                                Alignment.CenterVertically
-                                                ) {
-                                                        CircularProgressIndicator(
-                                                                modifier = Modifier.size(18.dp),
-                                                                strokeWidth = 2.dp,
-                                                                color = AppColors.Primary
-                                                        )
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Text(
-                                                                text = "Loading company facts...",
-                                                                style = AppTypography.Body2,
-                                                                color = AppColors.OnSurfaceSecondary
-                                                        )
-                                                }
-                                        } else if (factsError != null) {
-                                                Text(
-                                                        text = factsError
-                                                                        ?: "Failed to load company facts",
-                                                        style = AppTypography.Body2,
-                                                        color = AppColors.Error
-                                                )
-                                        } else if (companyFacts.isEmpty()) {
-                                                Text(
-                                                        text = "No company facts available.",
-                                                        style = AppTypography.Body2,
-                                                        color = AppColors.OnSurfaceSecondary
-                                                )
-                                        } else {
-                                                companyFacts.forEach { fact ->
-                                                        Row(
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                horizontalArrangement =
-                                                                        Arrangement.SpaceBetween
-                                                        ) {
-                                                                Text(
-                                                                        text = fact.label,
-                                                                        style = AppTypography.Body2,
-                                                                        color = AppColors.OnSurface,
-                                                                        modifier =
-                                                                                Modifier.weight(1f)
-                                                                )
-                                                                Spacer(
-                                                                        modifier =
-                                                                                Modifier.width(
-                                                                                        12.dp
-                                                                                )
-                                                                )
-                                                                Text(
-                                                                        text =
-                                                                                fact.value.ifEmpty {
-                                                                                        "—"
-                                                                                },
-                                                                        style = AppTypography.Body2,
-                                                                        color = AppColors.OnSurface,
-                                                                        textAlign = TextAlign.End
-                                                                )
-                                                        }
-                                                        Text(
-                                                                text =
-                                                                        buildString {
-                                                                                if (!fact.periodEnd
-                                                                                                .isNullOrBlank()
-                                                                                )
-                                                                                        append(
-                                                                                                "End: ${fact.periodEnd}"
-                                                                                        )
-                                                                                if (!fact.periodEnd
-                                                                                                .isNullOrBlank() &&
-                                                                                                !fact.unit
-                                                                                                        .isNullOrBlank()
-                                                                                )
-                                                                                        append(
-                                                                                                " · "
-                                                                                        )
-                                                                                if (!fact.unit
-                                                                                                .isNullOrBlank()
-                                                                                )
-                                                                                        append(
-                                                                                                "Unit: ${fact.unit}"
-                                                                                        )
-                                                                                append(" · ")
-                                                                                append(fact.concept)
-                                                                        },
-                                                                style = AppTypography.Caption,
-                                                                color = AppColors.OnSurfaceSecondary
-                                                        )
-                                                        Divider(
-                                                                color = AppColors.Divider,
-                                                                modifier =
-                                                                        Modifier.padding(
-                                                                                vertical = 8.dp
-                                                                        )
-                                                        )
-                                                }
-                                        }
-                                }
-                        }
-                } else if (analysis.xbrlMetrics.isEmpty()) {
-                        EmptyState(
-                                icon = Icons.Outlined.DataObject,
-                                title = "No XBRL data",
-                                description = "This analysis does not include XBRL facts."
                         )
                 }
         }
