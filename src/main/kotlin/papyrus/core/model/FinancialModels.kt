@@ -220,6 +220,23 @@ data class InsiderTradingInfo(
 )
 
 /**
+ * Form 144 - Notice of Proposed Sale of Securities
+ * Information about planned sales of restricted or control securities
+ */
+@Serializable
+data class ProposedSaleNotice(
+        val sellerName: String,
+        val sellerCik: String?,
+        val relationship: String, // e.g., "Officer", "Director", "10% Owner", "Affiliate"
+        val securityType: String, // e.g., "Common Stock", "Preferred Stock"
+        val proposedSaleDate: String?,
+        val numberOfShares: String,
+        val aggregateMarketValue: String?,
+        val brokerName: String?,
+        val remarks: String? = null
+)
+
+/**
  * Summary of an insider transaction for display
  */
 @Serializable
@@ -562,5 +579,8 @@ data class FinancialAnalysis(
         val aiProcessingTimeMs: Long? = null,
 
         // Form 4 Insider Trading Information
-        val insiderTradingInfo: List<InsiderTradingInfo> = emptyList()
+        val insiderTradingInfo: List<InsiderTradingInfo> = emptyList(),
+
+        // Form 144 - Notice of Proposed Sale of Securities
+        val proposedSaleNotices: List<ProposedSaleNotice> = emptyList()
 )

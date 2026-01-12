@@ -59,7 +59,7 @@ class BenchmarkRunner {
         val runtime = Runtime.getRuntime()
         val beforeMemory = runtime.totalMemory() - runtime.freeMemory()
 
-        var parseResult: SecReportParseResult? = null
+        var parseResult: SecReportParseResult?
         val parseTime = measureTimeMillis {
             parseResult =
                     try {
@@ -102,15 +102,13 @@ class BenchmarkRunner {
                 when (parseResult) {
                     is Form10KParseResult ->
                             validateMetrics(
-                                    parseResult!!.financialStatements,
-                                    groundTruth.expectedMetrics,
-                                    warnings
+                                    null, // Form10K no longer has financialStatements field
+                                    groundTruth.expectedMetrics
                             )
                     is Form10QParseResult ->
                             validateMetrics(
-                                    parseResult!!.financialStatements,
-                                    groundTruth.expectedMetrics,
-                                    warnings
+                                    null, // Form10Q no longer has financialStatements field
+                                    groundTruth.expectedMetrics
                             )
                     else -> MetricValidation(0, 0, 0, 1.0)
                 }
@@ -230,8 +228,7 @@ class BenchmarkRunner {
     /** Validate financial metrics. */
     private fun validateMetrics(
             actualStatements: StructuredFinancialData?,
-            expectedMetrics: List<ExpectedMetric>,
-            warnings: MutableList<String>
+            expectedMetrics: List<ExpectedMetric>
     ): MetricValidation {
         if (actualStatements == null) {
             return MetricValidation(

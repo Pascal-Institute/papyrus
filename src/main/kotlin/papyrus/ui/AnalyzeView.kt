@@ -40,6 +40,7 @@ import papyrus.core.model.HealthStatus
 import papyrus.core.model.InsiderTradingInfo
 import papyrus.core.model.InsiderTransactionSummary
 import papyrus.core.model.MetricCategory
+import papyrus.core.model.ProposedSaleNotice
 import papyrus.core.model.RatioCategory
 import papyrus.core.secApiClient
 
@@ -2154,6 +2155,33 @@ private fun FinancialsTab(analysis: FinancialAnalysis) {
                         Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
                 }
 
+                // Form 144 - Notice of Proposed Sale
+                if (analysis.proposedSaleNotices.isNotEmpty()) {
+                        Text(
+                                text = "Form 144 - 매도 의향 공시",
+                                style = AppTypography.Headline3,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF6B35), // Orange-red for attention
+                                modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Text(
+                                text = "제한된 주식 또는 지배주주의 주식 매도 계획 공시입니다. 대량 매도 가능성에 유의하세요.",
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        analysis.proposedSaleNotices.forEach { notice ->
+                                ProposedSaleNoticeCard(notice)
+                                Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+                        }
+
+                        Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
+                        Divider(color = AppColors.Divider, thickness = 2.dp)
+                        Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
+                }
+
                 // Financial Ratios (Calculated percentages and ratios)
                 if (ratios.isNotEmpty()) {
                         Text(
@@ -2179,7 +2207,7 @@ private fun FinancialsTab(analysis: FinancialAnalysis) {
                         }
                 }
 
-                if (ratios.isEmpty() && metrics.isEmpty() && insiderTradingInfo.isEmpty()) {
+                if (ratios.isEmpty() && metrics.isEmpty() && insiderTradingInfo.isEmpty() && analysis.proposedSaleNotices.isEmpty()) {
                         EmptyState(
                                 icon = Icons.Outlined.Analytics,
                                 title = "No Financial Data Found",
@@ -2338,6 +2366,192 @@ private fun TransactionDetailRow(label: String, value: String, isBold: Boolean =
                         style = AppTypography.Body2,
                         fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
                         color = if (isBold) AppColors.OnSurface else AppColors.OnSurfaceSecondary,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                )
+        }
+}
+
+/**
+ * Form 144 - Proposed Sale Notice Card
+ * Displays information about planned sales of restricted or control securities
+ */
+@Composable
+private fun ProposedSaleNoticeCard(notice: ProposedSaleNotice) {
+        Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = AppDimens.CardElevation,
+                shape = AppShapes.Medium,
+                backgroundColor = Color(0xFFFFF3E0) // Light orange background for warning
+        ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                        // Header with seller information
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                        imageVector = Icons.Outlined.Warning,
+                                                        contentDescription = null,
+                                                        tint = Color(0xFFFF6B35),
+                                                        modifier = Modifier.size(24.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                        text = notice.sellerName,
+                                                        style = AppTypography.Headline3,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = AppColors.OnSurface
+                                                )
+                                        }
+                                        Text(
+                                                text = "관계: ${notice.relationship}",
+                                                style = AppTypography.Body2,
+                                                color = Color(0xFFE65100),
+                                                fontWeight = FontWeight.SemiBold,
+                                                modifier = Modifier.padding(top = 4.dp, start = 32.dp)
+                                        )
+                                        notice.sellerCik?.let { cik: String ->
+                                                Text(
+                                                        text = "CIK: $cik",
+                                                        style = AppTypography.Caption,
+                                                        color = AppColors.OnSurfaceSecondary,
+                                                        modifier = Modifier.padding(top = 2.dp, start = 32.dp)
+                                                )
+                                        }
+                                }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Divider(color = Color(0xFFFFB74D))
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Sale Information Section
+                        Text(
+                                text = "📋 매도 계획 정보",
+                                style = AppTypography.Subtitle1,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.OnSurface,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                        )
+
+                        // Key Details
+                        Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                elevation = 2.dp,
+                                shape = RoundedCornerShape(8.dp),
+                                backgroundColor = Color.White
+                        ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                        ProposedSaleDetailRow("증권 종류", notice.securityType)
+
+                                        notice.proposedSaleDate?.let { date: String ->
+                                                ProposedSaleDetailRow("예정 매도일", date, isImportant = true)
+                                        }
+
+                                        ProposedSaleDetailRow(
+                                                "매도 예정 주식 수",
+                                                notice.numberOfShares,
+                                                isImportant = true
+                                        )
+
+                                        notice.aggregateMarketValue?.let { value: String ->
+                                                ProposedSaleDetailRow(
+                                                        "예상 시장 가치",
+                                                        value,
+                                                        isImportant = true,
+                                                        isBold = true
+                                                )
+                                        }
+
+                                        notice.brokerName?.let { broker: String ->
+                                                ProposedSaleDetailRow("중개인", broker)
+                                        }
+                                }
+                        }
+
+                        // Remarks section if available
+                        notice.remarks?.let { remarks: String ->
+                                if (remarks.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                elevation = 1.dp,
+                                                shape = RoundedCornerShape(8.dp),
+                                                backgroundColor = Color(0xFFFFFBF0)
+                                        ) {
+                                                Column(modifier = Modifier.padding(12.dp)) {
+                                                        Text(
+                                                                text = "💬 비고",
+                                                                style = AppTypography.Subtitle2,
+                                                                fontWeight = FontWeight.SemiBold,
+                                                                color = AppColors.OnSurface,
+                                                                modifier = Modifier.padding(bottom = 6.dp)
+                                                        )
+                                                        Text(
+                                                                text = remarks,
+                                                                style = AppTypography.Body2,
+                                                                color = AppColors.OnSurfaceSecondary
+                                                        )
+                                                }
+                                        }
+                                }
+                        }
+
+                        // Warning footer
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                                modifier = Modifier.fillMaxWidth()
+                                        .background(Color(0xFFFFE0B2), RoundedCornerShape(6.dp))
+                                        .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Icon(
+                                        imageVector = Icons.Outlined.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFFE65100),
+                                        modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                        text = "이 공시는 매도 '의향'을 나타내며, 실제 매도는 시장 상황에 따라 달라질 수 있습니다.",
+                                        style = AppTypography.Caption,
+                                        color = Color(0xFFE65100)
+                                )
+                        }
+                }
+        }
+}
+
+/**
+ * Helper function for proposed sale detail rows
+ */
+@Composable
+private fun ProposedSaleDetailRow(
+        label: String,
+        value: String,
+        isImportant: Boolean = false,
+        isBold: Boolean = false
+) {
+        Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+                Text(
+                        text = if (isImportant) "▸ $label:" else "  • $label:",
+                        style = AppTypography.Body2,
+                        color = if (isImportant) Color(0xFFE65100) else AppColors.OnSurfaceSecondary,
+                        fontWeight = if (isImportant) FontWeight.SemiBold else FontWeight.Normal,
+                        modifier = Modifier.weight(1f)
+                )
+                Text(
+                        text = value,
+                        style = AppTypography.Body2,
+                        fontWeight = if (isBold) FontWeight.Bold else if (isImportant) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isBold || isImportant) AppColors.OnSurface else AppColors.OnSurfaceSecondary,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.End
                 )
@@ -2848,7 +3062,7 @@ private fun SimpleMetricsCard(metrics: List<FinancialMetric>) {
                                                                                         )
                                                                                         ?.let {
                                                                                                 formatNumber(
-                                                                                                        it
+                                                                                                        it.toString()
                                                                                                 )
                                                                                         }
                                                                                         ?: metric.value
@@ -2864,7 +3078,7 @@ private fun SimpleMetricsCard(metrics: List<FinancialMetric>) {
                                                                                         )
                                                                                         ?.let {
                                                                                                 formatCurrency(
-                                                                                                        it
+                                                                                                        it.toString()
                                                                                                 )
                                                                                         }
                                                                                         ?: metric.value

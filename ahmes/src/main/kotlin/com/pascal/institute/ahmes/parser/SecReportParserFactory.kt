@@ -20,6 +20,7 @@ object SecReportParserFactory {
             SecReportType.FORM_DEF14A -> FormDEF14AParser()
             SecReportType.FORM_20F -> Form20FParser()
             SecReportType.FORM_4 -> Form4Parser()
+            SecReportType.FORM_144 -> Form144Parser()
             SecReportType.FORM_13F -> Form13FParser()
             else -> GenericSecReportParser(reportType)
         }

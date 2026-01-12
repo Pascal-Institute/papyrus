@@ -3,6 +3,7 @@ package papyrus.core.service.analyzer
 import com.pascal.institute.ahmes.ai.AiEnhancedSecParser
 import com.pascal.institute.ahmes.ai.AiEnhancementOptions
 import com.pascal.institute.ahmes.model.Form4ParseResult
+import com.pascal.institute.ahmes.model.Form144ParseResult
 import com.pascal.institute.ahmes.model.SecReportMetadata
 import com.pascal.institute.ahmes.model.SecReportType
 import com.pascal.institute.ahmes.parser.EnhancedFinancialParser
@@ -80,7 +81,7 @@ object FinancialAnalyzer {
 
         // 1단계: 테이블 기반 파싱 (가장 정확함)
         val tableMetrics = mutableListOf<ExtendedFinancialMetric>()
-        var tablesFound = 0
+        var tablesFound: Int
         try {
             val tables = SecTableParser.parseFinancialTables(content)
             tablesFound = tables.size
@@ -169,6 +170,9 @@ object FinancialAnalyzer {
         // Check if this is a Form 4 and extract insider trading information
         val insiderTradingInfo = extractInsiderTradingInfo(content, reportType)
 
+        // Check if this is a Form 144 and extract proposed sale notices
+        val proposedSaleNotices = extractProposedSaleNotices(content, reportType)
+
         // 요약 생성
         val summary =
                 generateEnhancedSummary(
@@ -191,7 +195,8 @@ object FinancialAnalyzer {
                 ratios = calculatedRatios,
                 extendedMetrics = allExtendedMetrics,
                 xbrlMetrics = xbrlMetrics,
-                insiderTradingInfo = insiderTradingInfo
+                insiderTradingInfo = insiderTradingInfo,
+                proposedSaleNotices = proposedSaleNotices
         )
     }
 
@@ -828,7 +833,7 @@ object FinancialAnalyzer {
                         }
                     }
 
-            for ((category, metricsList) in grouped) {
+            for ((_, metricsList) in grouped) {
                 for (metric in metricsList.take(2)) {
                     val formatted = metric.rawValue?.let { formatNumber(it) } ?: metric.value
                     sb.appendLine("  • ${metric.name}: $formatted")
@@ -2254,6 +2259,75 @@ object FinancialAnalyzer {
             }
         } catch (e: Exception) {
             println("⚠ Error extracting insider trading info: ${e.message}")
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    /**
+     * Extract Form 144 proposed sale notices
+     */
+    private fun extractProposedSaleNotices(content: String, reportType: String?): List<ProposedSaleNotice> {
+        // Check if this is a Form 144
+        val isForm144 = reportType?.contains("144", ignoreCase = true) == true ||
+                content.contains("FORM 144", ignoreCase = true) ||
+                content.contains("Notice of Proposed Sale", ignoreCase = true)
+
+        if (!isForm144) {
+            return emptyList()
+        }
+
+        return try {
+            println("📋 Extracting Form 144 (Proposed Sale) information...")
+
+            val metadata = SecReportMetadata(
+                    formType = "144",
+                    filingDate = null,
+                    reportDate = null,
+                    fiscalYearEnd = null,
+                    companyName = null,
+                    ticker = null,
+                    cik = null,
+                    accessionNumber = null,
+                    documentCount = 0,
+                    primaryDocument = null
+            )
+
+            // Parse Form 144 using the dedicated parser
+            val parser = SecReportParserFactory.getParser(SecReportType.FORM_144)
+            val parseResult = parser.parseHtml(content, metadata)
+
+            if (parseResult is Form144ParseResult) {
+                val noticeList = mutableListOf<ProposedSaleNotice>()
+
+                // Extract seller and sale information
+                val seller = parseResult.personSelling
+                val saleInfo = parseResult.proposedSaleInfo
+
+                if (seller != null && saleInfo != null) {
+                    noticeList.add(
+                        ProposedSaleNotice(
+                            sellerName = seller.name,
+                            sellerCik = seller.cik,
+                            relationship = seller.relationship,
+                            securityType = saleInfo.securityType,
+                            proposedSaleDate = saleInfo.proposedSaleDate,
+                            numberOfShares = saleInfo.numberOfShares,
+                            aggregateMarketValue = saleInfo.aggregateMarketValue,
+                            brokerName = saleInfo.brokerName,
+                            remarks = parseResult.remarks
+                        )
+                    )
+                }
+
+                println("✅ Extracted ${noticeList.size} Form 144 notice(s)")
+                noticeList
+            } else {
+                println("⚠ Form 144 parsing returned unexpected result type")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            println("⚠ Error extracting Form 144 info: ${e.message}")
             e.printStackTrace()
             emptyList()
         }

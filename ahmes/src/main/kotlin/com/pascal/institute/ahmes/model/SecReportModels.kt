@@ -29,6 +29,7 @@ enum class SecReportType(val displayName: String, val importance: Int) {
     // Others
     FORM_3("Form 3 Initial Ownership", 3),
     FORM_4("Form 4 Insider Trading", 4),
+    FORM_144("Form 144 Proposed Sale Notice", 4),
     FORM_13F("13F Institutional Holdings", 4),
     FORM_424B("424B Prospectus", 6),
     FORM_SC_13G("SC 13G Ownership Report", 4),
@@ -49,6 +50,7 @@ enum class SecReportType(val displayName: String, val importance: Int) {
                 "NT10K" -> FORM_NT_10K
                 "NT10Q" -> FORM_NT_10Q
                 "4" -> FORM_4
+                "144" -> FORM_144
                 "3" -> FORM_3
                 "SC13G" -> FORM_SC_13G
                 else -> UNKNOWN

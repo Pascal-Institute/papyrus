@@ -72,3 +72,34 @@ enum class TransactionCode(val code: String, val description: String) {
     W("W", "Will or laws of descent or distribution"),
     J("J", "Other")
 }
+
+/** Result of parsing a Form 144 (Notice of Proposed Sale of Securities) */
+data class Form144ParseResult(
+        override val metadata: SecReportMetadata,
+        override val rawContent: String,
+        override val sections: Map<String, String>,
+        val issuerName: String?,
+        val issuerTicker: String?,
+        val personSelling: SellerInfo?,
+        val proposedSaleInfo: ProposedSaleInfo?,
+        val remarks: String?
+) : SecReportParseResult
+
+/** Information about the person/entity planning to sell securities */
+@Serializable
+data class SellerInfo(
+        val name: String,
+        val cik: String? = null,
+        val relationship: String // e.g., "Officer", "Director", "10% Owner", "Affiliate"
+)
+
+/** Details about the proposed sale */
+@Serializable
+data class ProposedSaleInfo(
+        val securityType: String, // e.g., "Common Stock", "Preferred Stock"
+        val numberOfShares: String,
+        val aggregateMarketValue: String? = null,
+        val proposedSaleDate: String? = null,
+        val brokerName: String? = null
+)
+
