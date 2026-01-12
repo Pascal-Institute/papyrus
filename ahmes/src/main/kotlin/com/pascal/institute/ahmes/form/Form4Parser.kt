@@ -125,31 +125,64 @@ class Form4Parser : BaseSecReportParser<Form4ParseResult>(SecReportType.FORM_4) 
                 val cells = row.select("td")
                 println("   Row $rowIndex: ${cells.size} cells")
 
+                // Debug: Print all cell contents
+                if (cells.isNotEmpty()) {
+                    println("   Cell contents: ${cells.mapIndexed { i, cell -> "[$i]='${cell.text().trim()}'" }.joinToString(", ")}")
+                }
+
                 if (cells.size >= 4) {
                     try {
                         val title = cells[0].text().trim()
                         if (title.isNotBlank() && title != "Title of Security") {
+                            // Standard Form 4 Table I column mapping:
+                            // [0] Title of Security
+                            // [1] Transaction Date
+                            // [2] Transaction Code (often with footnotes)
+                            // [3] Number of Securities Transacted (Amount)
+                            // [4] Acquired (A) or Disposed (D)
+                            // [5] Price Per Share
+                            // [6] Amount of Securities Beneficially Owned Following Transaction
+                            // [7] Ownership Form: Direct (D) or Indirect (I)
+                            // [8] Nature of Indirect Beneficial Ownership
+
                             val date = if (cells.size > 1) cells[1].text().trim() else ""
                             val code = if (cells.size > 2) cells[2].text().trim() else ""
-                            val amount = if (cells.size > 4) cells[4].text().trim() else ""
-                            val pricePerShare = if (cells.size > 6) cells[6].text().trim().ifEmpty { null } else null
-                            val sharesOwned = if (cells.size > 7) cells[7].text().trim() else ""
-                            val ownershipForm = if (cells.size > 8) cells[8].text().trim().firstOrNull()?.toString() ?: "D" else "D"
 
-                            // Extract nature of indirect ownership (handles "By ..." patterns)
-                            val nature = if (cells.size > 9) {
-                                val text = cells[9].text().trim()
+                            // Amount: Column 3 (Number of Securities Transacted)
+                            val amount = if (cells.size > 3) {
+                                cells[3].text().trim().replace(",", "").replace("(", "").replace(")", "").filter { it.isDigit() || it == '.' }
+                            } else ""
+
+                            // Acquired/Disposed indicator: Column 4
+                            val acquiredDisposed = if (cells.size > 4) cells[4].text().trim() else ""
+
+                            // Price Per Share: Column 5
+                            val pricePerShare = if (cells.size > 5) {
+                                val priceText = cells[5].text().trim().replace("$", "").replace(",", "")
+                                if (priceText.isNotEmpty() && priceText.any { it.isDigit() }) priceText else null
+                            } else null
+
+                            // Shares Owned Following: Column 6
+                            val sharesOwned = if (cells.size > 6) {
+                                cells[6].text().trim().replace(",", "")
+                            } else ""
+
+                            // Ownership Form: Column 7 (D or I)
+                            val ownershipForm = if (cells.size > 7) {
+                                cells[7].text().trim().firstOrNull()?.toString() ?: "D"
+                            } else "D"
+
+                            // Extract nature of indirect ownership: Column 8
+                            val nature = if (cells.size > 8) {
+                                val text = cells[8].text().trim()
                                 if (text.isNotEmpty()) text else null
                             } else null
 
                             // Determine if acquisition or disposition
-                            val isAcquisition = if (cells.size > 5) {
-                                cells[5].text().trim().equals("A", ignoreCase = true)
-                            } else {
-                                code.contains("P", ignoreCase = true) || code.contains("A", ignoreCase = true)
-                            }
+                            val isAcquisition = acquiredDisposed.equals("A", ignoreCase = true) ||
+                                    (acquiredDisposed.isEmpty() && code.contains("P", ignoreCase = true))
 
-                            println("   ✅ Adding transaction: $title | Date: $date | Amount: $amount | Ownership: $ownershipForm")
+                            println("   ✅ Adding transaction: $title | Date: $date | Amount: $amount | Price: ${pricePerShare ?: "N/A"} | Shares After: $sharesOwned | Ownership: $ownershipForm")
 
                             transactions.add(
                                 InsiderTransaction(
@@ -230,17 +263,32 @@ class Form4Parser : BaseSecReportParser<Form4ParseResult>(SecReportType.FORM_4) 
                             val title = firstCell
                             val date = if (cells.size > 1) cells[1].text().trim() else ""
                             val code = if (cells.size > 2) cells[2].text().trim() else ""
-                            val amount = if (cells.size > 4) cells[4].text().trim() else cells.getOrNull(3)?.text()?.trim() ?: ""
-                            val pricePerShare = if (cells.size > 6) cells[6].text().trim().ifEmpty { null } else null
-                            val sharesOwned = if (cells.size > 7) cells[7].text().trim() else ""
-                            val ownershipForm = if (cells.size > 8) cells[8].text().trim().firstOrNull()?.toString() ?: "D" else "D"
-                            val nature = if (cells.size > 9) cells[9].text().trim().ifEmpty { null } else null
 
-                            val isAcquisition = if (cells.size > 5) {
-                                cells[5].text().trim().equals("A", ignoreCase = true)
-                            } else {
-                                code.contains("A", ignoreCase = true)
-                            }
+                            // Amount: Column 3
+                            val amount = if (cells.size > 3) {
+                                cells[3].text().trim().replace(",", "").replace("(", "").replace(")", "").filter { it.isDigit() || it == '.' }
+                            } else ""
+
+                            // Acquired/Disposed: Column 4
+                            val acquiredDisposed = if (cells.size > 4) cells[4].text().trim() else ""
+
+                            // Price Per Share: Column 5
+                            val pricePerShare = if (cells.size > 5) {
+                                val priceText = cells[5].text().trim().replace("$", "").replace(",", "")
+                                if (priceText.isNotEmpty() && priceText.any { it.isDigit() }) priceText else null
+                            } else null
+
+                            // Shares Owned: Column 6
+                            val sharesOwned = if (cells.size > 6) cells[6].text().trim().replace(",", "") else ""
+
+                            // Ownership Form: Column 7
+                            val ownershipForm = if (cells.size > 7) cells[7].text().trim().firstOrNull()?.toString() ?: "D" else "D"
+
+                            // Nature: Column 8
+                            val nature = if (cells.size > 8) cells[8].text().trim().ifEmpty { null } else null
+
+                            val isAcquisition = acquiredDisposed.equals("A", ignoreCase = true) ||
+                                    (acquiredDisposed.isEmpty() && code.contains("A", ignoreCase = true))
 
                             println("   ✅ Adding fallback transaction: $title")
 
