@@ -63,7 +63,12 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     /** Update search text and perform search */
     fun onSearchTextChange(query: String) {
-        val basicResults = secApiClient.searchTicker(query).map { it.toPapyrus() }
+        // Initial search results with loading state for top items
+        val basicResults =
+                secApiClient.searchTicker(query).mapIndexed { index, item ->
+                    val entry = item.toPapyrus()
+                    if (index < 10) entry.copy(isLoadingPrice = true) else entry
+                }
         appState = appState.copy(searchText = query, searchResults = basicResults)
 
         // Cancel previous fetching job
@@ -89,9 +94,15 @@ class MainViewModel(private val scope: CoroutineScope) {
                                                                 ticker.ticker
                                                         )
                                                 if (quote != null) {
-                                                    ticker.copy(currentPrice = quote.price)
+                                                    ticker.copy(
+                                                            currentPrice = quote.price,
+                                                            priceChange = quote.change,
+                                                            priceChangePercent =
+                                                                    quote.changePercent,
+                                                            isLoadingPrice = false
+                                                    )
                                                 } else {
-                                                    ticker
+                                                    ticker.copy(isLoadingPrice = false)
                                                 }
                                             }
                                         }

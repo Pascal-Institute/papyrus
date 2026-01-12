@@ -208,17 +208,45 @@ fun TickerCard(ticker: TickerEntry, onClick: () -> Unit, modifier: Modifier = Mo
                         overflow = TextOverflow.Ellipsis,
                         color = AppColors.OnSurfaceSecondary
                 )
-                if (ticker.currentPrice != null) {
+                if (ticker.isLoadingPrice) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(
+                                modifier = Modifier.size(12.dp),
+                                strokeWidth = 2.dp,
+                                color = AppColors.Primary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                                text = "Price: $${String.format("%,.2f", ticker.currentPrice)}",
+                                text = "Updating...",
+                                style = AppTypography.Caption,
+                                color = AppColors.OnSurfaceSecondary
+                        )
+                    }
+                } else if (ticker.currentPrice != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val change = ticker.priceChange ?: 0.0
+                        val color =
+                                when {
+                                    change > 0 -> AppColors.Success
+                                    change < 0 -> AppColors.Error
+                                    else -> AppColors.OnSurface
+                                }
+
+                        val priceText = "$${String.format("%,.2f", ticker.currentPrice)}"
+                        val changeText =
+                                if (ticker.priceChange != null) {
+                                    val sign = if (change > 0) "+" else ""
+                                    " ($sign${String.format("%,.2f", change)})"
+                                } else ""
+
+                        Text(
+                                text = "Price : $priceText$changeText",
                                 style = AppTypography.Body2,
-                                fontWeight = FontWeight.Bold, // Make price stand
-                                // out
-                                color = AppColors.OnSurface // Use neutral or
-                                // Success color
-                                )
+                                fontWeight = FontWeight.Bold,
+                                color = color
+                        )
                         if (ticker.marketCap != null) {
                             Text(
                                     text = " • Cap: ${ticker.marketCap}",

@@ -18,13 +18,20 @@ object MarketDataService {
     @Serializable
     data class ChartMeta(
             val regularMarketPrice: Double? = null,
+            val previousClose: Double? = null,
+            val chartPreviousClose: Double? = null,
             val currency: String? = null,
             val symbol: String? = null,
             val instrumentType: String? = null
     )
     @Serializable data class ChartError(val code: String, val description: String)
 
-    data class StockQuote(val price: Double, val currency: String)
+    data class StockQuote(
+            val price: Double,
+            val change: Double?,
+            val changePercent: Double?,
+            val currency: String
+    )
 
     suspend fun getStockPrice(ticker: String): StockQuote? =
             withContext(Dispatchers.IO) {
@@ -47,7 +54,15 @@ object MarketDataService {
                         val meta = response.chart?.result?.firstOrNull()?.meta
 
                         if (meta?.regularMarketPrice != null) {
-                            StockQuote(meta.regularMarketPrice, meta.currency ?: "USD")
+                            val price = meta.regularMarketPrice
+                            val prevClose = meta.previousClose ?: meta.chartPreviousClose
+                            val change = if (prevClose != null) price - prevClose else null
+                            val changePercent =
+                                    if (prevClose != null && prevClose != 0.0)
+                                            (change!! / prevClose) * 100
+                                    else null
+
+                            StockQuote(price, change, changePercent, meta.currency ?: "USD")
                         } else {
                             null
                         }

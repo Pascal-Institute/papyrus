@@ -500,7 +500,10 @@ data class TickerEntry(
         val ticker: String,
         val title: String,
         val currentPrice: Double? = null,
-        val marketCap: String? = null
+        val marketCap: String? = null,
+        val priceChange: Double? = null,
+        val priceChangePercent: Double? = null,
+        val isLoadingPrice: Boolean = false
 )
 
 @Serializable
