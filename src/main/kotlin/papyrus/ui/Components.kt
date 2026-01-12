@@ -238,7 +238,8 @@ fun TickerCard(ticker: TickerEntry, onClick: () -> Unit, modifier: Modifier = Mo
                         val changeText =
                                 if (ticker.priceChange != null) {
                                     val sign = if (change > 0) "+" else ""
-                                    " ($sign${String.format("%,.2f", change)})"
+                                    val percent = ticker.priceChangePercent ?: 0.0
+                                    " ($sign${String.format("%,.2f", change)} / $sign${String.format("%,.2f", percent)}%)"
                                 } else ""
 
                         Text(
