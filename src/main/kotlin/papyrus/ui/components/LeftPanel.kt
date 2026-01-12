@@ -3,7 +3,6 @@ package papyrus.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Divider
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -46,10 +45,7 @@ fun LeftPanel(
                                 .background(AppColors.Surface)
         ) {
                 // App Header
-                AppHeader(
-                        title = AppStrings.APP_TITLE,
-                        subtitle = AppStrings.APP_SUBTITLE
-                )
+                AppHeader(title = AppStrings.APP_TITLE, subtitle = AppStrings.APP_SUBTITLE)
 
                 // Search Box
                 Box(
@@ -77,39 +73,52 @@ fun LeftPanel(
                 }
 
                 // Content
-                if (appState.selectedTicker == null) {
-                        // Bookmarks and Search Results
-                        Column(modifier = Modifier.fillMaxSize()) {
-                                // Bookmark section (only shown when search is empty)
-                                if (appState.searchText.isEmpty() && bookmarks.isNotEmpty()) {
-                                        BookmarkHorizontalList(
-                                                bookmarks = bookmarks,
-                                                onTickerClick = onBookmarkedTickerClick,
-                                                onRemove = onRemoveBookmark
-                                        )
-                                }
-
-                                // Search Results
+                // Content
+                Box(modifier = Modifier.fillMaxSize()) {
+                        if (appState.searchText.isNotEmpty()) {
+                                // Search Results (Active Search) - Overrides Detail View
                                 SearchResultsList(
                                         results = appState.searchResults,
                                         onTickerSelected = onTickerSelected,
-                                        showEmptyState =
-                                                appState.searchText.isEmpty() && bookmarks.isEmpty()
+                                        showEmptyState = false
                                 )
+                        } else if (appState.selectedTicker != null) {
+                                // Company Detail & Filings
+                                CompanyFilingsPanel(
+                                        ticker = appState.selectedTicker,
+                                        filings = appState.submissions,
+                                        currentAnalyzingFiling = appState.currentAnalyzingFiling,
+                                        isBookmarked =
+                                                BookmarkManager.isBookmarked(
+                                                        appState.selectedTicker.cik
+                                                ),
+                                        onBackClick = onBackToSearch,
+                                        onBookmarkClick = {
+                                                onBookmarkClick(appState.selectedTicker)
+                                        },
+                                        onAnalyze = onAnalyze,
+                                        onOpenInBrowser = onOpenInBrowser
+                                )
+                        } else {
+                                // Home / Idle State
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                        // Bookmark section
+                                        if (bookmarks.isNotEmpty()) {
+                                                BookmarkHorizontalList(
+                                                        bookmarks = bookmarks,
+                                                        onTickerClick = onBookmarkedTickerClick,
+                                                        onRemove = onRemoveBookmark
+                                                )
+                                        }
+
+                                        // Empty Search State
+                                        SearchResultsList(
+                                                results = emptyList(),
+                                                onTickerSelected = onTickerSelected,
+                                                showEmptyState = true
+                                        )
+                                }
                         }
-                } else {
-                        // Company Detail & Filings
-                        CompanyFilingsPanel(
-                                ticker = appState.selectedTicker,
-                                filings = appState.submissions,
-                                currentAnalyzingFiling = appState.currentAnalyzingFiling,
-                                isBookmarked =
-                                        BookmarkManager.isBookmarked(appState.selectedTicker.cik),
-                                onBackClick = onBackToSearch,
-                                onBookmarkClick = { onBookmarkClick(appState.selectedTicker) },
-                                onAnalyze = onAnalyze,
-                                onOpenInBrowser = onOpenInBrowser
-                        )
                 }
         }
 }
