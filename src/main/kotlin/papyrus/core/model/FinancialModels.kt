@@ -206,6 +206,33 @@ enum class RiskSeverity {
     CRITICAL
 }
 
+/**
+ * Insider Trading Information from Form 4
+ *
+ * Contains details about insider transactions including who bought/sold shares
+ */
+@Serializable
+data class InsiderTradingInfo(
+        val reportingOwnerName: String?,
+        val reportingOwnerCik: String?,
+        val relationship: String, // e.g., "Director", "Officer", "10% Owner"
+        val transactions: List<InsiderTransactionSummary>
+)
+
+/**
+ * Summary of an insider transaction for display
+ */
+@Serializable
+data class InsiderTransactionSummary(
+        val transactionType: String, // "Purchase" or "Sale"
+        val securityTitle: String,
+        val transactionDate: String,
+        val sharesTransacted: String,
+        val pricePerShare: String?,
+        val totalValue: String?,
+        val sharesOwnedAfter: String
+)
+
 @Serializable
 data class BeginnerInsight(
         val title: String,
@@ -532,5 +559,8 @@ data class FinancialAnalysis(
         val aiDocumentSummary: DocumentSummary? = null,
         val aiSectionClassifications: Map<String, SectionClassification> = emptyMap(),
         val aiModelUsed: String? = null,
-        val aiProcessingTimeMs: Long? = null
+        val aiProcessingTimeMs: Long? = null,
+
+        // Form 4 Insider Trading Information
+        val insiderTradingInfo: List<InsiderTradingInfo> = emptyList()
 )

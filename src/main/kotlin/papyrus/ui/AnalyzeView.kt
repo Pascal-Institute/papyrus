@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -37,6 +38,8 @@ import papyrus.core.model.FinancialRatio
 import papyrus.core.model.FinancialTermExplanation
 import papyrus.core.model.GlossaryCategory
 import papyrus.core.model.HealthStatus
+import papyrus.core.model.InsiderTradingInfo
+import papyrus.core.model.InsiderTransactionSummary
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.RatioCategory
 import papyrus.core.model.XbrlCompanyFact
@@ -842,7 +845,7 @@ fun FinancialAnalysisPanel(
                         "Health Score" -> HealthScoreTab(analysis)
                         "Overview" -> FinancialOverviewTab(analysis)
                         "Insights" -> BeginnerInsightsTab(analysis)
-                        "Financials" -> FinancialsTab(analysis.ratios, analysis.metrics)
+                        "Financials" -> FinancialsTab(analysis)
                         "XBRL" -> XbrlTab(analysis)
                         "Raw Data" -> FinancialRawDataTab(analysis.rawContent, analysis)
                         else -> FinancialRawDataTab(analysis.rawContent, analysis)
@@ -2269,9 +2272,12 @@ private fun TermExplanationCard(term: FinancialTermExplanation) {
 
 /** Financials tab - comprehensive view of ratios and concrete financial metrics */
 @Composable
-private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialMetric>) {
+private fun FinancialsTab(analysis: FinancialAnalysis) {
         val scrollState = rememberScrollState()
         var showVisualization by remember { mutableStateOf(true) }
+        val ratios = analysis.ratios
+        val metrics = analysis.metrics
+        val insiderTradingInfo = analysis.insiderTradingInfo
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
                 // Toggle between visual and detailed view
@@ -2326,6 +2332,33 @@ private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialM
                         Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
                 }
 
+                // Insider Trading Information (Form 4)
+                if (insiderTradingInfo.isNotEmpty()) {
+                        Text(
+                                text = "👤 Insider Trading Activity (Form 4)",
+                                style = AppTypography.Headline3,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Primary,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Text(
+                                text = "Information about insider transactions including purchases and sales by company officers, directors, and major shareholders",
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        insiderTradingInfo.forEach { insider ->
+                                InsiderTradingCard(insider)
+                                Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+                        }
+
+                        Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
+                        Divider(color = AppColors.Divider, thickness = 2.dp)
+                        Spacer(modifier = Modifier.height(AppDimens.PaddingLarge))
+                }
+
                 // Financial Ratios (Calculated percentages and ratios)
                 if (ratios.isNotEmpty()) {
                         Text(
@@ -2351,7 +2384,7 @@ private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialM
                         }
                 }
 
-                if (ratios.isEmpty() && metrics.isEmpty()) {
+                if (ratios.isEmpty() && metrics.isEmpty() && insiderTradingInfo.isEmpty()) {
                         EmptyState(
                                 icon = Icons.Outlined.Analytics,
                                 title = "No Financial Data Found",
@@ -2359,6 +2392,160 @@ private fun FinancialsTab(ratios: List<FinancialRatio>, metrics: List<FinancialM
                                         "Unable to extract financial metrics or ratios from document."
                         )
                 }
+        }
+}
+
+/**
+ * Insider Trading Card
+ * Displays information about insider transactions from Form 4
+ */
+@Composable
+private fun InsiderTradingCard(insider: InsiderTradingInfo) {
+        Card(
+                modifier = Modifier.fillMaxSize(),
+                elevation = AppDimens.CardElevation,
+                shape = AppShapes.Medium,
+                backgroundColor = AppColors.Surface
+        ) {
+                Column(modifier = Modifier.padding(AppDimens.PaddingMedium)) {
+                        // Insider Information Header
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                                text = insider.reportingOwnerName ?: "Unknown",
+                                                style = AppTypography.Headline3,
+                                                fontWeight = FontWeight.Bold,
+                                                color = AppColors.OnSurface
+                                        )
+                                        Text(
+                                                text = insider.relationship,
+                                                style = AppTypography.Body2,
+                                                color = AppColors.OnSurfaceSecondary,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                        )
+                                        insider.reportingOwnerCik?.let { cik ->
+                                                Text(
+                                                        text = "CIK: $cik",
+                                                        style = AppTypography.Caption,
+                                                        color = AppColors.OnSurfaceSecondary,
+                                                        modifier = Modifier.padding(top = 2.dp)
+                                                )
+                                        }
+                                }
+                        }
+
+                        if (insider.transactions.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+                                Divider(color = AppColors.Divider)
+                                Spacer(modifier = Modifier.height(AppDimens.PaddingMedium))
+
+                                Text(
+                                        text = "Transactions (${insider.transactions.size})",
+                                        style = AppTypography.Subtitle2,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = AppColors.OnSurface,
+                                        modifier = Modifier.padding(bottom = 12.dp)
+                                )
+
+                                insider.transactions.forEach { transaction ->
+                                        InsiderTransactionRow(transaction)
+                                        Spacer(modifier = Modifier.height(AppDimens.PaddingSmall))
+                                }
+                        }
+                }
+        }
+}
+
+/**
+ * Individual Transaction Row
+ */
+@Composable
+private fun InsiderTransactionRow(transaction: InsiderTransactionSummary) {
+        val isPurchase = transaction.transactionType.contains("Purchase", ignoreCase = true) ||
+                         transaction.transactionType.contains("Acquisition", ignoreCase = true)
+        val isSale = transaction.transactionType.contains("Sale", ignoreCase = true) ||
+                     transaction.transactionType.contains("Disposition", ignoreCase = true)
+
+        val transactionColor = when {
+                isPurchase -> Color(0xFF4CAF50) // Green for purchases
+                isSale -> Color(0xFFF44336) // Red for sales
+                else -> AppColors.OnSurfaceSecondary
+        }
+
+        val transactionIcon = when {
+                isPurchase -> "\uD83D\uDFE2" // Green circle
+                isSale -> "\uD83D\uDD34" // Red circle
+                else -> "\uD83D\uDFE1" // Yellow circle
+        }
+
+        Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = 2.dp,
+                shape = RoundedCornerShape(8.dp),
+                backgroundColor = AppColors.Surface.copy(alpha = 0.5f)
+        ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Text(
+                                        text = "$transactionIcon ${transaction.transactionType}",
+                                        style = AppTypography.Subtitle2,
+                                        fontWeight = FontWeight.Bold,
+                                        color = transactionColor
+                                )
+                                Text(
+                                        text = transaction.transactionDate,
+                                        style = AppTypography.Caption,
+                                        color = AppColors.OnSurfaceSecondary
+                                )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Transaction Details
+                        TransactionDetailRow("Security", transaction.securityTitle)
+                        TransactionDetailRow("Shares Transacted", transaction.sharesTransacted)
+                        transaction.pricePerShare?.let {
+                                TransactionDetailRow("Price per Share", it)
+                        }
+                        transaction.totalValue?.let {
+                                TransactionDetailRow("Total Value", it, isBold = true)
+                        }
+                        TransactionDetailRow("Shares Owned After", transaction.sharesOwnedAfter)
+                }
+        }
+}
+
+/**
+ * Transaction detail row helper
+ */
+@Composable
+private fun TransactionDetailRow(label: String, value: String, isBold: Boolean = false) {
+        Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+                Text(
+                        text = "  • $label:",
+                        style = AppTypography.Body2,
+                        color = AppColors.OnSurfaceSecondary,
+                        modifier = Modifier.weight(1f)
+                )
+                Text(
+                        text = value,
+                        style = AppTypography.Body2,
+                        fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isBold) AppColors.OnSurface else AppColors.OnSurfaceSecondary,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                )
         }
 }
 
