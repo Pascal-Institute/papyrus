@@ -4,12 +4,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import papyrus.core.model.BookmarkedTicker
 import papyrus.core.model.FilingItem
 import papyrus.core.model.TickerEntry
 import papyrus.core.model.toPapyrus
 import papyrus.core.secApiClient
+import papyrus.core.service.MarketDataService
 import papyrus.core.state.AnalysisState
 import papyrus.core.state.AppState
 import papyrus.util.data.BookmarkManager
@@ -54,13 +59,55 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
     }
 
+    private var marketDataJob: Job? = null
+
     /** Update search text and perform search */
     fun onSearchTextChange(query: String) {
-        appState =
-                appState.copy(
-                        searchText = query,
-                        searchResults = secApiClient.searchTicker(query).map { it.toPapyrus() }
-                )
+        val basicResults = secApiClient.searchTicker(query).map { it.toPapyrus() }
+        appState = appState.copy(searchText = query, searchResults = basicResults)
+
+        // Cancel previous fetching job
+        marketDataJob?.cancel()
+
+        // Debounce and fetch market data for top results
+        if (basicResults.isNotEmpty()) {
+            marketDataJob =
+                    scope.launch {
+                        // Short delay to avoid spamming while typing
+                        delay(300)
+
+                        // Only fetch for visible items (e.g. top 10) to respect free API limits
+                        val topResults = basicResults.take(10)
+
+                        // Fetch concurrently
+                        val enrichedResults =
+                                topResults
+                                        .map { ticker ->
+                                            async {
+                                                val quote =
+                                                        MarketDataService.getStockPrice(
+                                                                ticker.ticker
+                                                        )
+                                                if (quote != null) {
+                                                    ticker.copy(currentPrice = quote.price)
+                                                } else {
+                                                    ticker
+                                                }
+                                            }
+                                        }
+                                        .awaitAll()
+
+                        // Update app state if relevant
+                        // We map the new prices back to the current results in the state
+                        val currentResults = appState.searchResults
+                        val updatedResults =
+                                currentResults.map { current ->
+                                    enrichedResults.find { it.ticker == current.ticker } ?: current
+                                }
+
+                        appState = appState.copy(searchResults = updatedResults)
+                    }
+        }
     }
 
     /** Handle ticker selection from search results */

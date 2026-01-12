@@ -220,8 +220,8 @@ data class InsiderTradingInfo(
 )
 
 /**
- * Form 144 - Notice of Proposed Sale of Securities
- * Information about planned sales of restricted or control securities
+ * Form 144 - Notice of Proposed Sale of Securities Information about planned sales of restricted or
+ * control securities
  */
 @Serializable
 data class ProposedSaleNotice(
@@ -236,9 +236,7 @@ data class ProposedSaleNotice(
         val remarks: String? = null
 )
 
-/**
- * Summary of an insider transaction for display
- */
+/** Summary of an insider transaction for display */
 @Serializable
 data class InsiderTransactionSummary(
         val transactionType: String, // "Purchase" or "Sale"
@@ -497,7 +495,13 @@ data class XbrlCompanyFact(
 // ========================================
 
 @Serializable
-data class TickerEntry(@SerialName("cik_str") val cik: Int, val ticker: String, val title: String)
+data class TickerEntry(
+        @SerialName("cik_str") val cik: Int,
+        val ticker: String,
+        val title: String,
+        val currentPrice: Double? = null,
+        val marketCap: String? = null
+)
 
 @Serializable
 data class SubmissionsRoot(
