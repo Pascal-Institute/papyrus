@@ -1,0 +1,126 @@
+# Detekt Configuration for Papyrus
+# Focus on preventing common compilation errors and maintaining code quality
+
+build:
+  maxIssues: -1 # Unlimited - just report, don't fail
+  excludeCorrectable: false
+  weights:
+    complexity: 2
+    LongParameterList: 1
+    style: 1
+    comments: 0
+
+config:
+  validation: true
+  warningsAsErrors: false
+  checkExhaustiveness: false
+
+console-reports:
+  active: true
+  exclude:
+    - "ProjectStatisticsReport"
+    - "ComplexityReport"
+    - "NotificationReport"
+
+output-reports:
+  active: true
+  exclude: []
+
+processors:
+  active: true
+
+complexity:
+  active: true
+  LongMethod:
+    active: true
+    threshold: 80 # More lenient for financial logic
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 10
+    ignoreDefaultParameters: true
+  ComplexMethod:
+    active: true
+    threshold: 20 # More lenient
+  TooManyFunctions:
+    active: false # We have large service classes
+
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: false # We use GlobalScope in some places intentionally
+  SuspendFunWithFlowReturnType:
+    active: true
+
+empty-blocks:
+  active: true
+  EmptyCatchBlock:
+    active: true
+    allowedExceptionNameRegex: "_|(ignore|expected).*"
+  EmptyFunctionBlock:
+    active: false # Interface methods can be empty
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: false # Sometimes we need to catch general exceptions
+  SwallowedException:
+    active: false # We log and handle exceptions appropriately
+  ExceptionRaisedInUnexpectedLocation:
+    active: true
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    excludes: ["**/test/**", "**/Test.kt"]
+  VariableNaming:
+    active: true
+    excludes: ["**/test/**"]
+  ClassNaming:
+    active: true
+  TopLevelPropertyNaming:
+    active: false # Allow constants with different naming
+
+performance:
+  active: true
+  SpreadOperator:
+    active: false # Not a real performance issue in our use cases
+
+potential-bugs:
+  active: true
+  UnsafeCast:
+    active: true
+  EqualsWithHashCodeExist:
+    active: true
+  HasPlatformType:
+    active: false # Platform types are okay when well-documented
+  NullableToStringCall:
+    active: true
+  LateinitUsage:
+    active: false # lateinit is okay for DI
+
+style:
+  active: true
+  MagicNumber:
+    active: false # Financial calculations have many constants
+  MaxLineLength:
+    active: true
+    maxLineLength: 150 # More lenient
+    excludeCommentStatements: true
+  ReturnCount:
+    active: false # Early returns are good practice
+  UnusedPrivateClass:
+    active: true
+  UnusedPrivateMember:
+    active: true
+  UseCheckOrError:
+    active: false # We use require/check appropriately
+  UseRequire:
+    active: false
+  ForbiddenComment:
+    active: false # Comments are okay
+  NewLineAtEndOfFile:
+    active: false
+  TrailingWhitespace:
+    active: false # IDE handles this

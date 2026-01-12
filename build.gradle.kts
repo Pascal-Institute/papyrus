@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.compose") version "1.7.3"
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
     kotlin("plugin.serialization") version "2.1.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.4"
 }
 
 repositories {
@@ -48,6 +49,53 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Kotlin 컴파일러 옵션: 타입 안정성 및 조기 에러 감지
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        // 경고를 무시하지 않고 명확히 처리하도록 강제
+        // allWarningsAsErrors.set(true)  // 준비되면 활성화
+
+        // Null safety 강화
+        freeCompilerArgs.add("-Xjsr305=strict")
+
+        // Progressive mode: 미래 Kotlin 버전의 breaking changes 미리 적용
+        // progressiveMode.set(true)
+    }
+}
+
+// Detekt 설정: 코드 품질 검사
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+
+    // 설정 파일이 있으면 사용
+    val configFile = file("$projectDir/config/detekt/detekt.yml")
+    if (configFile.exists()) {
+        config.setFrom(configFile)
+    }
+
+    // Baseline 파일은 optional
+    val baselineFile = file("$projectDir/config/detekt/baseline.xml")
+    if (baselineFile.exists()) {
+        baseline = baselineFile
+    }
+
+    // Detekt 실패 시 빌드를 중단하지 않음 (경고로만 처리)
+    ignoreFailures = true
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    reports {
+        html.required.set(true)  // HTML 리포트 (브라우저에서 확인)
+        xml.required.set(true)   // XML 리포트 (파싱 가능)
+        txt.required.set(true)   // 텍스트 리포트 (콘솔 출력)
+        sarif.required.set(true) // SARIF 리포트 (GitHub 통합)
+    }
+
+    // JVM 메모리 증가 (큰 프로젝트 분석용)
+    jvmTarget = "17"
 }
 
 compose.desktop {

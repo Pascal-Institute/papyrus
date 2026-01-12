@@ -6,47 +6,47 @@ A powerful Kotlin Compose Desktop application for analyzing SEC financial report
 
 ### 📊 **Intelligent Financial Analysis**
 
-- **Drag & Drop Support**: Drop any SEC report (**PDF, HTML, HTM, TXT**) directly into the application
-- **Automatic PDF Processing**: Seamless text extraction using Apache PDFBox
-- **Key Metrics Extraction**: Automatically extracts critical financial data:
-  - Revenue, Net Income, EPS (Earnings Per Share)
-  - Total Assets, Liabilities, Equity
-  - Cash Flow, Operating Income
-  - And more!
-- **Smart Parsing**: Intelligent detection of company name, report type (10-K, 10-Q, 8-K), and fiscal period
+-   **Drag & Drop Support**: Drop any SEC report (**PDF, HTML, HTM, TXT**) directly into the application
+-   **Automatic PDF Processing**: Seamless text extraction using Apache PDFBox
+-   **Key Metrics Extraction**: Automatically extracts critical financial data:
+    -   Revenue, Net Income, EPS (Earnings Per Share)
+    -   Total Assets, Liabilities, Equity
+    -   Cash Flow, Operating Income
+    -   And more!
+-   **Smart Parsing**: Intelligent detection of company name, report type (10-K, 10-Q, 8-K), and fiscal period
 
 ### 🤖 **AI-Powered Analysis** (Optional)
 
-- **AI Financial Insights**: Comprehensive AI-generated analysis using OpenRouter API
-- **Industry Comparisons**: Compare company performance against industry benchmarks
-- **Investment Recommendations**: AI-driven investment suggestions based on financial health
-- **Risk Assessment**: Automated evaluation of financial risks and opportunities
-- **Key Insights**: AI-extracted critical takeaways from financial reports
-- **Reanalysis Capability**: Re-run AI analysis on existing reports with one click
-- **Smart Caching**: Skips redundant AI calls for already-analyzed documents
+-   **AI Financial Insights**: Comprehensive AI-generated analysis using OpenRouter API
+-   **Industry Comparisons**: Compare company performance against industry benchmarks
+-   **Investment Recommendations**: AI-driven investment suggestions based on financial health
+-   **Risk Assessment**: Automated evaluation of financial risks and opportunities
+-   **Key Insights**: AI-extracted critical takeaways from financial reports
+-   **Reanalysis Capability**: Re-run AI analysis on existing reports with one click
+-   **Smart Caching**: Skips redundant AI calls for already-analyzed documents
 
 ### 🏥 **Financial Health Score**
 
-- **At-a-Glance Assessment**: Visual financial health scoring system (A+ to F)
-- **Strengths & Weaknesses**: Clear identification of financial strong points and areas for improvement
-- **Beginner-Friendly**: Simplified explanations designed for non-financial professionals
-- **Actionable Recommendations**: Concrete suggestions based on financial analysis
+-   **At-a-Glance Assessment**: Visual financial health scoring system (A+ to F)
+-   **Strengths & Weaknesses**: Clear identification of financial strong points and areas for improvement
+-   **Beginner-Friendly**: Simplified explanations designed for non-financial professionals
+-   **Actionable Recommendations**: Concrete suggestions based on financial analysis
 
 ### 🔍 **SEC EDGAR Integration**
 
-- **Company Search**: Search by ticker symbol or company name across all SEC registered entities
-- **Recent Filings Browser**: Browse recent filings (10-K, 10-Q, 8-K, DEF 14A, etc.)
-- **Direct Browser Access**: Open filings directly in SEC EDGAR website
-- **Quick Analysis**: Instant text analysis with keyword detection
-- **Bookmark Management**: Save favorite companies for quick access
-- **Recent Views**: Track recently viewed companies and filings
+-   **Company Search**: Search by ticker symbol or company name across all SEC registered entities
+-   **Recent Filings Browser**: Browse recent filings (10-K, 10-Q, 8-K, DEF 14A, etc.)
+-   **Direct Browser Access**: Open filings directly in SEC EDGAR website
+-   **Quick Analysis**: Instant text analysis with keyword detection
+-   **Bookmark Management**: Save favorite companies for quick access
+-   **Recent Views**: Track recently viewed companies and filings
 
 ### 🎨 **Modern User Experience**
 
-- **Clean Interface**: Emoji-free, professional UI design following AGENTS.md principles
-- **Intuitive Navigation**: Tab-based analysis view with clear categorization
-- **Real-time Updates**: Live status updates during document processing
-- **Error Handling**: Graceful error messages with retry capabilities
+-   **Clean Interface**: Emoji-free, professional UI design following AGENTS.md principles
+-   **Intuitive Navigation**: Tab-based analysis view with clear categorization
+-   **Real-time Updates**: Live status updates during document processing
+-   **Error Handling**: Graceful error messages with retry capabilities
 
 ## 📋 How to Use
 
@@ -117,9 +117,9 @@ src/main/kotlin/papyrus/
 
 ### Prerequisites
 
-- **Java 17 or higher** (JDK 17+)
-- **Internet connection** (for SEC API and AI features)
-- **OpenRouter API Key** (optional, for AI analysis features)
+-   **Java 17 or higher** (JDK 17+)
+-   **Internet connection** (for SEC API and AI features)
+-   **OpenRouter API Key** (optional, for AI analysis features)
 
 ### Using Gradle Wrapper (Recommended)
 
@@ -155,37 +155,37 @@ The built application will be in `build/compose/binaries/main/` directory.
 
 1. **Get an OpenRouter API Key**:
 
-   - Visit [OpenRouter](https://openrouter.ai/)
-   - Sign up for a free account
-   - Generate an API key from the dashboard
+    - Visit [OpenRouter](https://openrouter.ai/)
+    - Sign up for a free account
+    - Generate an API key from the dashboard
 
 2. **Configure in Papyrus**:
 
-   - Click the Settings icon (⚙️) in the top right
-   - Paste your API key
-   - Click "Save"
+    - Click the Settings icon (⚙️) in the top right
+    - Paste your API key
+    - Click "Save"
 
 3. **Alternative**: Set environment variable:
-   ```bash
-   export OPENROUTER_API_KEY="your-api-key-here"
-   ```
+    ```bash
+    export OPENROUTER_API_KEY="your-api-key-here"
+    ```
 
 ### Settings Location
 
 Application settings are stored in:
 
-- **Windows**: `%USERPROFILE%\.papyrus\settings.properties`
-- **macOS/Linux**: `~/.papyrus/settings.properties`
+-   **Windows**: `%USERPROFILE%\.papyrus\settings.properties`
+-   **macOS/Linux**: `~/.papyrus/settings.properties`
 
 ## 🛠️ Technologies
 
-- **Kotlin** 1.9+
-- **Compose Multiplatform** for Desktop UI
-- **Ktor** for HTTP API clients
-- **Apache PDFBox** for PDF text extraction
-- **Kotlinx Serialization** for JSON parsing
-- **OpenRouter API** for AI-powered analysis
-- **Gradle** build system
+-   **Kotlin** 1.9+
+-   **Compose Multiplatform** for Desktop UI
+-   **Ktor** for HTTP API clients
+-   **Apache PDFBox** for PDF text extraction
+-   **Kotlinx Serialization** for JSON parsing
+-   **OpenRouter API** for AI-powered analysis
+-   **Gradle** build system
 
 ## 📝 Development Principles
 
@@ -200,19 +200,114 @@ This project follows the principles outlined in [AGENTS.md](AGENTS.md):
 
 Contributions are welcome! Please ensure your code follows the AGENTS.md principles:
 
-- Clear, self-explanatory variable and function names
-- Minimal abstraction unless necessary
-- Comments only when the code cannot be self-documenting
+-   Clear, self-explanatory variable and function names
+-   Minimal abstraction unless necessary
+-   Comments only when the code cannot be self-documenting
 
-## 📄 License
+## �️ Development Tools
+
+### Code Quality & Compilation Error Prevention
+
+To minimize compilation errors as the project grows, we use several tools:
+
+#### 1. **Detekt** (Static Code Analysis)
+
+Catches potential issues before compilation:
+
+```bash
+# Run Detekt analysis
+.\gradlew.bat detekt
+
+# View report
+start build\reports\detekt\detekt.html
+
+# Or use helper script (recommended)
+.\check-code-quality.ps1
+
+# Load helper functions for detailed analysis
+. .\detekt-helpers.ps1
+Get-DetektSummary        # Show summary
+Export-DetektReport      # Export to JSON
+```
+
+**Quick Commands** (after loading detekt-helpers.ps1):
+
+```powershell
+detekt-run      # Run analysis
+detekt-show     # Show summary
+detekt-report   # Open HTML report
+detekt-export   # Export to JSON for AI analysis
+```
+
+#### 2. **Incremental Compilation Check**
+
+Compile before committing:
+
+```bash
+# Quick compile check
+.\gradlew.bat compileKotlin compileTestKotlin
+
+# Full build with tests
+.\gradlew.bat build
+```
+
+#### 3. **Pre-commit Hook** (Recommended)
+
+Automatically check code before each commit:
+
+**Windows (PowerShell)**:
+
+```powershell
+# Copy pre-commit hook
+Copy-Item pre-commit-hook.ps1 .git\hooks\pre-commit.ps1
+
+# Make it executable (if needed)
+# Git will automatically run this before commits
+```
+
+**Linux/Mac**:
+
+```bash
+# Copy and make executable
+cp pre-commit-hook.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+#### 4. **IDE Setup for Error Prevention**
+
+**IntelliJ IDEA Settings**:
+
+-   Enable "Run inspections on file save"
+-   Set "Kotlin Compiler Warnings" to Error level
+-   Enable "Auto-import" for Kotlin
+-   Use "Optimize imports on save"
+
+### Common Compilation Error Patterns & Solutions
+
+| Error Pattern          | Solution                                             |
+| ---------------------- | ---------------------------------------------------- |
+| Unresolved reference   | Run `.\gradlew.bat build --refresh-dependencies`     |
+| Type mismatch          | Check nullable types (`?`) and use safe calls (`?.`) |
+| Missing import         | Enable auto-import in IDE or use `Alt+Enter`         |
+| Module not found       | Sync Gradle: `.\gradlew.bat --refresh-dependencies`  |
+| Test compilation fails | Ensure test dependencies are in `testImplementation` |
+
+### Recommended Workflow
+
+1. **Before making changes**: `.\gradlew.bat compileKotlin`
+2. **During development**: Let IDE auto-compile in background
+3. **Before commit**: Run `.\pre-commit-hook.ps1` (or let Git hook do it)
+4. **Before push**: `.\gradlew.bat build` (full build + tests)
+
+## �📄 License
 
 This project is open source and available under the MIT License.
 
 ## 🔗 Resources
 
-- [SEC EDGAR Search](https://www.sec.gov/edgar/search/)
-- [OpenRouter AI](https://openrouter.ai/)
-- [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/)
+-   [SEC EDGAR Search](https://www.sec.gov/edgar/search/)
+-   [OpenRouter AI](https://openrouter.ai/)
+-   [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/)
 
 ## 📧 Support
 
@@ -235,18 +330,18 @@ For issues, questions, or feature requests, please open an issue on GitHub.
 
 ## Technical Details
 
-- **Framework**: Jetpack Compose for Desktop (v1.6.1)
-- **Language**: Kotlin 1.9.23
-- **HTTP Client**: Ktor 2.3.7
-- **Serialization**: kotlinx.serialization
-- **Drag & Drop**: Native Java AWT integration
+-   **Framework**: Jetpack Compose for Desktop (v1.6.1)
+-   **Language**: Kotlin 1.9.23
+-   **HTTP Client**: Ktor 2.3.7
+-   **Serialization**: kotlinx.serialization
+-   **Drag & Drop**: Native Java AWT integration
 
 ## Notes
 
-- The financial analyzer uses pattern matching to extract metrics from HTML documents
-- Accuracy depends on document structure and formatting
-- For best results, use official SEC EDGAR HTML filings
-- User-Agent is configured for SEC compliance; update with your contact info for production use
+-   The financial analyzer uses pattern matching to extract metrics from HTML documents
+-   Accuracy depends on document structure and formatting
+-   For best results, use official SEC EDGAR HTML filings
+-   User-Agent is configured for SEC compliance; update with your contact info for production use
 
 ## License
 
