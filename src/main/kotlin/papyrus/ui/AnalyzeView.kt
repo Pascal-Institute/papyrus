@@ -278,6 +278,52 @@ private fun formatMetricName(name: String): String {
         }
 }
 
+/** Get explanation for risk category to help users understand */
+private fun getRiskCategoryExplanation(category: String): String {
+        return when (category.lowercase()) {
+                "financial" -> "재무적 위험: 현금흐름, 부채, 수익성 등 재무 건전성과 관련된 리스크"
+                "operational" -> "운영 리스크: 사업 운영, 생산, 공급망 등 일상 운영과 관련된 리스크"
+                "market" -> "시장 리스크: 경쟁, 시장 변화, 수요 감소 등 시장 환경 변화 리스크"
+                "regulatory" -> "규제 리스크: 법규 준수, 정책 변화, 규제 강화 등과 관련된 리스크"
+                "legal" -> "법률 리스크: 소송, 계약 분쟁, 지적재산권 등 법적 문제 리스크"
+                "technology" -> "기술 리스크: 기술 변화, 혁신 실패, 사이버 보안 등 기술 관련 리스크"
+                "strategic" -> "전략 리스크: 사업 방향, 인수합병, 신규 사업 등 전략적 의사결정 리스크"
+                "reputational" -> "평판 리스크: 브랜드 이미지, 고객 신뢰, 언론 보도 등 평판 관련 리스크"
+                else -> ""
+        }
+}
+
+/** Get detailed model information for display */
+private fun getModelDetails(aiModelUsed: String?): String {
+        if (aiModelUsed == null) return ""
+
+        return when {
+                aiModelUsed.contains("djl-pytorch") -> {
+                        val parts = aiModelUsed.split("|").map { it.trim() }
+                        val modelInfo = mutableListOf<String>()
+
+                        // Extract specific model names
+                        parts.forEach { part ->
+                                when {
+                                        part.contains("distilbert") -> modelInfo.add("DistilBERT (NLP)")
+                                        part.contains("bert") && !part.contains("distilbert") -> modelInfo.add("BERT (NLP)")
+                                        part.contains("sentiment") -> modelInfo.add("Sentiment Analysis")
+                                        part.contains("ner") || part.contains("entity") -> modelInfo.add("Entity Recognition")
+                                        part.contains("classification") -> modelInfo.add("Text Classification")
+                                }
+                        }
+
+                        if (modelInfo.isNotEmpty()) {
+                                modelInfo.joinToString(" + ")
+                        } else {
+                                "Deep Learning Models"
+                        }
+                }
+                aiModelUsed.contains("rule-based") -> "Rule-based Analysis"
+                else -> ""
+        }
+}
+
 /** Get Korean explanation for financial terms */
 private fun getFinancialTermExplanation(englishName: String): String? {
         return when (englishName.lowercase().trim()) {
@@ -4230,17 +4276,28 @@ private fun AiAnalysisContent(analysis: FinancialAnalysis) {
                                                 modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                                text = analysis.aiModelUsed ?: "AI Ready",
-                                                style = AppTypography.Caption,
-                                                color =
-                                                        if (analysis.aiModelUsed?.contains("GPU") ==
-                                                                        true
+                                        Column {
+                                                Text(
+                                                        text = analysis.aiModelUsed ?: "AI Ready",
+                                                        style = AppTypography.Caption,
+                                                        color =
+                                                                if (analysis.aiModelUsed?.contains("GPU") ==
+                                                                                true
+                                                                )
+                                                                        Color(0xFF2E7D32)
+                                                                else AppColors.OnSurfaceSecondary,
+                                                        fontWeight = FontWeight.Bold
+                                                )
+                                                // Show model details
+                                                val modelDetails = getModelDetails(analysis.aiModelUsed)
+                                                if (modelDetails.isNotEmpty()) {
+                                                        Text(
+                                                                text = modelDetails,
+                                                                style = AppTypography.Caption.copy(fontSize = 10.sp),
+                                                                color = AppColors.OnSurfaceSecondary.copy(alpha = 0.7f)
                                                         )
-                                                                Color(0xFF2E7D32)
-                                                        else AppColors.OnSurfaceSecondary,
-                                                fontWeight = FontWeight.Bold
-                                        )
+                                                }
+                                        }
                                 }
                         }
                 }
@@ -4542,6 +4599,13 @@ private fun AiAnalysisContent(analysis: FinancialAnalysis) {
                                 modifier = Modifier.padding(vertical = 12.dp)
                         )
 
+                        Text(
+                                text = "AI 모델이 문서에서 감지한 잠재적 위험 요소입니다. 투자 의사결정 시 참고하세요.",
+                                style = AppTypography.Body2,
+                                color = AppColors.OnSurfaceSecondary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                        )
+
                         analysis.aiRiskAnalysis.chunked(2).forEach { rowRisks ->
                                 Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -4671,6 +4735,18 @@ private fun AiAnalysisContent(analysis: FinancialAnalysis) {
                                                                                         4.dp
                                                                                 )
                                                                 )
+
+                                                                // Category explanation
+                                                                val categoryExplanation = getRiskCategoryExplanation(risk.category)
+                                                                if (categoryExplanation.isNotEmpty()) {
+                                                                        Text(
+                                                                                text = categoryExplanation,
+                                                                                style = AppTypography.Caption,
+                                                                                color = AppColors.OnSurfaceSecondary,
+                                                                                modifier = Modifier.padding(vertical = 4.dp)
+                                                                        )
+                                                                }
+
                                                                 val sentimentKor =
                                                                         when (risk.sentiment
                                                                                         .sentiment

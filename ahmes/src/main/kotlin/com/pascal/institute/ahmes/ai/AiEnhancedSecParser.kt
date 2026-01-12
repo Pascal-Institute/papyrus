@@ -64,7 +64,28 @@ object AiEnhancedSecParser {
 
         val content = parseResult.cleanedContent.take(options.maxTextLength)
         val isAiAvailable = DjlModelManager.isAvailable()
-        val aiModel = if (isAiAvailable) "djl-pytorch" else "rule-based"
+
+        // Build detailed model information
+        val modelComponents = mutableListOf<String>()
+        if (isAiAvailable) {
+            modelComponents.add("djl-pytorch")
+            if (options.enableSentimentAnalysis) {
+                modelComponents.add("distilbert-sentiment")
+            }
+            if (options.enableEntityExtraction) {
+                modelComponents.add("ner-entity-extraction")
+            }
+            if (options.enableSectionClassification) {
+                modelComponents.add("text-classification")
+            }
+            if (DjlModelManager.isGpuAvailable()) {
+                modelComponents.add("GPU-accelerated")
+            }
+        } else {
+            modelComponents.add("rule-based")
+        }
+
+        val aiModel = modelComponents.joinToString(" | ")
 
         logger.info("Enhancing parse result with AI (model: $aiModel)")
 
