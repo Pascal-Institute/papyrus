@@ -217,32 +217,38 @@ object EnhancedFinancialParser {
 
 ## 🔧 Implementation Steps
 
-### **Phase 1: Extract Pattern Definitions** ✅
-1. ✅ Create `FinancialMetricPatterns.kt`
-2. ✅ Move `PatternDef` and `allPatterns`
-3. ✅ Update imports in `EnhancedFinancialParser.kt`
+### Phase 1: Extract Pattern Definitions ✅ (Completed)
+- **Goal**: Move regex patterns and constants to `FinancialMetricPatterns.kt`.
+- **Status**: ✅ **COMPLETED** (Jan 14, 2026)
+- **Outcome**: `FinancialMetricPatterns.kt` created. `EnhancedFinancialParser.kt` reduced by ~100 lines.
 
-### **Phase 2: Extract Metric Extraction** 📝
-1. Create `FinancialMetricExtractor.kt`
-2. Move metric extraction logic
-3. Move helper functions (detectUnit, detectPeriod, parseNumber)
-4. Update `EnhancedFinancialParser` to delegate
-5. Run tests to ensure no regressions
+### Phase 2: Extract Metric Extraction Logic ✅ (Completed)
+- **Goal**: Move specific metric search and parsing logic to `FinancialMetricExtractor.kt` (implemented as `ParsingHelpers.kt`).
+- **Status**: ✅ **COMPLETED** (Jan 14, 2026)
+- **Actions**:
+  - Created `ParsingHelpers.kt` for common utility functions (cleanHtml, detectPeriod, etc.)
+  - Made helper functions `internal` to allow sharing.
+  - *Note: Originally planned as `FinancialMetricExtractor`, but `ParsingHelpers` was a more foundational first step.*
 
-### **Phase 3: Extract Statement Parsing** 📝
-1. Create `FinancialStatementParser.kt`
-2. Move statement parsing logic
-3. Move category inference logic
-4. Update `EnhancedFinancialParser` to delegate
-5. Run tests
+### Phase 3: Extract Statement Parsing Logic ✅ (Completed)
+- **Goal**: Move income/balance/cash flow parsing to `FinancialStatementParser.kt`.
+- **Status**: ✅ **COMPLETED** (Jan 14, 2026)
+- **Actions**:
+  - Created `FinancialStatementParser.kt`.
+  - Moved `parseFinancialStatements` and related logic.
+  - Delegated logic in `EnhancedFinancialParser`.
 
-### **Phase 4: Extract Risk Analysis** 📝
-1. Create `RiskFactorAnalyzer.kt`
-2. Move risk factor logic
-3. Update `EnhancedFinancialParser` to delegate
-5. Run tests
+### Phase 4: Extract Risk Analysis Logic ✅ (Completed)
+- **Goal**: Move risk factor parsing and analysis to `RiskFactorAnalyzer.kt`.
+- **Status**: ✅ **COMPLETED** (Jan 14, 2026)
+- **Outcome**:
+  - Created `RiskFactorAnalyzer.kt`.
+  - Implemented multi-strategy parsing (Section extraction -> Paragraph splitting -> Global regex fallback).
+  - Verified with Joby 10-K integration tests.
 
-### **Phase 5: Extract Ratio Calculation** 📝
+### Phase 5: Extract Ratio Calculation 🟡 (In Progress)
+- **Goal**: Move ratio calculation logic to `FinancialRatioCalculator.kt`.
+- **Target File**: `com.pascal.institute.ahmes.parser.FinancialRatioCalculator`
 1. Create `FinancialRatioCalculator.kt`
 2. Move ratio calculation logic
 3. Move health assessment functions

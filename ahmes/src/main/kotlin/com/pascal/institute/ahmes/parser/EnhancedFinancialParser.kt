@@ -326,57 +326,8 @@ object EnhancedFinancialParser {
 
     /** Parse risk factors from SEC document */
     fun parseRiskFactors(content: String): List<RiskFactor> {
-        logger.info { "Starting risk factor parsing: contentLength=${content.length}" }
-
-        val risks = mutableListOf<RiskFactor>()
-        val cleanText = cleanHtml(content)
-
-        val riskSection = extractSection(cleanText, listOf("RISK FACTORS", "Item 1A"))
-
-        if (riskSection == null) {
-            logger.warn { "Risk Factors section not found in document" }
-            return risks
-        }
-
-        logger.debug { "Risk Factors section found: length=${riskSection.length}" }
-
-        val riskPatterns =
-                listOf(
-                        Regex(
-                                """(?i)(?:^|\n)\s*([A-Z][^.\n]{10,100})\s*[-–—.]\s*([^\n]{50,500})"""
-                        ),
-                        Regex("""(?i)(?:^|\n)\s*•\s*([^\n]{20,200})""")
-                )
-
-        for (pattern in riskPatterns) {
-            val matches = pattern.findAll(riskSection)
-            for (match in matches.take(15)) {
-                val title = match.groupValues.getOrElse(1) { match.value }.trim()
-                val summary = match.groupValues.getOrElse(2) { "" }.trim()
-
-                val category = categorizeRisk(title + " " + summary)
-                val severity = assessRiskSeverity(title + " " + summary)
-
-                risks.add(
-                        RiskFactor(
-                                title = title.take(100),
-                                summary = summary.take(300),
-                                category = category,
-                                severity = severity
-                        )
-                )
-
-                logger.trace {
-                    "Risk factor: category=$category, severity=$severity, title='${title.take(50)}...'"
-                }
-            }
-        }
-
-        val result = risks.distinctBy { it.title }.take(10)
-        logger.info {
-            "Risk factor parsing complete: ${result.size} unique risks (${risks.size} before deduplication)"
-        }
-        return result
+        // Delegated to RiskFactorAnalyzer (Phase 4)
+        return RiskFactorAnalyzer.parseRiskFactors(content)
     }
 
     /** Calculate financial ratios from metrics */
@@ -646,40 +597,7 @@ object EnhancedFinancialParser {
             metrics: List<ExtendedFinancialMetric>
     ): List<ExtendedFinancialMetric> = ParsingHelpers.deduplicateMetrics(metrics)
 
-    private fun categorizeRisk(text: String): RiskCategory {
-        val lowerText = text.lowercase()
-        return when {
-            lowerText.contains("market") || lowerText.contains("economic") -> RiskCategory.MARKET
-            lowerText.contains("operation") || lowerText.contains("supply chain") ->
-                    RiskCategory.OPERATIONAL
-            lowerText.contains("debt") ||
-                    lowerText.contains("credit") ||
-                    lowerText.contains("financial") -> RiskCategory.FINANCIAL
-            lowerText.contains("regulat") || lowerText.contains("compliance") ->
-                    RiskCategory.REGULATORY
-            lowerText.contains("competi") -> RiskCategory.COMPETITIVE
-            lowerText.contains("technolog") || lowerText.contains("cyber") ->
-                    RiskCategory.TECHNOLOGY
-            lowerText.contains("legal") || lowerText.contains("litigation") -> RiskCategory.LEGAL
-            lowerText.contains("environment") || lowerText.contains("climate") ->
-                    RiskCategory.ENVIRONMENTAL
-            lowerText.contains("geopolit") || lowerText.contains("international") ->
-                    RiskCategory.GEOPOLITICAL
-            else -> RiskCategory.OTHER
-        }
-    }
-
-    private fun assessRiskSeverity(text: String): RiskSeverity {
-        val lowerText = text.lowercase()
-        return when {
-            lowerText.contains("material adverse") || lowerText.contains("significant risk") ->
-                    RiskSeverity.HIGH
-            lowerText.contains("may adversely") || lowerText.contains("could harm") ->
-                    RiskSeverity.MEDIUM
-            lowerText.contains("minor") || lowerText.contains("limited impact") -> RiskSeverity.LOW
-            else -> RiskSeverity.MEDIUM
-        }
-    }
+    // Risk classification methods moved to RiskFactorAnalyzer (Phase 4)
 
     private fun createRatio(
             name: String,
