@@ -52,8 +52,10 @@ dependencies {
     // CUDA 12.4 native library (compatible with CUDA 12.2)
     runtimeOnly("ai.djl.pytorch:pytorch-native-cu124:2.5.1:win-x86_64")
 
-    // Logging
+    // Logging (AGENTS.md Principle 7: Radical Truth)
     implementation("org.slf4j:slf4j-api:2.0.16")
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.16")
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")

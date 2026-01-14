@@ -2,6 +2,9 @@
 
 import com.pascal.institute.ahmes.model.*
 import com.pascal.institute.ahmes.parser.*
+import mu.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * 10-K Annual Report Parser
@@ -15,53 +18,90 @@ import com.pascal.institute.ahmes.parser.*
 class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM_10K) {
 
     override fun parseHtml(htmlContent: String, metadata: SecReportMetadata): Form10KParseResult {
+        logger.info {
+            "Starting 10-K HTML parsing: cik=${metadata.cik}, accessionNumber=${metadata.accessionNumber}, contentLength=${htmlContent.length}"
+        }
         val cleanedContent = cleanHtml(htmlContent)
         return parseContent(cleanedContent, htmlContent, metadata)
     }
 
     override fun parseText(textContent: String, metadata: SecReportMetadata): Form10KParseResult {
+        logger.info {
+            "Starting 10-K text parsing: cik=${metadata.cik}, accessionNumber=${metadata.accessionNumber}, contentLength=${textContent.length}"
+        }
         return parseContent(textContent, textContent, metadata)
     }
 
     private fun parseContent(
-        cleanedContent: String,
-        rawContent: String,
-        metadata: SecReportMetadata
+            cleanedContent: String,
+            rawContent: String,
+            metadata: SecReportMetadata
     ): Form10KParseResult {
+        logger.debug { "Extracting sections from 10-K document" }
         val sections = extractSections(cleanedContent)
+        logger.debug { "Extracted ${sections.size} sections: ${sections.keys}" }
 
-        return Form10KParseResult(
-            metadata = metadata,
-            rawContent = rawContent,
-            sections = sections,
-            businessDescription = sections["Item 1"] ?: sections["ITEM 1"],
-            riskFactors = extractRiskFactors(cleanedContent),
-            properties = sections["Item 2"] ?: sections["ITEM 2"],
-            legalProceedings = sections["Item 3"] ?: sections["ITEM 3"],
-            mdAndA = extractMdAndA(cleanedContent),
-            financialStatements = extractFinancialStatements(cleanedContent),
-            controlsAndProcedures = sections["Item 9A"] ?: sections["ITEM 9A"],
-            executiveCompensation = sections["Item 11"] ?: sections["ITEM 11"],
-            directorInfo = sections["Item 10"] ?: sections["ITEM 10"],
-            exhibits = extractExhibits(cleanedContent)
-        )
+        logger.debug { "Extracting risk factors" }
+        val riskFactors = extractRiskFactors(cleanedContent)
+        logger.debug { "Extracted ${riskFactors.size} risk factors" }
+
+        logger.debug { "Extracting MD&A section" }
+        val mdAndA = extractMdAndA(cleanedContent)
+        logger.debug { "MD&A extraction ${if (mdAndA != null) "successful" else "failed"}" }
+
+        logger.debug { "Extracting financial statements" }
+        val financialStmts = extractFinancialStatements(cleanedContent)
+        logger.debug {
+            "Financial statements extraction ${if (financialStmts != null) "successful" else "failed"}"
+        }
+
+        logger.debug { "Extracting exhibits" }
+        val exhibits = extractExhibits(cleanedContent)
+        logger.debug { "Extracted ${exhibits.size} exhibits" }
+
+        val result =
+                Form10KParseResult(
+                        metadata = metadata,
+                        rawContent = rawContent,
+                        sections = sections,
+                        businessDescription = sections["Item 1"] ?: sections["ITEM 1"],
+                        riskFactors = riskFactors,
+                        properties = sections["Item 2"] ?: sections["ITEM 2"],
+                        legalProceedings = sections["Item 3"] ?: sections["ITEM 3"],
+                        mdAndA = mdAndA,
+                        financialStatements = financialStmts,
+                        controlsAndProcedures = sections["Item 9A"] ?: sections["ITEM 9A"],
+                        executiveCompensation = sections["Item 11"] ?: sections["ITEM 11"],
+                        directorInfo = sections["Item 10"] ?: sections["ITEM 10"],
+                        exhibits = exhibits
+                )
+
+        logger.info {
+            "10-K parsing complete: sections=${sections.size}, risks=${riskFactors.size}, exhibits=${exhibits.size}"
+        }
+        return result
     }
 
     override fun extractSections(content: String): Map<String, String> {
-        val itemPatterns = Form10KItem.values().map { item ->
-            Regex(
-                "(?i)item\\s+${Regex.escape(item.itemNumber)}[.:\\-\\s]+${item.title}",
-                RegexOption.IGNORE_CASE
-            )
-        }
+        val itemPatterns =
+                Form10KItem.values().map { item ->
+                    Regex(
+                            "(?i)item\\s+${Regex.escape(item.itemNumber)}[.:\\-\\s]+${item.title}",
+                            RegexOption.IGNORE_CASE
+                    )
+                }
 
         val headerMatches = findSectionHeader(content, itemPatterns)
 
-        val sections = extractSectionsFromHeaderMatches(content, headerMatches) { _, headerText ->
-            val itemMatch = Regex("(?i)item\\s+(\\d+[a-z]?)").find(headerText)
-            val itemNumber = itemMatch?.groupValues?.get(1)?.uppercase() ?: return@extractSectionsFromHeaderMatches null
-            "Item $itemNumber"
-        }.toMutableMap()
+        val sections =
+                extractSectionsFromHeaderMatches(content, headerMatches) { _, headerText ->
+                            val itemMatch = Regex("(?i)item\\s+(\\d+[a-z]?)").find(headerText)
+                            val itemNumber =
+                                    itemMatch?.groupValues?.get(1)?.uppercase()
+                                            ?: return@extractSectionsFromHeaderMatches null
+                            "Item $itemNumber"
+                        }
+                        .toMutableMap()
 
         extractPartSections(content, sections)
 
@@ -77,11 +117,12 @@ class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM
             val partNumber = match.groupValues[1].uppercase()
 
             val startIndex = match.range.first
-            val endIndex = if (i < matches.size - 1) {
-                matches[i + 1].range.first
-            } else {
-                null
-            }
+            val endIndex =
+                    if (i < matches.size - 1) {
+                        matches[i + 1].range.first
+                    } else {
+                        null
+                    }
 
             val sectionContent = extractSection(content, startIndex, endIndex)
             sections["Part $partNumber"] = sectionContent
@@ -97,18 +138,23 @@ class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM
         val policies = extractCriticalPolicies(mdaSection)
 
         return ManagementDiscussion(
-            keyBusinessDrivers = listOf(execSummary, results),
-            marketConditions = liquidity,
-            futureOutlook = "See MD&A section for details",
-            criticalAccountingPolicies = listOf(policies)
+                keyBusinessDrivers = listOf(execSummary, results),
+                marketConditions = liquidity,
+                futureOutlook = "See MD&A section for details",
+                criticalAccountingPolicies = listOf(policies)
         )
     }
 
     private fun extractExecutiveSummary(mdaContent: String): String {
-        val summaryPattern = Regex("(?i)(overview|executive\\s+summary|introduction)[.:\\-\\s]*", RegexOption.IGNORE_CASE)
+        val summaryPattern =
+                Regex(
+                        "(?i)(overview|executive\\s+summary|introduction)[.:\\-\\s]*",
+                        RegexOption.IGNORE_CASE
+                )
         val match = summaryPattern.find(mdaContent) ?: return mdaContent.take(1000)
 
-        val nextSectionPattern = Regex("(?i)(results\\s+of\\s+operations|liquidity)", RegexOption.IGNORE_CASE)
+        val nextSectionPattern =
+                Regex("(?i)(results\\s+of\\s+operations|liquidity)", RegexOption.IGNORE_CASE)
         val endMatch = nextSectionPattern.find(mdaContent, match.range.last)
 
         val summary = extractSection(mdaContent, match.range.first, endMatch?.range?.first)
@@ -126,17 +172,23 @@ class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM
     }
 
     private fun extractLiquiditySection(mdaContent: String): String {
-        val pattern = Regex("(?i)liquidity\\s+(and\\s+)?capital\\s+resources", RegexOption.IGNORE_CASE)
+        val pattern =
+                Regex("(?i)liquidity\\s+(and\\s+)?capital\\s+resources", RegexOption.IGNORE_CASE)
         val match = pattern.find(mdaContent) ?: return ""
 
-        val endPattern = Regex("(?i)(critical\\s+accounting|contractual\\s+obligations)", RegexOption.IGNORE_CASE)
+        val endPattern =
+                Regex(
+                        "(?i)(critical\\s+accounting|contractual\\s+obligations)",
+                        RegexOption.IGNORE_CASE
+                )
         val endMatch = endPattern.find(mdaContent, match.range.last)
 
         return extractSection(mdaContent, match.range.first, endMatch?.range?.first).take(2000)
     }
 
     private fun extractCriticalPolicies(mdaContent: String): String {
-        val pattern = Regex("(?i)critical\\s+accounting\\s+(policies|estimates)", RegexOption.IGNORE_CASE)
+        val pattern =
+                Regex("(?i)critical\\s+accounting\\s+(policies|estimates)", RegexOption.IGNORE_CASE)
         val match = pattern.find(mdaContent) ?: return ""
 
         return extractSection(mdaContent, match.range.first, null).take(2000)
@@ -145,7 +197,8 @@ class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM
     private fun extractExhibits(content: String): List<String> {
         val exhibits = mutableListOf<String>()
 
-        val exhibitPattern = Regex("(?i)exhibit\\s+(\\d+\\.\\d+)[.:\\-\\s]*([^\n]+)", RegexOption.IGNORE_CASE)
+        val exhibitPattern =
+                Regex("(?i)exhibit\\s+(\\d+\\.\\d+)[.:\\-\\s]*([^\n]+)", RegexOption.IGNORE_CASE)
         exhibitPattern.findAll(content).forEach { match ->
             val exhibitNumber = match.groupValues[1]
             val exhibitDescription = match.groupValues[2].trim().take(200)
@@ -158,32 +211,39 @@ class Form10KParser : BaseSecReportParser<Form10KParseResult>(SecReportType.FORM
     override fun extractFinancialStatements(content: String): StructuredFinancialData? {
         val statements = EnhancedFinancialParser.parseFinancialStatements(content)
 
-        val incomeStatement = statements.find { it.type == StatementType.INCOME_STATEMENT }?.let {
-            FinancialDataMapper.convertToStructuredIncome(it)
-        }
+        val incomeStatement =
+                statements.find { it.type == StatementType.INCOME_STATEMENT }?.let {
+                    FinancialDataMapper.convertToStructuredIncome(it)
+                }
 
-        val balanceSheet = statements.find { it.type == StatementType.BALANCE_SHEET }?.let {
-            FinancialDataMapper.convertToStructuredBalance(it)
-        }
+        val balanceSheet =
+                statements.find { it.type == StatementType.BALANCE_SHEET }?.let {
+                    FinancialDataMapper.convertToStructuredBalance(it)
+                }
 
-        val cashFlow = statements.find { it.type == StatementType.CASH_FLOW_STATEMENT }?.let {
-            FinancialDataMapper.convertToStructuredCashFlow(it)
-        }
+        val cashFlow =
+                statements.find { it.type == StatementType.CASH_FLOW_STATEMENT }?.let {
+                    FinancialDataMapper.convertToStructuredCashFlow(it)
+                }
 
         return StructuredFinancialData(
-            companyName = null,
-            reportType = "10-K",
-            fiscalYear = extractFiscalYear(content),
-            fiscalPeriod = "FY",
-            incomeStatement = incomeStatement,
-            balanceSheet = balanceSheet,
-            cashFlowStatement = cashFlow,
-            dataQuality = if (statements.isNotEmpty()) DataQuality.HIGH else DataQuality.MEDIUM
+                companyName = null,
+                reportType = "10-K",
+                fiscalYear = extractFiscalYear(content),
+                fiscalPeriod = "FY",
+                incomeStatement = incomeStatement,
+                balanceSheet = balanceSheet,
+                cashFlowStatement = cashFlow,
+                dataQuality = if (statements.isNotEmpty()) DataQuality.HIGH else DataQuality.MEDIUM
         )
     }
 
     private fun extractFiscalYear(content: String): String {
-        val yearPattern = Regex("(?i)(fiscal\\s+year|year\\s+ended)\\s+\\w+\\s+\\d+,?\\s+(\\d{4})", RegexOption.IGNORE_CASE)
+        val yearPattern =
+                Regex(
+                        "(?i)(fiscal\\s+year|year\\s+ended)\\s+\\w+\\s+\\d+,?\\s+(\\d{4})",
+                        RegexOption.IGNORE_CASE
+                )
         val match = yearPattern.find(content)
         return match?.groupValues?.get(2) ?: ""
     }
