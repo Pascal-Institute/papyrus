@@ -2,8 +2,8 @@ package papyrus.core.service.analyzer
 
 import com.pascal.institute.ahmes.ai.AiEnhancedSecParser
 import com.pascal.institute.ahmes.ai.AiEnhancementOptions
-import com.pascal.institute.ahmes.model.Form4ParseResult
 import com.pascal.institute.ahmes.model.Form144ParseResult
+import com.pascal.institute.ahmes.model.Form4ParseResult
 import com.pascal.institute.ahmes.model.SecReportMetadata
 import com.pascal.institute.ahmes.model.SecReportType
 import com.pascal.institute.ahmes.parser.EnhancedFinancialParser
@@ -720,11 +720,13 @@ object FinancialAnalyzer {
                 if (insider.transactions.isNotEmpty()) {
                     sb.appendLine("  📊 Transactions:")
                     insider.transactions.forEach { txn ->
-                        val typeEmoji = when {
-                            txn.transactionType.contains("Purchase", ignoreCase = true) -> "🟢"
-                            txn.transactionType.contains("Sale", ignoreCase = true) -> "🔴"
-                            else -> "🟡"
-                        }
+                        val typeEmoji =
+                                when {
+                                    txn.transactionType.contains("Purchase", ignoreCase = true) ->
+                                            "🟢"
+                                    txn.transactionType.contains("Sale", ignoreCase = true) -> "🔴"
+                                    else -> "🟡"
+                                }
                         sb.appendLine("    $typeEmoji ${txn.transactionType}")
                         sb.appendLine("      • Security: ${txn.securityTitle}")
                         sb.appendLine("      • Date: ${txn.transactionDate}")
@@ -976,7 +978,8 @@ object FinancialAnalyzer {
                                 aiEnhancedResult
                                         ?.metadata
                                         ?.get("aiProcessingTimeMs")
-                                        ?.toLongOrNull()
+                                        ?.toLongOrNull(),
+                        aiAnalysisText = generateAiComprehensiveAssessment(aiEnhancedResult)
                 )
 
         // Save to cache
@@ -984,6 +987,54 @@ object FinancialAnalyzer {
         println("✓ Analysis cached for future use")
 
         return result
+    }
+
+    private fun generateAiComprehensiveAssessment(
+            aiResult: com.pascal.institute.ahmes.ai.AiEnhancedParseResult?
+    ): String? {
+        if (aiResult == null || aiResult.documentSummary == null) return null
+
+        val sb = StringBuilder()
+        val summary = aiResult.documentSummary!!
+
+        // Executive Summary
+        if (summary.executiveSummary.isNotBlank()) {
+            sb.append(summary.executiveSummary)
+            sb.append("\n\n")
+        }
+
+        // Health Score Summary (if available)
+        aiResult.healthScore?.let { health ->
+            sb.append("Financial Health: ${health.summary}\n")
+            if (health.strengths.isNotEmpty()) {
+                sb.append("\nKey Strengths:\n")
+                health.strengths.forEach { sb.append("• $it\n") }
+            }
+            if (health.weaknesses.isNotEmpty()) {
+                sb.append("\nKey Risks/Weaknesses:\n")
+                health.weaknesses.forEach { sb.append("• $it\n") }
+            }
+            sb.append("\n")
+        }
+
+        // Key Findings
+        if (summary.keyFindings.isNotEmpty()) {
+            sb.append("\nKey Findings:\n")
+            summary.keyFindings.forEach { sb.append("• $it\n") }
+        }
+
+        // Outlook
+        if (summary.outlook.isNotBlank()) {
+            sb.append("\nOutlook: ${summary.outlook}\n")
+        }
+
+        // Investment Implications
+        if (summary.investmentImplications.isNotEmpty()) {
+            sb.append("\nInvestment Implications:\n")
+            summary.investmentImplications.forEach { sb.append("• $it\n") }
+        }
+
+        return sb.toString()
     }
 
     /** 기존 메트릭과 확장 메트릭 병합 */
@@ -2146,11 +2197,18 @@ object FinancialAnalyzer {
      *
      * Detects Form 4 filings and extracts details about insider transactions
      */
-    private fun extractInsiderTradingInfo(content: String, reportType: String?): List<InsiderTradingInfo> {
+    private fun extractInsiderTradingInfo(
+            content: String,
+            reportType: String?
+    ): List<InsiderTradingInfo> {
         // Check if this is a Form 4
-        val isForm4 = reportType?.contains("4", ignoreCase = true) == true ||
-                content.contains("FORM 4", ignoreCase = true) ||
-                content.contains("Statement of Changes in Beneficial Ownership", ignoreCase = true)
+        val isForm4 =
+                reportType?.contains("4", ignoreCase = true) == true ||
+                        content.contains("FORM 4", ignoreCase = true) ||
+                        content.contains(
+                                "Statement of Changes in Beneficial Ownership",
+                                ignoreCase = true
+                        )
 
         if (!isForm4) {
             return emptyList()
@@ -2160,17 +2218,18 @@ object FinancialAnalyzer {
             println("📋 Detected Form 4 - Extracting insider trading information")
 
             // Create metadata for Form 4 parser
-            val metadata = SecReportMetadata(
-                formType = "4",
-                filingDate = null,
-                reportDate = null,
-                fiscalYearEnd = null,
-                companyName = null,
-                ticker = null,
-                cik = null,
-                accessionNumber = null,
-                primaryDocument = null
-            )
+            val metadata =
+                    SecReportMetadata(
+                            formType = "4",
+                            filingDate = null,
+                            reportDate = null,
+                            fiscalYearEnd = null,
+                            companyName = null,
+                            ticker = null,
+                            cik = null,
+                            accessionNumber = null,
+                            primaryDocument = null
+                    )
 
             // Parse Form 4 using the dedicated parser
             val parser = SecReportParserFactory.getParser(SecReportType.FORM_4)
@@ -2187,9 +2246,11 @@ object FinancialAnalyzer {
                         val roles = mutableListOf<String>()
                         owner.relationship?.let { rel ->
                             if (rel.isDirector) roles.add("Director")
-                            if (rel.isOfficer) roles.add("Officer${rel.officerTitle?.let { " ($it)" } ?: ""}")
+                            if (rel.isOfficer)
+                                    roles.add("Officer${rel.officerTitle?.let { " ($it)" } ?: ""}")
                             if (rel.isTenPercentOwner) roles.add("10% Owner")
-                            if (rel.isOther) roles.add("Other${rel.otherText?.let { " ($it)" } ?: ""}")
+                            if (rel.isOther)
+                                    roles.add("Other${rel.otherText?.let { " ($it)" } ?: ""}")
                         }
                         append(roles.joinIfEmpty("Unknown"))
                     }
@@ -2199,59 +2260,73 @@ object FinancialAnalyzer {
 
                     // Non-derivative transactions (common stock)
                     parseResult.nonDerivativeTransactions.forEach { transaction ->
-                        val transactionType = when {
-                            transaction.isAcquisition == true -> "Purchase"
-                            transaction.isAcquisition == false -> "Sale"
-                            else -> "Unknown"
-                        }
+                        val transactionType =
+                                when {
+                                    transaction.isAcquisition == true -> "Purchase"
+                                    transaction.isAcquisition == false -> "Sale"
+                                    else -> "Unknown"
+                                }
 
                         transactionSummaries.add(
-                            InsiderTransactionSummary(
-                                transactionType = transactionType,
-                                securityTitle = transaction.titleOfSecurity ?: "Common Stock",
-                                transactionDate = transaction.transactionDate ?: "Unknown",
-                                sharesTransacted = transaction.amount ?: "N/A",
-                                pricePerShare = transaction.pricePerShare?.let { "$$it" },
-                                totalValue = calculateTotalValue(transaction.amount, transaction.pricePerShare),
-                                sharesOwnedAfter = transaction.sharesOwnedFollowing ?: "N/A"
-                            )
+                                InsiderTransactionSummary(
+                                        transactionType = transactionType,
+                                        securityTitle = transaction.titleOfSecurity
+                                                        ?: "Common Stock",
+                                        transactionDate = transaction.transactionDate ?: "Unknown",
+                                        sharesTransacted = transaction.amount ?: "N/A",
+                                        pricePerShare = transaction.pricePerShare?.let { "$$it" },
+                                        totalValue =
+                                                calculateTotalValue(
+                                                        transaction.amount,
+                                                        transaction.pricePerShare
+                                                ),
+                                        sharesOwnedAfter = transaction.sharesOwnedFollowing ?: "N/A"
+                                )
                         )
                     }
 
                     // Derivative transactions (options, warrants, etc.)
                     parseResult.derivativeTransactions.forEach { transaction ->
-                        val transactionType = when {
-                            transaction.isAcquisition == true -> "Acquisition"
-                            transaction.isAcquisition == false -> "Disposition"
-                            else -> "Unknown"
-                        }
+                        val transactionType =
+                                when {
+                                    transaction.isAcquisition == true -> "Acquisition"
+                                    transaction.isAcquisition == false -> "Disposition"
+                                    else -> "Unknown"
+                                }
 
                         transactionSummaries.add(
-                            InsiderTransactionSummary(
-                                transactionType = transactionType,
-                                securityTitle = transaction.titleOfSecurity ?: "Derivative Security",
-                                transactionDate = transaction.transactionDate ?: "Unknown",
-                                sharesTransacted = transaction.amount ?: "N/A",
-                                pricePerShare = transaction.pricePerShare?.let { "$$it" },
-                                totalValue = calculateTotalValue(transaction.amount, transaction.pricePerShare),
-                                sharesOwnedAfter = transaction.sharesOwnedFollowing ?: "N/A"
-                            )
+                                InsiderTransactionSummary(
+                                        transactionType = transactionType,
+                                        securityTitle = transaction.titleOfSecurity
+                                                        ?: "Derivative Security",
+                                        transactionDate = transaction.transactionDate ?: "Unknown",
+                                        sharesTransacted = transaction.amount ?: "N/A",
+                                        pricePerShare = transaction.pricePerShare?.let { "$$it" },
+                                        totalValue =
+                                                calculateTotalValue(
+                                                        transaction.amount,
+                                                        transaction.pricePerShare
+                                                ),
+                                        sharesOwnedAfter = transaction.sharesOwnedFollowing ?: "N/A"
+                                )
                         )
                     }
 
                     if (transactionSummaries.isNotEmpty()) {
                         insiderInfoList.add(
-                            InsiderTradingInfo(
-                                reportingOwnerName = owner.name ?: "Unknown",
-                                reportingOwnerCik = owner.cik,
-                                relationship = relationship,
-                                transactions = transactionSummaries
-                            )
+                                InsiderTradingInfo(
+                                        reportingOwnerName = owner.name ?: "Unknown",
+                                        reportingOwnerCik = owner.cik,
+                                        relationship = relationship,
+                                        transactions = transactionSummaries
+                                )
                         )
                     }
                 }
 
-                println("✅ Extracted ${insiderInfoList.size} insider(s) with ${insiderInfoList.sumOf { it.transactions.size }} transaction(s)")
+                println(
+                        "✅ Extracted ${insiderInfoList.size} insider(s) with ${insiderInfoList.sumOf { it.transactions.size }} transaction(s)"
+                )
                 insiderInfoList
             } else {
                 println("⚠ Form 4 parsing returned unexpected result type")
@@ -2264,14 +2339,16 @@ object FinancialAnalyzer {
         }
     }
 
-    /**
-     * Extract Form 144 proposed sale notices
-     */
-    private fun extractProposedSaleNotices(content: String, reportType: String?): List<ProposedSaleNotice> {
+    /** Extract Form 144 proposed sale notices */
+    private fun extractProposedSaleNotices(
+            content: String,
+            reportType: String?
+    ): List<ProposedSaleNotice> {
         // Check if this is a Form 144
-        val isForm144 = reportType?.contains("144", ignoreCase = true) == true ||
-                content.contains("FORM 144", ignoreCase = true) ||
-                content.contains("Notice of Proposed Sale", ignoreCase = true)
+        val isForm144 =
+                reportType?.contains("144", ignoreCase = true) == true ||
+                        content.contains("FORM 144", ignoreCase = true) ||
+                        content.contains("Notice of Proposed Sale", ignoreCase = true)
 
         if (!isForm144) {
             return emptyList()
@@ -2280,18 +2357,19 @@ object FinancialAnalyzer {
         return try {
             println("📋 Extracting Form 144 (Proposed Sale) information...")
 
-            val metadata = SecReportMetadata(
-                    formType = "144",
-                    filingDate = null,
-                    reportDate = null,
-                    fiscalYearEnd = null,
-                    companyName = null,
-                    ticker = null,
-                    cik = null,
-                    accessionNumber = null,
-                    documentCount = 0,
-                    primaryDocument = null
-            )
+            val metadata =
+                    SecReportMetadata(
+                            formType = "144",
+                            filingDate = null,
+                            reportDate = null,
+                            fiscalYearEnd = null,
+                            companyName = null,
+                            ticker = null,
+                            cik = null,
+                            accessionNumber = null,
+                            documentCount = 0,
+                            primaryDocument = null
+                    )
 
             // Parse Form 144 using the dedicated parser
             val parser = SecReportParserFactory.getParser(SecReportType.FORM_144)
@@ -2306,17 +2384,17 @@ object FinancialAnalyzer {
 
                 if (seller != null && saleInfo != null) {
                     noticeList.add(
-                        ProposedSaleNotice(
-                            sellerName = seller.name,
-                            sellerCik = seller.cik,
-                            relationship = seller.relationship,
-                            securityType = saleInfo.securityType,
-                            proposedSaleDate = saleInfo.proposedSaleDate,
-                            numberOfShares = saleInfo.numberOfShares,
-                            aggregateMarketValue = saleInfo.aggregateMarketValue,
-                            brokerName = saleInfo.brokerName,
-                            remarks = parseResult.remarks
-                        )
+                            ProposedSaleNotice(
+                                    sellerName = seller.name,
+                                    sellerCik = seller.cik,
+                                    relationship = seller.relationship,
+                                    securityType = saleInfo.securityType,
+                                    proposedSaleDate = saleInfo.proposedSaleDate,
+                                    numberOfShares = saleInfo.numberOfShares,
+                                    aggregateMarketValue = saleInfo.aggregateMarketValue,
+                                    brokerName = saleInfo.brokerName,
+                                    remarks = parseResult.remarks
+                            )
                     )
                 }
 
@@ -2333,9 +2411,7 @@ object FinancialAnalyzer {
         }
     }
 
-    /**
-     * Calculate total transaction value from shares and price
-     */
+    /** Calculate total transaction value from shares and price */
     private fun calculateTotalValue(sharesStr: String?, priceStr: String?): String? {
         if (sharesStr == null || priceStr == null) return null
 
@@ -2354,9 +2430,7 @@ object FinancialAnalyzer {
         }
     }
 
-    /**
-     * Helper extension function to join with fallback
-     */
+    /** Helper extension function to join with fallback */
     private fun List<String>.joinIfEmpty(default: String): String {
         return if (isEmpty()) default else joinToString(", ")
     }

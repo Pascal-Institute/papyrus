@@ -48,23 +48,10 @@ object DjlModelManager {
         }
     }
 
-    // Default device (CPU or GPU if available)
+    // Default device (CPU forced for stability due to potential CUDA issues on some Windows setups)
     val defaultDevice: Device by lazy {
-        val device =
-                try {
-                    if (isGpuAvailable()) {
-                        val gpu = Device.gpu()
-                        logger.info("Using GPU: $gpu")
-                        gpu
-                    } else {
-                        logger.info("Using CPU")
-                        Device.cpu()
-                    }
-                } catch (e: Exception) {
-                    logger.warn("Error selecting device, defaulting to CPU: ${e.message}")
-                    Device.cpu()
-                }
-        device
+        logger.warn("Forcing CPU usage for DJL models to ensure stability on Windows.")
+        Device.cpu()
     }
 
     /** Model types available for SEC parsing */

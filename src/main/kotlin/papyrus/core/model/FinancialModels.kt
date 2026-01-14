@@ -577,6 +577,7 @@ data class FinancialAnalysis(
         val xbrlMetrics: List<ExtendedFinancialMetric> = emptyList(),
 
         // AI-Enhanced Insights (NEW)
+        val aiAnalysisText: String? = null,
         val aiSentiment: DocumentSentimentSummary? = null,
         val aiEntities: List<FinancialEntityAi> = emptyList(),
         val aiRiskAnalysis: List<RiskAnalysis> = emptyList(),

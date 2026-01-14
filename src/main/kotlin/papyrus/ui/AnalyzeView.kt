@@ -42,7 +42,6 @@ import papyrus.core.model.InsiderTransactionSummary
 import papyrus.core.model.MetricCategory
 import papyrus.core.model.ProposedSaleNotice
 import papyrus.core.model.RatioCategory
-import papyrus.core.secApiClient
 
 /** Map icon name to Material Icon ImageVector */
 private fun getIconForName(iconName: String): ImageVector {
@@ -306,11 +305,16 @@ private fun getModelDetails(aiModelUsed: String?): String {
                         // Extract specific model names
                         parts.forEach { part ->
                                 when {
-                                        part.contains("distilbert") -> modelInfo.add("DistilBERT (NLP)")
-                                        part.contains("bert") && !part.contains("distilbert") -> modelInfo.add("BERT (NLP)")
-                                        part.contains("sentiment") -> modelInfo.add("Sentiment Analysis")
-                                        part.contains("ner") || part.contains("entity") -> modelInfo.add("Entity Recognition")
-                                        part.contains("classification") -> modelInfo.add("Text Classification")
+                                        part.contains("distilbert") ->
+                                                modelInfo.add("DistilBERT (NLP)")
+                                        part.contains("bert") && !part.contains("distilbert") ->
+                                                modelInfo.add("BERT (NLP)")
+                                        part.contains("sentiment") ->
+                                                modelInfo.add("Sentiment Analysis")
+                                        part.contains("ner") || part.contains("entity") ->
+                                                modelInfo.add("Entity Recognition")
+                                        part.contains("classification") ->
+                                                modelInfo.add("Text Classification")
                                 }
                         }
 
@@ -1246,7 +1250,7 @@ private fun BeginnerInsightsTab(analysis: FinancialAnalysis) {
         } else {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                         // AI Analysis (Prioritized if available)
-                        if (analysis.aiSentiment != null) {
+                        if (analysis.aiSentiment != null || analysis.aiAnalysisText != null) {
                                 AiAnalysisContent(analysis)
                                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -2139,7 +2143,8 @@ private fun FinancialsTab(analysis: FinancialAnalysis) {
                         )
 
                         Text(
-                                text = "Information about insider transactions including purchases and sales by company officers, directors, and major shareholders",
+                                text =
+                                        "Information about insider transactions including purchases and sales by company officers, directors, and major shareholders",
                                 style = AppTypography.Body2,
                                 color = AppColors.OnSurfaceSecondary,
                                 modifier = Modifier.padding(bottom = 16.dp)
@@ -2207,7 +2212,11 @@ private fun FinancialsTab(analysis: FinancialAnalysis) {
                         }
                 }
 
-                if (ratios.isEmpty() && metrics.isEmpty() && insiderTradingInfo.isEmpty() && analysis.proposedSaleNotices.isEmpty()) {
+                if (ratios.isEmpty() &&
+                                metrics.isEmpty() &&
+                                insiderTradingInfo.isEmpty() &&
+                                analysis.proposedSaleNotices.isEmpty()
+                ) {
                         EmptyState(
                                 icon = Icons.Outlined.Analytics,
                                 title = "No Financial Data Found",
@@ -2218,10 +2227,7 @@ private fun FinancialsTab(analysis: FinancialAnalysis) {
         }
 }
 
-/**
- * Insider Trading Card
- * Displays information about insider transactions from Form 4
- */
+/** Insider Trading Card Displays information about insider transactions from Form 4 */
 @Composable
 private fun InsiderTradingCard(insider: InsiderTradingInfo) {
         Card(
@@ -2283,27 +2289,29 @@ private fun InsiderTradingCard(insider: InsiderTradingInfo) {
         }
 }
 
-/**
- * Individual Transaction Row
- */
+/** Individual Transaction Row */
 @Composable
 private fun InsiderTransactionRow(transaction: InsiderTransactionSummary) {
-        val isPurchase = transaction.transactionType.contains("Purchase", ignoreCase = true) ||
-                         transaction.transactionType.contains("Acquisition", ignoreCase = true)
-        val isSale = transaction.transactionType.contains("Sale", ignoreCase = true) ||
-                     transaction.transactionType.contains("Disposition", ignoreCase = true)
+        val isPurchase =
+                transaction.transactionType.contains("Purchase", ignoreCase = true) ||
+                        transaction.transactionType.contains("Acquisition", ignoreCase = true)
+        val isSale =
+                transaction.transactionType.contains("Sale", ignoreCase = true) ||
+                        transaction.transactionType.contains("Disposition", ignoreCase = true)
 
-        val transactionColor = when {
-                isPurchase -> Color(0xFF4CAF50) // Green for purchases
-                isSale -> Color(0xFFF44336) // Red for sales
-                else -> AppColors.OnSurfaceSecondary
-        }
+        val transactionColor =
+                when {
+                        isPurchase -> Color(0xFF4CAF50) // Green for purchases
+                        isSale -> Color(0xFFF44336) // Red for sales
+                        else -> AppColors.OnSurfaceSecondary
+                }
 
-        val transactionIcon = when {
-                isPurchase -> "\uD83D\uDFE2" // Green circle
-                isSale -> "\uD83D\uDD34" // Red circle
-                else -> "\uD83D\uDFE1" // Yellow circle
-        }
+        val transactionIcon =
+                when {
+                        isPurchase -> "\uD83D\uDFE2" // Green circle
+                        isSale -> "\uD83D\uDD34" // Red circle
+                        else -> "\uD83D\uDFE1" // Yellow circle
+                }
 
         Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -2346,9 +2354,7 @@ private fun InsiderTransactionRow(transaction: InsiderTransactionSummary) {
         }
 }
 
-/**
- * Transaction detail row helper
- */
+/** Transaction detail row helper */
 @Composable
 private fun TransactionDetailRow(label: String, value: String, isBold: Boolean = false) {
         Row(
@@ -2373,8 +2379,8 @@ private fun TransactionDetailRow(label: String, value: String, isBold: Boolean =
 }
 
 /**
- * Form 144 - Proposed Sale Notice Card
- * Displays information about planned sales of restricted or control securities
+ * Form 144 - Proposed Sale Notice Card Displays information about planned sales of restricted or
+ * control securities
  */
 @Composable
 private fun ProposedSaleNoticeCard(notice: ProposedSaleNotice) {
@@ -2412,14 +2418,19 @@ private fun ProposedSaleNoticeCard(notice: ProposedSaleNotice) {
                                                 style = AppTypography.Body2,
                                                 color = Color(0xFFE65100),
                                                 fontWeight = FontWeight.SemiBold,
-                                                modifier = Modifier.padding(top = 4.dp, start = 32.dp)
+                                                modifier =
+                                                        Modifier.padding(top = 4.dp, start = 32.dp)
                                         )
                                         notice.sellerCik?.let { cik: String ->
                                                 Text(
                                                         text = "CIK: $cik",
                                                         style = AppTypography.Caption,
                                                         color = AppColors.OnSurfaceSecondary,
-                                                        modifier = Modifier.padding(top = 2.dp, start = 32.dp)
+                                                        modifier =
+                                                                Modifier.padding(
+                                                                        top = 2.dp,
+                                                                        start = 32.dp
+                                                                )
                                                 )
                                         }
                                 }
@@ -2449,7 +2460,11 @@ private fun ProposedSaleNoticeCard(notice: ProposedSaleNotice) {
                                         ProposedSaleDetailRow("증권 종류", notice.securityType)
 
                                         notice.proposedSaleDate?.let { date: String ->
-                                                ProposedSaleDetailRow("예정 매도일", date, isImportant = true)
+                                                ProposedSaleDetailRow(
+                                                        "예정 매도일",
+                                                        date,
+                                                        isImportant = true
+                                                )
                                         }
 
                                         ProposedSaleDetailRow(
@@ -2489,7 +2504,10 @@ private fun ProposedSaleNoticeCard(notice: ProposedSaleNotice) {
                                                                 style = AppTypography.Subtitle2,
                                                                 fontWeight = FontWeight.SemiBold,
                                                                 color = AppColors.OnSurface,
-                                                                modifier = Modifier.padding(bottom = 6.dp)
+                                                                modifier =
+                                                                        Modifier.padding(
+                                                                                bottom = 6.dp
+                                                                        )
                                                         )
                                                         Text(
                                                                 text = remarks,
@@ -2504,9 +2522,13 @@ private fun ProposedSaleNoticeCard(notice: ProposedSaleNotice) {
                         // Warning footer
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
-                                modifier = Modifier.fillMaxWidth()
-                                        .background(Color(0xFFFFE0B2), RoundedCornerShape(6.dp))
-                                        .padding(12.dp),
+                                modifier =
+                                        Modifier.fillMaxWidth()
+                                                .background(
+                                                        Color(0xFFFFE0B2),
+                                                        RoundedCornerShape(6.dp)
+                                                )
+                                                .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
                                 Icon(
@@ -2526,9 +2548,7 @@ private fun ProposedSaleNoticeCard(notice: ProposedSaleNotice) {
         }
 }
 
-/**
- * Helper function for proposed sale detail rows
- */
+/** Helper function for proposed sale detail rows */
 @Composable
 private fun ProposedSaleDetailRow(
         label: String,
@@ -2543,15 +2563,21 @@ private fun ProposedSaleDetailRow(
                 Text(
                         text = if (isImportant) "▸ $label:" else "  • $label:",
                         style = AppTypography.Body2,
-                        color = if (isImportant) Color(0xFFE65100) else AppColors.OnSurfaceSecondary,
+                        color =
+                                if (isImportant) Color(0xFFE65100)
+                                else AppColors.OnSurfaceSecondary,
                         fontWeight = if (isImportant) FontWeight.SemiBold else FontWeight.Normal,
                         modifier = Modifier.weight(1f)
                 )
                 Text(
                         text = value,
                         style = AppTypography.Body2,
-                        fontWeight = if (isBold) FontWeight.Bold else if (isImportant) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isBold || isImportant) AppColors.OnSurface else AppColors.OnSurfaceSecondary,
+                        fontWeight =
+                                if (isBold) FontWeight.Bold
+                                else if (isImportant) FontWeight.SemiBold else FontWeight.Normal,
+                        color =
+                                if (isBold || isImportant) AppColors.OnSurface
+                                else AppColors.OnSurfaceSecondary,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.End
                 )
@@ -4495,20 +4521,27 @@ private fun AiAnalysisContent(analysis: FinancialAnalysis) {
                                                         text = analysis.aiModelUsed ?: "AI Ready",
                                                         style = AppTypography.Caption,
                                                         color =
-                                                                if (analysis.aiModelUsed?.contains("GPU") ==
-                                                                                true
+                                                                if (analysis.aiModelUsed?.contains(
+                                                                                "GPU"
+                                                                        ) == true
                                                                 )
                                                                         Color(0xFF2E7D32)
                                                                 else AppColors.OnSurfaceSecondary,
                                                         fontWeight = FontWeight.Bold
                                                 )
                                                 // Show model details
-                                                val modelDetails = getModelDetails(analysis.aiModelUsed)
+                                                val modelDetails =
+                                                        getModelDetails(analysis.aiModelUsed)
                                                 if (modelDetails.isNotEmpty()) {
                                                         Text(
                                                                 text = modelDetails,
-                                                                style = AppTypography.Caption.copy(fontSize = 10.sp),
-                                                                color = AppColors.OnSurfaceSecondary.copy(alpha = 0.7f)
+                                                                style =
+                                                                        AppTypography.Caption.copy(
+                                                                                fontSize = 10.sp
+                                                                        ),
+                                                                color =
+                                                                        AppColors.OnSurfaceSecondary
+                                                                                .copy(alpha = 0.7f)
                                                         )
                                                 }
                                         }
@@ -4658,6 +4691,30 @@ private fun AiAnalysisContent(analysis: FinancialAnalysis) {
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // AI Comprehensive Analysis Section (NEW)
+                if (!analysis.aiAnalysisText.isNullOrBlank()) {
+                        Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                elevation = AppDimens.CardElevation,
+                                shape = AppShapes.Large
+                        ) {
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                        SectionHeader(
+                                                title = "AI 종합 평가",
+                                                icon = Icons.Default.Assessment
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Text(
+                                                text = translateAiText(analysis.aiAnalysisText),
+                                                style = AppTypography.Body1,
+                                                color = AppColors.OnSurface,
+                                                lineHeight = 24.sp
+                                        )
+                                }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 // AI Summary Section
                 analysis.aiDocumentSummary?.let { summary ->
@@ -4951,13 +5008,26 @@ private fun AiAnalysisContent(analysis: FinancialAnalysis) {
                                                                 )
 
                                                                 // Category explanation
-                                                                val categoryExplanation = getRiskCategoryExplanation(risk.category)
-                                                                if (categoryExplanation.isNotEmpty()) {
+                                                                val categoryExplanation =
+                                                                        getRiskCategoryExplanation(
+                                                                                risk.category
+                                                                        )
+                                                                if (categoryExplanation.isNotEmpty()
+                                                                ) {
                                                                         Text(
-                                                                                text = categoryExplanation,
-                                                                                style = AppTypography.Caption,
-                                                                                color = AppColors.OnSurfaceSecondary,
-                                                                                modifier = Modifier.padding(vertical = 4.dp)
+                                                                                text =
+                                                                                        categoryExplanation,
+                                                                                style =
+                                                                                        AppTypography
+                                                                                                .Caption,
+                                                                                color =
+                                                                                        AppColors
+                                                                                                .OnSurfaceSecondary,
+                                                                                modifier =
+                                                                                        Modifier.padding(
+                                                                                                vertical =
+                                                                                                        4.dp
+                                                                                        )
                                                                         )
                                                                 }
 
@@ -5053,6 +5123,13 @@ private fun translateAiText(text: String?): String {
                         .replace("Interest rate risk", "금리 리스크")
                         .replace("Litigation risk", "소송 리스크")
                         .replace("Environmental compliance", "환경 규제 준수")
+                        .replace("Financial Health:", "재무 건전성:")
+                        .replace("Key Strengths:", "핵심 강점:")
+                        .replace("Key Risks/Weaknesses:", "핵심 리스크/약점:")
+                        .replace("Outlook:", "향후 전망:")
+                        .replace("Investment Implications:", "투자 시사점:")
+                        .replace("Key Findings:", "주요 발견 사항:")
+                        .replace("•", "•") // Ensure bullets are preserved or handled if needed
 
         return result
 }
