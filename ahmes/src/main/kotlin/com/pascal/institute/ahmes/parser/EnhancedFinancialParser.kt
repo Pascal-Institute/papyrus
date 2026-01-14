@@ -819,8 +819,8 @@ object EnhancedFinancialParser {
         return ratios
     }
 
-    // Helper functions
-    fun cleanHtml(content: String): String {
+    // Helper functions - made internal for use by FinancialMetricExtractor
+    internal fun cleanHtml(content: String): String {
         var cleaned = content
 
         cleaned =
@@ -858,7 +858,7 @@ object EnhancedFinancialParser {
         return cleaned
     }
 
-    private fun detectUnit(text: String): MetricUnit {
+    internal fun detectUnit(text: String): MetricUnit {
         val lowerText = text.lowercase()
         return when {
             lowerText.contains("in billions") || lowerText.contains("(in billions)") ->
@@ -871,7 +871,7 @@ object EnhancedFinancialParser {
         }
     }
 
-    private fun detectPeriod(text: String): String? {
+    internal fun detectPeriod(text: String): String? {
         val patterns =
                 listOf(
                         Regex(
@@ -888,7 +888,7 @@ object EnhancedFinancialParser {
         return null
     }
 
-    private fun detectPeriodType(text: String): PeriodType? {
+    internal fun detectPeriodType(text: String): PeriodType? {
         val lowerText = text.lowercase()
         return when {
             lowerText.contains("three months") || lowerText.contains("quarterly") ->
@@ -901,7 +901,7 @@ object EnhancedFinancialParser {
         }
     }
 
-    private fun searchMetricValues(
+    internal fun searchMetricValues(
             text: String,
             term: String,
             category: MetricCategory,
@@ -965,7 +965,7 @@ object EnhancedFinancialParser {
         return results.distinctBy { it.rawValue }
     }
 
-    private fun parseNumber(
+    internal fun parseNumber(
             value: String,
             unit: MetricUnit,
             isNegative: Boolean = false
@@ -984,7 +984,7 @@ object EnhancedFinancialParser {
         }
     }
 
-    private fun formatValue(value: BigDecimal): String {
+    internal fun formatValue(value: BigDecimal): String {
         val absValue = value.abs()
         val prefix = if (value < BigDecimal.ZERO) "-" else ""
 
@@ -1024,7 +1024,7 @@ object EnhancedFinancialParser {
         return null
     }
 
-    private fun deduplicateMetrics(
+    internal fun deduplicateMetrics(
             metrics: List<ExtendedFinancialMetric>
     ): List<ExtendedFinancialMetric> {
         return metrics
