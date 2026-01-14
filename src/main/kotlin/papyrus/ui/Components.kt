@@ -1096,14 +1096,25 @@ fun ReportTypeFilter(
                 )
             }
 
-            // \uc804\uccb4 \uc120\ud0dd/\ud574\uc81c \ubc84\ud2bc
-            if (selectedTypes.isNotEmpty()) {
-                TextButton(onClick = { onTypesChanged(emptySet()) }) {
-                    Text(
-                            text = "\ubaa8\ub450 \ud574\uc81c",
-                            style = AppTypography.Caption,
-                            color = AppColors.Primary
-                    )
+            // 전체 선택/해제 버튼
+            Row {
+                if (selectedTypes.size < availableTypes.size) {
+                    TextButton(onClick = { onTypesChanged(availableTypes.toSet()) }) {
+                        Text(
+                                text = "모두 선택",
+                                style = AppTypography.Caption,
+                                color = AppColors.Primary
+                        )
+                    }
+                }
+                if (selectedTypes.isNotEmpty()) {
+                    TextButton(onClick = { onTypesChanged(emptySet()) }) {
+                        Text(
+                                text = "모두 해제",
+                                style = AppTypography.Caption,
+                                color = AppColors.Primary
+                        )
+                    }
                 }
             }
         }
