@@ -166,7 +166,7 @@ object EnhancedFinancialParser {
     }
 
     // Delegated to ParsingHelpers (Phase 3)
-    internal fun inferCategoryFromLabel(label: String): MetricCategory? =
+    fun inferCategoryFromLabel(label: String): MetricCategory? =
             ParsingHelpers.inferCategoryFromLabel(label)
 
     private val allPatterns = allFinancialMetricPatterns
@@ -248,15 +248,15 @@ object EnhancedFinancialParser {
     }
 
     // Helper functions - delegated to ParsingHelpers (Phase 2a)
-    internal fun cleanHtml(content: String): String = ParsingHelpers.cleanHtml(content)
+    fun cleanHtml(content: String): String = ParsingHelpers.cleanHtml(content)
 
-    internal fun detectUnit(text: String): MetricUnit = ParsingHelpers.detectUnit(text)
+    fun detectUnit(text: String): MetricUnit = ParsingHelpers.detectUnit(text)
 
-    internal fun detectPeriod(text: String): String? = ParsingHelpers.detectPeriod(text)
+    fun detectPeriod(text: String): String? = ParsingHelpers.detectPeriod(text)
 
-    internal fun detectPeriodType(text: String): PeriodType? = ParsingHelpers.detectPeriodType(text)
+    fun detectPeriodType(text: String): PeriodType? = ParsingHelpers.detectPeriodType(text)
 
-    internal fun searchMetricValues(
+    fun searchMetricValues(
             text: String,
             term: String,
             category: MetricCategory,
@@ -320,18 +320,14 @@ object EnhancedFinancialParser {
         return results.distinctBy { it.rawValue }
     }
 
-    internal fun parseNumber(
-            value: String,
-            unit: MetricUnit,
-            isNegative: Boolean = false
-    ): BigDecimal? = ParsingHelpers.parseNumber(value, unit, isNegative)
+    fun parseNumber(value: String, unit: MetricUnit, isNegative: Boolean = false): BigDecimal? =
+            ParsingHelpers.parseNumber(value, unit, isNegative)
 
-    internal fun formatValue(value: BigDecimal): String = ParsingHelpers.formatValue(value)
+    fun formatValue(value: BigDecimal): String = ParsingHelpers.formatValue(value)
 
     private fun extractSection(text: String, sectionNames: List<String>): String? =
             ParsingHelpers.extractSection(text, sectionNames)
 
-    internal fun deduplicateMetrics(
-            metrics: List<ExtendedFinancialMetric>
-    ): List<ExtendedFinancialMetric> = ParsingHelpers.deduplicateMetrics(metrics)
+    fun deduplicateMetrics(metrics: List<ExtendedFinancialMetric>): List<ExtendedFinancialMetric> =
+            ParsingHelpers.deduplicateMetrics(metrics)
 }
