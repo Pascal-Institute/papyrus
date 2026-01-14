@@ -84,33 +84,34 @@ A powerful Kotlin Compose Desktop application for analyzing SEC financial report
 The codebase follows AGENTS.md principles: **intuitive, concise, and meaningful**.
 
 ```
-src/main/kotlin/papyrus/
+ahmes/                                    # Core parsing library module (Financial Engine)
+├── src/main/kotlin/com/pascal/institute/ahmes/
+│   ├── format/                          # Document format parsers (HTML, PDF, TXT)
+│   ├── model/                           # Core data models (FinancialMetric, RiskFactor)
+│   └── parser/                          # Financial parsing logic
+│       ├── EnhancedFinancialParser.kt   # Main coordinator
+│       ├── FinancialRatioCalculator.kt  # Ratio calculation
+│       ├── RiskFactorAnalyzer.kt        # Risk analysis
+│       └── FinancialStatementParser.kt  # Statement parsing
+│
+src/main/kotlin/papyrus/                  # Desktop Application module
 ├── Main.kt                               # Main application entry point with UI orchestration
 ├── core/
 │   ├── model/
 │   │   ├── BookmarkModels.kt            # Bookmark and recently viewed data models
-│   │   ├── FinancialModels.kt           # Financial analysis result models
-│   │   ├── NewsModels.kt                # Company news data models
-│   │   ├── ParserModels.kt              # Financial statement parsing models
-│   │   └── SecModels.kt                 # SEC EDGAR API response models
+│   │   ├── SecModels.kt                 # SEC EDGAR API response models
+│   │   └── ...
 │   ├── network/
-│   │   ├── SecApi.kt                    # SEC EDGAR API client (Ktor HTTP)
-│   │   └── NewsApi.kt                   # Financial news API client
+│   │   └── SecApi.kt                    # SEC EDGAR API client (Ktor HTTP)
 │   └── service/
-│       ├── AiAnalysisService.kt         # OpenRouter AI integration for financial analysis
-│       ├── EnhancedFinancialParser.kt   # Advanced financial statement parser
-│       └── FinancialAnalyzer.kt         # Core financial analysis engine
+│       └── FinancialAnalyzer.kt         # Core service integrating Ahmes library
 ├── ui/
-│   ├── AppTheme.kt                       # Material Design theme and colors
-│   ├── Components.kt                     # Reusable UI components (cards, lists, etc.)
+│   ├── Components.kt                     # Reusable UI components
 │   ├── DragDropPanel.kt                  # File drag & drop interface
-│   ├── QuickAnalyzeView.kt              # Financial analysis results display
-│   └── SettingsDialog.kt                 # AI API key configuration dialog
+│   └── QuickAnalyzeView.kt              # Financial analysis results display
 └── util/
-    ├── BookmarkManager.kt                # Bookmark and recent views persistence
-    ├── FileUtils.kt                      # File type detection and text extraction
-    ├── PdfParser.kt                      # PDF document parser (Apache PDFBox)
-    └── SettingsManager.kt                # Application settings management
+    ├── BookmarkManager.kt                # Bookmark persistence
+    └── SettingsManager.kt                # Application settings
 ```
 
 ## 🚀 How to Run

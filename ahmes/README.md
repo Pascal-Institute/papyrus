@@ -214,8 +214,12 @@ com.pascal.institute.ahmes
 │   ├── FinancialModels.kt      # FinancialMetric, FinancialRatio, FinancialAnalysis
 │   ├── ParserModels.kt         # ExtendedFinancialMetric, MetricCategory
 │   └── SecReportModels.kt      # Form10KParseResult, SecReportType, etc.
-├── parser              # Core parsers
-│   ├── EnhancedFinancialParser.kt   # Main financial metric extraction
+├── parser              # Core parsers & Logic
+│   ├── EnhancedFinancialParser.kt   # Coordinator & Facade
+│   ├── FinancialRatioCalculator.kt  # Ratio calculation & health assessment
+│   ├── RiskFactorAnalyzer.kt        # Risk factor extraction & categorization
+│   ├── FinancialStatementParser.kt  # Balance Sheet/Income Statement/Cash Flow parsing
+│   ├── ParsingHelpers.kt            # Shared parsing utilities
 │   ├── InlineXbrlExtractor.kt       # iXBRL extraction
 │   ├── SecTableParser.kt            # Table parsing
 │   ├── SecReportParserFactory.kt    # Factory for form parsers
